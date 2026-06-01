@@ -6,7 +6,7 @@ interface SetupScreenProps {
   onStart: (playerNames: string[]) => void;
 }
 
-const PLAYER_COLORS = ['#E74C3C', '#3498DB', '#2ECC71', '#F39C12'];
+const PLAYER_COLORS = ['#E74C3C', '#3498DB', '#2ECC71', '#111111'];
 
 export default function SetupScreen({ onStart }: SetupScreenProps) {
   const [playerCount, setPlayerCount] = useState(2);

@@ -28,26 +28,20 @@ function getPosition(visualRow: number, col: number): number {
   }
 }
 
-function getBoxStyle(boxType: BoxType): { bg: string; text: string } {
-  switch (boxType) {
-    case 'biru':
-      return { bg: '#3B82F6', text: '#FFFFFF' };
-    case 'merah':
-      return { bg: '#EF4444', text: '#FFFFFF' };
-    case 'kuning':
-      return { bg: '#EAB308', text: '#1a1a1a' };
-    case 'hijau':
-      return { bg: '#22C55E', text: '#FFFFFF' };
-    case 'ungu':
-      return { bg: '#A855F7', text: '#FFFFFF' };
-    case 'start':
-      return { bg: '#E5E7EB', text: '#1a1a1a' };
-    case 'finish':
-      return { bg: '#FFD700', text: '#1a1a1a' };
-    default:
-      return { bg: '#F3F4F6', text: '#1a1a1a' };
-  }
-}
+const PLAYER_PIONS = [
+  '/red.png',
+  '/blue.png',
+  '/green.png',
+  '/black.png',
+];
+
+// Offset positions so multiple pawns on the same cell don't fully overlap
+const PION_OFFSETS: Record<number, { top: string; left: string }> = {
+  0: { top: '8%', left: '12%' },
+  1: { top: '8%', left: '52%' },
+  2: { top: '48%', left: '12%' },
+  3: { top: '48%', left: '52%' },
+};
 
 export default function Board({ board, players }: BoardProps) {
   const cells = [];
@@ -55,60 +49,37 @@ export default function Board({ board, players }: BoardProps) {
   for (let row = 0; row < 10; row++) {
     for (let col = 0; col < 10; col++) {
       const position = getPosition(row, col);
-      const boxType = board[position - 1];
       const playersHere = players.filter((p) => p.position === position);
-      const hasSnake = position in snakes;
-      const hasLadder = position in ladders;
-      const style = getBoxStyle(boxType);
 
       cells.push(
         <div
           key={position}
-          className="relative flex flex-col items-center justify-center border border-gray-300/50"
-          style={{
-            backgroundColor: style.bg,
-            color: style.text,
-            aspectRatio: '1',
-          }}
+          className="relative w-full h-full"
         >
-          {/* Position number */}
-          <span className="font-bold text-[10px] sm:text-xs leading-none">
-            {position}
-          </span>
+          {/* Hover indicator */}
+          <div className="absolute inset-0 hover:bg-black/5 rounded-sm transition-colors z-[1]" />
 
-          {/* Snake or Ladder indicator */}
-          {hasSnake && (
-            <span className="text-[10px] sm:text-sm leading-none" title={`Ular: ${position} → ${snakes[position]}`}>
-              🐍
-            </span>
-          )}
-          {hasLadder && (
-            <span className="text-[10px] sm:text-sm leading-none" title={`Tangga: ${position} → ${ladders[position]}`}>
-              🪜
-            </span>
-          )}
-
-          {/* Special labels */}
-          {boxType === 'start' && (
-            <span className="text-[8px] font-bold leading-none">START</span>
-          )}
-          {boxType === 'finish' && (
-            <span className="text-[8px] font-bold leading-none">FINISH</span>
-          )}
-
-          {/* Player tokens */}
-          {playersHere.length > 0 && (
-            <div className="flex gap-0.5 flex-wrap justify-center absolute bottom-0.5">
-              {playersHere.map((p) => (
-                <div
-                  key={p.id}
-                  className="w-3 h-3 sm:w-4 sm:h-4 rounded-full border-2 border-white shadow-md"
-                  style={{ backgroundColor: p.color }}
-                  title={p.name}
-                />
-              ))}
-            </div>
-          )}
+          {/* Player tokens (pion) — spread across the cell */}
+          {playersHere.map((p, idx) => {
+            const pionSrc = PLAYER_PIONS[p.id % PLAYER_PIONS.length];
+            const offset = PION_OFFSETS[idx] || PION_OFFSETS[0];
+            return (
+              <img
+                key={p.id}
+                src={pionSrc}
+                alt={p.name}
+                className="absolute object-contain z-10 transition-all duration-500 ease-in-out hover:scale-[1.3] hover:z-20"
+                style={{
+                  width: '42%',
+                  height: '42%',
+                  top: offset.top,
+                  left: offset.left,
+                  filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.35))',
+                }}
+                title={`${p.name} — Kotak ${p.position}`}
+              />
+            );
+          })}
         </div>
       );
     }
@@ -116,8 +87,15 @@ export default function Board({ board, players }: BoardProps) {
 
   return (
     <div
-      className="grid grid-cols-10 border-2 border-gray-400 rounded-lg overflow-hidden w-full"
-      style={{ maxWidth: '560px' }}
+      className="grid grid-cols-10 rounded-2xl overflow-hidden w-full h-full max-h-full relative"
+      style={{
+        backgroundImage: 'url(/papan.png)',
+        backgroundSize: '100% 100%',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        aspectRatio: '4/3',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08)',
+      }}
     >
       {cells}
     </div>

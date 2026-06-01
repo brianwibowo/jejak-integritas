@@ -11,7 +11,15 @@ interface PlayerPanelProps {
   phase: GamePhase;
   message: string | null;
   onNextTurn: () => void;
+  onPause: () => void;
 }
+
+const PLAYER_PIONS = [
+  '/red.png',
+  '/blue.png',
+  '/green.png',
+  '/black.png',
+];
 
 export default function PlayerPanel({
   players,
@@ -21,93 +29,136 @@ export default function PlayerPanel({
   phase,
   message,
   onNextTurn,
+  onPause,
 }: PlayerPanelProps) {
   const currentPlayer = players[currentPlayerIndex];
 
+  // Sort players for leaderboard (rank by current position descending)
+  const rankedPlayers = [...players].sort((a, b) => b.position - a.position);
+
   return (
-    <div className="flex flex-col gap-4 p-4 bg-white rounded-xl shadow-lg w-full">
-      {/* Title */}
-      <h2 className="text-lg font-bold text-center text-gray-800">
-        Pemain
-      </h2>
+    <div className="flex flex-col gap-4 p-5 bg-white rounded-2xl shadow-xl w-full h-full border border-gray-100/80">
 
-      {/* Player list */}
-      <div className="flex flex-col gap-2">
-        {players.map((player, i) => (
-          <div
-            key={player.id}
-            className="flex items-center gap-3 p-3 rounded-lg transition-colors"
-            style={{
-              backgroundColor:
-                i === currentPlayerIndex ? '#EFF6FF' : '#F9FAFB',
-              border:
-                i === currentPlayerIndex
-                  ? '2px solid #93C5FD'
-                  : '2px solid transparent',
-            }}
-          >
-            <div
-              className="w-6 h-6 rounded-full border-2 border-white shadow flex-shrink-0"
-              style={{ backgroundColor: player.color }}
+      {/* 1. CURRENT TURN & DICE ROLL */}
+      <div className="text-center p-4 bg-blue-50/50 rounded-2xl border border-blue-100/50 flex flex-col gap-3">
+        <h3 className="text-xs font-bold text-blue-800 uppercase tracking-wider">
+          🎯 Giliran Saat Ini
+        </h3>
+        
+        <div className="flex flex-col items-center justify-center gap-1">
+          {currentPlayer && (
+            <img
+              src={PLAYER_PIONS[currentPlayer.id % PLAYER_PIONS.length]}
+              alt={currentPlayer.name}
+              className="w-10 h-10 object-contain animate-bounce"
             />
-            <div className="flex-1 min-w-0">
-              <div className="font-semibold text-sm text-gray-800 truncate">
-                {player.name}
-              </div>
-              <div className="text-xs text-gray-500">
-                Posisi: {player.position}
-              </div>
-            </div>
-            {i === currentPlayerIndex && (
-              <span className="text-[10px] bg-blue-500 text-white px-2 py-0.5 rounded-full flex-shrink-0">
-                Giliran
-              </span>
-            )}
+          )}
+          <div className="font-extrabold text-base text-gray-800">
+            <span style={{ color: currentPlayer?.color }}>
+              {currentPlayer?.name}
+            </span>
           </div>
-        ))}
-      </div>
-
-      {/* Divider */}
-      <div className="border-t border-gray-200" />
-
-      {/* Current turn info */}
-      <div className="text-center">
-        <div className="text-sm font-semibold text-gray-600 mb-3">
-          Giliran:{' '}
-          <span style={{ color: currentPlayer?.color }}>
-            {currentPlayer?.name}
-          </span>
         </div>
-        <Dice
-          value={diceValue}
-          onRoll={onRollDice}
-          disabled={phase !== 'rolling'}
-        />
+
+        {/* Dice & Roll Button */}
+        <div className="bg-white rounded-xl p-3 shadow-sm border border-blue-100/30">
+          <Dice
+            value={diceValue}
+            onRoll={onRollDice}
+            disabled={phase !== 'rolling'}
+          />
+        </div>
       </div>
 
-      {/* Message (for overshoot, neutral, etc.) */}
+      {/* Message Banner (for overshoot, neutral, etc.) */}
       {message && (
         <div
-          className="p-3 rounded-lg text-sm"
+          className="p-3 rounded-xl text-xs font-semibold leading-relaxed text-center animate-pulse"
           style={{
             backgroundColor: '#FFFBEB',
             border: '1px solid #FDE68A',
             color: '#92400E',
           }}
         >
-          {message}
+          ⚠️ {message}
         </div>
       )}
 
-      {/* Next Turn button (for overshoot / neutral — no question was shown) */}
+      {/* Next Turn Button */}
       {phase === 'result' && (
         <button
           onClick={onNextTurn}
-          className="w-full py-3 bg-blue-600 text-white rounded-lg font-bold text-sm hover:bg-blue-700 transition-colors"
+          className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm shadow-md transition-all transform active:scale-95"
         >
           Giliran Berikutnya →
         </button>
       )}
+
+      {/* Divider */}
+      <div className="border-t border-gray-100" />
+
+      {/* 2. LEADERBOARD (Consolidated inside PlayerPanel) */}
+      <div className="flex flex-col gap-3 flex-1 min-h-0">
+        <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+          🏆 Papan Peringkat
+        </h2>
+
+        <div className="flex flex-col gap-2 overflow-y-auto pr-1 flex-1">
+          {rankedPlayers.map((player, i) => {
+            const isCurrent = player.id === currentPlayer?.id;
+            return (
+              <div
+                key={player.id}
+                className="flex items-center gap-2 p-2 bg-gray-50 rounded-xl border border-gray-100 transition-all"
+                style={{
+                  borderLeft: `4px solid ${player.color}`,
+                  backgroundColor: isCurrent ? '#F0F9FF' : '#F9FAFB',
+                  borderColor: isCurrent ? '#BAE6FD' : '#F3F4F6',
+                }}
+              >
+                {/* Rank medal/number */}
+                <span className="text-sm font-bold text-gray-500 w-5 text-center flex-shrink-0">
+                  {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`}
+                </span>
+
+                {/* Custom player pion */}
+                <img
+                  src={PLAYER_PIONS[player.id % PLAYER_PIONS.length]}
+                  alt={player.name}
+                  className="w-6 h-6 object-contain flex-shrink-0"
+                />
+
+                {/* Player details */}
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-xs text-gray-800 truncate">
+                    {player.name}
+                  </div>
+                  <div className="text-[10px] text-gray-500 font-semibold flex flex-wrap items-center justify-between gap-x-2">
+                    <span>Kotak {player.position}</span>
+                    <span className="text-[9px] text-slate-400">
+                      Benar: <span className="text-emerald-600 font-bold">{player.correctAnswers || 0}</span> • Salah: <span className="text-rose-500 font-bold">{player.wrongAnswers || 0}</span>
+                    </span>
+                  </div>
+                </div>
+
+                {/* active status indicator inside leaderboard */}
+                {isCurrent && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-ping flex-shrink-0" />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Pause Button — below leaderboard */}
+      <button
+        onClick={onPause}
+        className="w-full px-3 py-2.5 rounded-xl text-xs font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 transition-colors flex items-center justify-center gap-1.5"
+        title="Pause Game"
+      >
+        ⏸ Pause
+      </button>
     </div>
   );
 }

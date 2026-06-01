@@ -18,9 +18,11 @@ export interface Player {
   name: string;
   position: number; // 1 = START, 100 = FINISH
   color: string;
+  correctAnswers: number;
+  wrongAnswers: number;
 }
 
-export type GamePhase = 'setup' | 'rolling' | 'question' | 'result' | 'finished';
+export type GamePhase = 'setup' | 'rolling' | 'walking' | 'pre_question' | 'question' | 'result' | 'finished';
 
 export interface GameState {
   phase: GamePhase;
@@ -28,6 +30,7 @@ export interface GameState {
   currentPlayerIndex: number;
   board: BoxType[];
   diceValue: number | null;
+  targetPosition: number | null;
   currentQuestion: Question | null;
   selectedAnswer: number | null;
   answerCorrect: boolean | null;
@@ -39,7 +42,7 @@ export interface GameState {
 
 // --- Constants ---
 
-const PLAYER_COLORS = ['#E74C3C', '#3498DB', '#2ECC71', '#F39C12'];
+const PLAYER_COLORS = ['#E74C3C', '#3498DB', '#2ECC71', '#111111'];
 
 const initialState: GameState = {
   phase: 'setup',
@@ -47,6 +50,7 @@ const initialState: GameState = {
   currentPlayerIndex: 0,
   board: [],
   diceValue: null,
+  targetPosition: null,
   currentQuestion: null,
   selectedAnswer: null,
   answerCorrect: null,
@@ -61,9 +65,13 @@ const initialState: GameState = {
 type GameAction =
   | { type: 'START_GAME'; playerNames: string[] }
   | { type: 'ROLL_DICE' }
+  | { type: 'WALK_STEP' }
+  | { type: 'FINISH_WALK' }
+  | { type: 'SHOW_QUESTION' }
   | { type: 'SELECT_ANSWER'; index: number }
   | { type: 'SUBMIT_ANSWER' }
   | { type: 'NEXT_TURN' }
+  | { type: 'QUICK_WIN' }
   | { type: 'RESET' };
 
 // --- Reducer ---
@@ -76,6 +84,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         name,
         position: 1, // All players start at position 1 (START)
         color: PLAYER_COLORS[i],
+        correctAnswers: 0,
+        wrongAnswers: 0,
       }));
       const board = generateBoard();
       return {
@@ -105,57 +115,86 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         };
       }
 
-      // --- Exact finish: WIN ---
-      if (newPosition === 100) {
-        const updatedPlayers = state.players.map((p, i) =>
-          i === state.currentPlayerIndex ? { ...p, position: 100 } : p
-        );
+      // Enter walking phase towards the target position
+      return {
+        ...state,
+        diceValue,
+        targetPosition: newPosition,
+        phase: 'walking',
+        message: null,
+      };
+    }
+
+    case 'WALK_STEP': {
+      if (state.phase !== 'walking') return state;
+
+      const updatedPlayers = state.players.map((p, i) =>
+        i === state.currentPlayerIndex ? { ...p, position: p.position + 1 } : p
+      );
+
+      return {
+        ...state,
+        players: updatedPlayers,
+      };
+    }
+
+    case 'FINISH_WALK': {
+      if (state.phase !== 'walking') return state;
+
+      const currentPlayer = state.players[state.currentPlayerIndex];
+      const currentPos = currentPlayer.position;
+
+      // Check if they reached Box 100 (win)
+      if (currentPos === 100) {
         return {
           ...state,
-          diceValue,
-          players: updatedPlayers,
           phase: 'finished',
-          winner: { ...currentPlayer, position: 100 },
+          winner: { ...currentPlayer },
           message: `🎉 ${currentPlayer.name} mencapai kotak 100 dan MENANG!`,
         };
       }
 
-      // --- Normal move ---
-      const updatedPlayers = state.players.map((p, i) =>
-        i === state.currentPlayerIndex ? { ...p, position: newPosition } : p
-      );
+      const boxType = state.board[currentPos - 1]; // 0-indexed
 
-      const boxType = state.board[newPosition - 1]; // board is 0-indexed
-
-      // If landing on start (very unlikely) or finish (handled above)
+      // If landing on start or finish
       if (boxType === 'start' || boxType === 'finish') {
         return {
           ...state,
-          diceValue,
-          players: updatedPlayers,
           phase: 'result',
           currentQuestion: null,
           consequence: 'neutral',
-          message: `${currentPlayer.name} mendarat di kotak ${newPosition}.`,
+          message: `${currentPlayer.name} mendarat di kotak ${currentPos}.`,
         };
       }
 
+      // Transition to pre_question phase (delay before showing question)
+      return {
+        ...state,
+        phase: 'pre_question',
+        targetPosition: null,
+      };
+    }
+
+    case 'SHOW_QUESTION': {
+      if (state.phase !== 'pre_question') return state;
+
+      const player = state.players[state.currentPlayerIndex];
+      const pos = player.position;
+      const bType = state.board[pos - 1];
+
       // Get random question for this box type
       const question = getRandomQuestion(
-        boxType as ColoredBoxType,
+        bType as ColoredBoxType,
         state.usedQuestionIds
       );
 
       return {
         ...state,
-        diceValue,
-        players: updatedPlayers,
         phase: 'question',
         currentQuestion: question,
         selectedAnswer: null,
         answerCorrect: null,
         consequence: null,
-        message: null,
       };
     }
 
@@ -196,15 +235,27 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
 
       const updatedPlayers = state.players.map((p, i) =>
-        i === state.currentPlayerIndex ? { ...p, position: newPosition } : p
+        i === state.currentPlayerIndex
+          ? {
+              ...p,
+              position: newPosition,
+              correctAnswers: p.correctAnswers + (isCorrect ? 1 : 0),
+              wrongAnswers: p.wrongAnswers + (isCorrect ? 0 : 1),
+            }
+          : p
       );
 
-      // Check win after ladder (e.g., ladder 80 → 100)
+      // Check win after ladder climb
       let phase: GamePhase = 'result';
       let winner = state.winner;
       if (newPosition === 100) {
         phase = 'finished';
-        winner = { ...currentPlayer, position: 100 };
+        winner = {
+          ...currentPlayer,
+          position: 100,
+          correctAnswers: currentPlayer.correctAnswers + (isCorrect ? 1 : 0),
+          wrongAnswers: currentPlayer.wrongAnswers + (isCorrect ? 0 : 1),
+        };
         consequence += ` 🎉 ${currentPlayer.name} mencapai kotak 100 dan MENANG!`;
       }
 
@@ -233,6 +284,31 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         answerCorrect: null,
         consequence: null,
         message: null,
+        targetPosition: null,
+      };
+    }
+
+    case 'QUICK_WIN': {
+      const currentPlayer = state.players[state.currentPlayerIndex];
+      const updatedPlayers = state.players.map((p, i) =>
+        i === state.currentPlayerIndex
+          ? {
+              ...p,
+              position: 100,
+              correctAnswers: p.correctAnswers + 1,
+            }
+          : p
+      );
+      return {
+        ...state,
+        phase: 'finished',
+        players: updatedPlayers,
+        winner: {
+          ...currentPlayer,
+          position: 100,
+          correctAnswers: currentPlayer.correctAnswers + 1,
+        },
+        message: `🎉 ${currentPlayer.name} melakukan Quick Win untuk testing!`,
       };
     }
 
@@ -258,6 +334,18 @@ export function useGameState() {
     dispatch({ type: 'ROLL_DICE' });
   }, []);
 
+  const walkStep = useCallback(() => {
+    dispatch({ type: 'WALK_STEP' });
+  }, []);
+
+  const finishWalk = useCallback(() => {
+    dispatch({ type: 'FINISH_WALK' });
+  }, []);
+
+  const showQuestion = useCallback(() => {
+    dispatch({ type: 'SHOW_QUESTION' });
+  }, []);
+
   const selectAnswer = useCallback((index: number) => {
     dispatch({ type: 'SELECT_ANSWER', index });
   }, []);
@@ -270,6 +358,10 @@ export function useGameState() {
     dispatch({ type: 'NEXT_TURN' });
   }, []);
 
+  const quickWin = useCallback(() => {
+    dispatch({ type: 'QUICK_WIN' });
+  }, []);
+
   const resetGame = useCallback(() => {
     dispatch({ type: 'RESET' });
   }, []);
@@ -279,9 +371,13 @@ export function useGameState() {
     actions: {
       startGame,
       rollDice,
+      walkStep,
+      finishWalk,
+      showQuestion,
       selectAnswer,
       submitAnswer,
       nextTurn,
+      quickWin,
       resetGame,
     },
   };
