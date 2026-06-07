@@ -11,6 +11,7 @@ interface QuestionModalProps {
   consequence: string | null;
   onNext: () => void;
   showResult: boolean;
+  isReadOnly?: boolean;
 }
 
 const optionLabels = ['A', 'B', 'C', 'D'];
@@ -24,6 +25,7 @@ export default function QuestionModal({
   consequence,
   onNext,
   showResult,
+  isReadOnly = false,
 }: QuestionModalProps) {
   const info = boxTypeInfo[question.boxType as ColoredBoxType];
   const themeName = themeLabels[question.theme];
@@ -42,7 +44,7 @@ export default function QuestionModal({
 
         <div className="p-5">
           {/* Question */}
-          <p className="text-gray-800 text-sm sm:text-base mb-5 leading-relaxed">
+          <p className="text-gray-800 text-sm sm:text-base mb-5 leading-relaxed font-semibold">
             {question.question}
           </p>
 
@@ -68,13 +70,13 @@ export default function QuestionModal({
               return (
                 <button
                   key={i}
-                  onClick={() => !showResult && onSelectAnswer(i)}
-                  disabled={showResult}
+                  onClick={() => !(showResult || isReadOnly) && onSelectAnswer(i)}
+                  disabled={showResult || isReadOnly}
                   className="text-left px-4 py-3 rounded-lg transition-all text-sm sm:text-base"
                   style={{
                     border: `2px solid ${borderColor}`,
                     backgroundColor: bgColor,
-                    cursor: showResult ? 'default' : 'pointer',
+                    cursor: (showResult || isReadOnly) ? 'default' : 'pointer',
                   }}
                 >
                   <span className="font-bold mr-2 text-gray-500">
@@ -87,7 +89,30 @@ export default function QuestionModal({
           </div>
 
           {/* Submit or Result */}
-          {!showResult ? (
+          {isReadOnly ? (
+            !showResult ? (
+              <div className="w-full py-3 bg-slate-100 text-slate-500 rounded-lg font-bold text-sm text-center animate-pulse border border-slate-200">
+                ⏳ Menunggu pemain aktif menjawab...
+              </div>
+            ) : (
+              <div>
+                {/* Consequence message */}
+                <div
+                  className="p-4 rounded-lg mb-4 text-sm font-semibold"
+                  style={{
+                    backgroundColor: answerCorrect ? '#F0FDF4' : '#FEF2F2',
+                    color: answerCorrect ? '#166534' : '#991B1B',
+                    border: `1px solid ${answerCorrect ? '#BBF7D0' : '#FECACA'}`,
+                  }}
+                >
+                  {consequence}
+                </div>
+                <div className="w-full py-3 bg-slate-100 text-slate-500 rounded-lg font-bold text-sm text-center animate-pulse border border-slate-200">
+                  ⏳ Menunggu giliran berikutnya...
+                </div>
+              </div>
+            )
+          ) : !showResult ? (
             <button
               onClick={onSubmit}
               disabled={selectedAnswer === null}
@@ -99,7 +124,7 @@ export default function QuestionModal({
             <div>
               {/* Consequence message */}
               <div
-                className="p-4 rounded-lg mb-4 text-sm"
+                className="p-4 rounded-lg mb-4 text-sm font-semibold"
                 style={{
                   backgroundColor: answerCorrect ? '#F0FDF4' : '#FEF2F2',
                   color: answerCorrect ? '#166534' : '#991B1B',

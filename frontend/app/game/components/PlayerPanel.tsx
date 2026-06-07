@@ -12,6 +12,7 @@ interface PlayerPanelProps {
   message: string | null;
   onNextTurn: () => void;
   onPause: () => void;
+  isMyTurn?: boolean;
 }
 
 const PLAYER_PIONS = [
@@ -30,6 +31,7 @@ export default function PlayerPanel({
   message,
   onNextTurn,
   onPause,
+  isMyTurn = true,
 }: PlayerPanelProps) {
   const currentPlayer = players[currentPlayerIndex];
 
@@ -65,7 +67,7 @@ export default function PlayerPanel({
           <Dice
             value={diceValue}
             onRoll={onRollDice}
-            disabled={phase !== 'rolling'}
+            disabled={phase !== 'rolling' || !isMyTurn}
           />
         </div>
       </div>
@@ -88,9 +90,10 @@ export default function PlayerPanel({
       {phase === 'result' && (
         <button
           onClick={onNextTurn}
-          className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm shadow-md transition-all transform active:scale-95"
+          disabled={!isMyTurn}
+          className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm shadow-md transition-all transform active:scale-95 disabled:bg-gray-300 disabled:cursor-not-allowed"
         >
-          Giliran Berikutnya →
+          {isMyTurn ? 'Giliran Berikutnya →' : 'Menunggu giliran berikutnya...'}
         </button>
       )}
 
