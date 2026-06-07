@@ -343,13 +343,17 @@ export default function GamePage() {
 
   // === LOBBY ACTIONS ===
   const handleJoinLobby = (lobbyId: string) => {
+    if (!socketConnected || !socketRef.current) {
+      setNicknameError('Gagal terhubung ke server. Pastikan backend sudah menyala.');
+      return;
+    }
     const trimmed = nickname.trim();
     if (!trimmed) {
       setNicknameError('Masukkan nama panggilan Anda terlebih dahulu');
       return;
     }
     setNicknameError('');
-    socketRef.current?.emit('join-lobby', { lobbyId, playerName: trimmed });
+    socketRef.current.emit('join-lobby', { lobbyId, playerName: trimmed });
   };
 
   const handleLeaveLobby = () => {
@@ -433,6 +437,15 @@ export default function GamePage() {
 
   // 2. ONLINE LOBBY SELECTION UI
   if (gameMode === 'online' && currentLobbyId === null) {
+    const defaultLobbies = Array.from({ length: 5 }).map((_, i) => ({
+      id: (i + 1).toString(),
+      name: `Lobby ${i + 1}`,
+      playerCount: 0,
+      status: 'waiting'
+    }));
+
+    const displayLobbies = lobbies.length > 0 ? lobbies : defaultLobbies;
+
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-slate-950 text-white p-6 font-sans relative overflow-hidden">
         {/* Glow */}
@@ -471,49 +484,43 @@ export default function GamePage() {
               Daftar Room (Maks. 5 Lobby)
             </div>
             
-            {lobbies.length === 0 ? (
-              <div className="text-center py-6 text-sm text-slate-500 font-medium">
-                Menghubungkan ke server...
-              </div>
-            ) : (
-              lobbies.map((lobby) => {
-                const isFull = lobby.playerCount >= 4;
-                const isPlaying = lobby.status === 'playing';
-                const canJoin = !isFull && !isPlaying;
+            {displayLobbies.map((lobby) => {
+              const isFull = lobby.playerCount >= 4;
+              const isPlaying = lobby.status === 'playing';
+              const canJoin = !isFull && !isPlaying;
 
-                return (
-                  <div
-                    key={lobby.id}
-                    className="flex justify-between items-center p-4 bg-slate-950 border border-slate-800/80 rounded-2xl hover:border-slate-800 transition-colors"
-                  >
-                    <div>
-                      <div className="font-extrabold text-sm text-slate-200">
-                        {lobby.name}
-                      </div>
-                      <div className="text-[10px] text-slate-500 font-bold uppercase mt-1 flex items-center gap-2">
-                        <span>👥 {lobby.playerCount}/4 Pemain</span>
-                        <span>•</span>
-                        <span className={isPlaying ? 'text-indigo-400' : 'text-emerald-500'}>
-                          {isPlaying ? 'Sedang bermain 🎮' : 'Menunggu ⏳'}
-                        </span>
-                      </div>
+              return (
+                <div
+                  key={lobby.id}
+                  className="flex justify-between items-center p-4 bg-slate-950 border border-slate-800/80 rounded-2xl hover:border-slate-800 transition-colors"
+                >
+                  <div>
+                    <div className="font-extrabold text-sm text-slate-200">
+                      {lobby.name}
                     </div>
-
-                    <button
-                      onClick={() => handleJoinLobby(lobby.id)}
-                      disabled={!canJoin}
-                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                        canJoin
-                          ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-md active:scale-95 cursor-pointer'
-                          : 'bg-slate-900 border border-slate-850 text-slate-600 cursor-not-allowed'
-                      }`}
-                    >
-                      {isPlaying ? 'Dalam Game' : isFull ? 'Penuh' : 'Gabung'}
-                    </button>
+                    <div className="text-[10px] text-slate-500 font-bold uppercase mt-1 flex items-center gap-2">
+                      <span>👥 {lobby.playerCount}/4 Pemain</span>
+                      <span>•</span>
+                      <span className={isPlaying ? 'text-indigo-400' : 'text-emerald-500'}>
+                        {isPlaying ? 'Sedang bermain 🎮' : 'Menunggu ⏳'}
+                      </span>
+                    </div>
                   </div>
-                );
-              })
-            )}
+
+                  <button
+                    onClick={() => handleJoinLobby(lobby.id)}
+                    disabled={!canJoin}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                      canJoin
+                        ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-md active:scale-95 cursor-pointer'
+                        : 'bg-slate-900 border border-slate-850 text-slate-600 cursor-not-allowed'
+                    }`}
+                  >
+                    {isPlaying ? 'Dalam Game' : isFull ? 'Penuh' : 'Gabung'}
+                  </button>
+                </div>
+              );
+            })}
           </div>
 
           <div className="flex justify-between items-center border-t border-slate-800 pt-6">
