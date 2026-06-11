@@ -2,13 +2,23 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { playHomeLobbyMusic, playClickSound } from './game/audioHelper';
 
 export default function Home() {
+  const router = useRouter();
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const [showIntro, setShowIntro] = useState(true);
   const [videoMuted, setVideoMuted] = useState(false);
+  const [curtainActive, setCurtainActive] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  // === SESSION CHECK FOR INTRO WATCHED ===
+  useEffect(() => {
+    if (typeof window !== 'undefined' && sessionStorage.getItem('introWatched') === 'true') {
+      setShowIntro(false);
+    }
+  }, []);
 
   // === LOBBY BGM SYNC ===
   useEffect(() => {
@@ -36,9 +46,14 @@ export default function Home() {
     }
   }, [showIntro]);
 
-  // === GLOBAL CLICK SOUND EFFECTS ===
+  // === GLOBAL CLICK & AUDIO INITIALIZATION ===
   useEffect(() => {
     const handleGlobalClick = (e: MouseEvent) => {
+      // Retry starting BGM on any page click once intro is finished
+      if (!showIntro) {
+        playHomeLobbyMusic();
+      }
+
       const target = e.target as HTMLElement;
       let current: HTMLElement | null = target;
       let isClickable = false;
@@ -62,20 +77,80 @@ export default function Home() {
     return () => {
       window.removeEventListener('click', handleGlobalClick);
     };
-  }, []);
+  }, [showIntro]);
 
   return (
     <>
+      {/* TRANSITION CURTAIN */}
+      <div
+        className="fixed inset-0 z-50 pointer-events-none bg-neutral-900/95 transition-transform duration-500 ease-in-out flex flex-col items-center justify-center p-8 gap-8"
+        style={{
+          transform: curtainActive ? 'translateX(0%)' : 'translateX(-100%)',
+          pointerEvents: curtainActive ? 'auto' : 'none',
+        }}
+      >
+        <div className="text-center animate-pulse flex flex-col items-center gap-2">
+          <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center text-3xl shadow-lg border border-white/20 animate-spin">
+            🎲
+          </div>
+          <h2 className="text-xl font-black text-white tracking-widest mt-2 uppercase">
+            MEMUAT PERMAINAN...
+          </h2>
+        </div>
+
+        {/* Media Collage Showcase */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl w-full">
+          {[
+            { src: '/background_home_resmi.png', label: 'Jejak Integritas' },
+            { src: '/belajar.png', label: 'Edukasi Karakter' },
+            { src: '/menanam tanaman.png', label: 'Aksi Nyata' },
+            { src: '/background_orang.png', label: 'Sosial & Moral' }
+          ].map((item, i) => (
+            <div
+              key={i}
+              className="relative aspect-[4/3] rounded-2xl overflow-hidden border border-white/10 shadow-lg"
+            >
+              <img
+                src={item.src}
+                alt={item.label}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent flex items-end p-3">
+                <span className="text-[10px] sm:text-xs font-bold text-white uppercase tracking-wider">
+                  {item.label}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* INTRO VIDEO OVERLAY */}
       {showIntro && (
-        <div className="fixed inset-0 bg-black flex items-center justify-center z-50 animate-fade-in">
+        <div
+          onClick={() => {
+            setShowIntro(false);
+            sessionStorage.setItem('introWatched', 'true');
+            playHomeLobbyMusic();
+          }}
+          className="fixed inset-0 bg-black flex items-center justify-center z-50 animate-fade-in cursor-pointer"
+        >
           <video
             ref={videoRef}
             src="/opening_jejak integritas.mp4"
             autoPlay
             playsInline
             muted={videoMuted}
-            onEnded={() => setShowIntro(false)}
+            onEnded={() => {
+              setShowIntro(false);
+              sessionStorage.setItem('introWatched', 'true');
+            }}
+            onClick={(e) => {
+              e.stopPropagation(); // Avoid double trigger with wrapper onClick
+              setShowIntro(false);
+              sessionStorage.setItem('introWatched', 'true');
+              playHomeLobbyMusic();
+            }}
             className="w-full h-full object-cover"
           />
         </div>
@@ -83,61 +158,73 @@ export default function Home() {
 
       <div
         className="flex flex-col items-center justify-center min-h-screen p-6 font-sans relative overflow-hidden bg-slate-100"
-        style={{
-          backgroundImage: "url('/background_home.png')",
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-        }}
       >
-        {/* Semi-transparent Overlay backdrop for screen readability */}
-        <div className="absolute inset-0 bg-white/30 backdrop-blur-[1px] pointer-events-none" />
-
-        {/* Main card */}
-        <div className="bg-white/80 backdrop-blur-md border border-white/60 rounded-3xl p-8 sm:p-10 shadow-2xl max-w-xl w-full text-center z-10">
-          {/* Floating Game Icon */}
-          <div className="relative inline-block mb-6">
-            <div className="absolute inset-0 bg-indigo-500 rounded-full filter blur-xl opacity-20 animate-pulse" />
-            <div className="w-20 h-20 bg-gradient-to-tr from-indigo-600 to-blue-500 rounded-3xl flex items-center justify-center text-4xl shadow-lg border border-white/40 animate-bounce mx-auto">
-              🎲
-            </div>
-          </div>
-
-          <h1 className="text-3xl sm:text-4xl font-black text-indigo-950 tracking-wide mb-2">
-            JEJAK INTEGRITAS
-          </h1>
-
-          <p className="text-[10px] sm:text-xs text-slate-500 font-extrabold uppercase tracking-widest mb-6">
-            Game Ular Tangga Edukatif Anti Korupsi
-          </p>
-
-          <p className="text-sm sm:text-base text-slate-650 mb-8 leading-relaxed max-w-md mx-auto font-semibold">
-            Media pembelajaran digital berbasis permainan ular tangga interaktif dengan nilai-nilai integritas, dilema moral, dan kearifan lokal untuk menanamkan jiwa anti korupsi sejak dini.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Link
-              href="/game"
-              className="w-full sm:w-auto px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-extrabold text-base transition-all shadow-md shadow-indigo-600/10 active:scale-95 text-center cursor-pointer"
-            >
-              Mulai Bermain 🎮
-            </Link>
-
-            <button
-              onClick={() => setIsTutorialOpen(true)}
-              className="w-full sm:w-auto px-8 py-4 bg-white border border-slate-200/80 hover:bg-slate-50/80 text-slate-700 hover:text-slate-900 rounded-xl font-extrabold text-base transition-all shadow-sm active:scale-95 cursor-pointer"
-            >
-              Panduan Bermain 📖
-            </button>
-          </div>
+        {/* Background Video (Muted, Loop like a GIF) */}
+        <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none z-0">
+          <video
+            src="/home_jejak integritas.mp4"
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="w-full h-full object-cover object-bottom"
+            style={{ objectPosition: 'center bottom' }}
+          />
+          {/* Semi-transparent Overlay backdrop for screen readability */}
+          <div className="absolute inset-0 bg-white/5 pointer-events-none" />
         </div>
 
-        {/* FOOTER */}
-        <div className="absolute bottom-6 left-0 right-0 text-center z-10">
-          <p className="text-[10px] text-slate-600 font-bold tracking-wider uppercase">
-            Edukasi Integritas & Anti Korupsi © 2026
-          </p>
+        {/* Top Left: Logo */}
+        <div
+          className="absolute z-20"
+          style={{ top: '1.31rem', left: '1.23rem' }}
+        >
+          <img
+            src="/logo_jejak integritas-no-bg.png"
+            alt="Jejak Integritas Logo"
+            className="w-36 sm:w-48 h-auto object-contain"
+          />
         </div>
+
+        {/* Top Right: Info / Tutorial Button */}
+        <button
+          onClick={() => setIsTutorialOpen(true)}
+          className="absolute z-20 hover:scale-105 active:scale-95 transition-all cursor-pointer bg-transparent border-0 p-0 outline-none focus:outline-none"
+          style={{ top: '3.2rem', right: '2.5rem' }}
+        >
+          <img
+            src="/tombol_info.png"
+            alt="Panduan Bermain"
+            className="w-12 h-12 sm:w-14 sm:h-14 object-contain"
+          />
+        </button>
+
+        {/* Center-Bottom: Play Button Graphic */}
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            setCurtainActive(true);
+            setTimeout(() => {
+              router.push('/game');
+            }, 600);
+          }}
+          className="absolute z-20 hover:scale-105 active:scale-95 transition-all cursor-pointer block bg-transparent border-0 p-0 outline-none focus:outline-none"
+          style={{
+            bottom: '3.4rem',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: '13.6rem',
+            height: '4.37rem',
+          }}
+        >
+          <img
+            src="/tombol_play.png"
+            alt="Mulai Bermain"
+            className="w-full h-full object-contain drop-shadow-md"
+          />
+        </button>
+
+
 
         {/* TUTORIAL MODAL POPUP */}
         {isTutorialOpen && (
@@ -163,7 +250,7 @@ export default function Home() {
                     🎯 1. Tujuan Permainan
                   </h3>
                   <p className="font-medium">
-                    Pemain bersaing mengumpulkan skor tertinggi dengan menjawab pertanyaan kuis integritas sembari melangkah ke <span className="text-indigo-600 font-extrabold">Kotak 52 (FINISH)</span>. Juara ditentukan berdasarkan akumulasi total poin terbanyak di akhir permainan, bukan hanya siapa yang sampai paling awal.
+                    Pemain bersaing mengumpulkan skor tertinggi dengan menjawab pertanyaan kuis integritas sembari melangkah ke <span className="text-indigo-600 font-extrabold">Kotak 50 (FINISH)</span>. Juara ditentukan berdasarkan akumulasi total poin terbanyak di akhir permainan, bukan hanya siapa yang sampai paling awal.
                   </p>
                 </section>
 
@@ -204,10 +291,10 @@ export default function Home() {
                   </h3>
                   <ul className="list-disc pl-5 space-y-1.5 font-medium">
                     <li>
-                      Jika mendarat di petak **Tangga 🪜**: Anda mendapat kuis. Jika jawaban <span className="text-emerald-600 font-extrabold">BENAR</span>, Anda langsung memanjat tangga. Jika <span className="text-rose-500 font-extrabold">SALAH</span>, Anda tetap di bawah.
+                      Jika mendarat di petak <span className="font-extrabold text-indigo-950">Tangga 🪜</span>: Anda mendapat kuis. Jika jawaban <span className="text-emerald-600 font-extrabold">BENAR</span>, Anda langsung memanjat tangga. Jika <span className="text-rose-500 font-extrabold">SALAH</span>, Anda tetap di bawah.
                     </li>
                     <li>
-                      Jika mendarat di petak **Ular 🐍**: Anda mendapat kuis. Jika jawaban <span className="text-emerald-600 font-extrabold">BENAR</span>, Anda aman di tempat. Jika <span className="text-rose-500 font-extrabold">SALAH</span>, Anda tergelincir turun ke ekor ular.
+                      Jika mendarat di petak <span className="font-extrabold text-indigo-950">Ular 🐍</span>: Anda mendapat kuis. Jika jawaban <span className="text-emerald-600 font-extrabold">BENAR</span>, Anda aman di tempat. Jika <span className="text-rose-500 font-extrabold">SALAH</span>, Anda tergelincir turun ke ekor ular.
                     </li>
                   </ul>
                 </section>

@@ -1,12 +1,19 @@
-let homeLobbyAudio: HTMLAudioElement | null = null;
+let homeLobbyAudio: HTMLAudioElement | null = typeof window !== 'undefined' ? new Audio('/backsound_home_sampai_lobby.mp3') : null;
+if (homeLobbyAudio) {
+  homeLobbyAudio.loop = true;
+  homeLobbyAudio.volume = 0.12; // "jangan kekerasan" (soft volume)
+  homeLobbyAudio.preload = 'auto';
+}
+
+let clickAudio: HTMLAudioElement | null = typeof window !== 'undefined' ? new Audio('/click.wav') : null;
+if (clickAudio) {
+  clickAudio.volume = 0.4;
+  clickAudio.preload = 'auto';
+  clickAudio.load();
+}
 
 export function playHomeLobbyMusic() {
-  if (typeof window === 'undefined') return;
-  if (!homeLobbyAudio) {
-    homeLobbyAudio = new Audio('/backsound_home_sampai_lobby.mp3');
-    homeLobbyAudio.loop = true;
-    homeLobbyAudio.volume = 0.12; // "jangan kekerasan" (soft volume)
-  }
+  if (!homeLobbyAudio) return;
   if (homeLobbyAudio.paused) {
     homeLobbyAudio.play().catch((err) => console.log("Lobby audio play failed:", err));
   }
@@ -26,8 +33,14 @@ export function setHomeLobbyMusicMute(muted: boolean) {
 }
 
 export function playClickSound() {
-  if (typeof window === 'undefined') return;
-  const audio = new Audio('/click.wav');
-  audio.volume = 0.4;
-  audio.play().catch(() => {});
+  if (!clickAudio) return;
+  try {
+    const clickClone = clickAudio.cloneNode(true) as HTMLAudioElement;
+    clickClone.volume = 0.4;
+    clickClone.play().catch(() => {});
+  } catch (err) {
+    // Fallback if clone fails or isn't supported properly
+    clickAudio.currentTime = 0;
+    clickAudio.play().catch(() => {});
+  }
 }

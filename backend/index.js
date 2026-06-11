@@ -96,6 +96,42 @@ function handlePlayerFinished(lobby, playerIdx) {
 io.on('connection', (socket) => {
   console.log(`User connected: ${socket.id}`);
 
+  const isDriver = (activePlayer, lobby) => {
+    return activePlayer.socketId === socket.id || (activePlayer.socketId.startsWith('fake-') && socket.id === lobby.hostId);
+  };
+
+  // Dev Bypass: Add Fake Player
+  socket.on('dev-add-fake-player', ({ lobbyId }) => {
+    const lobby = lobbies[lobbyId];
+    if (!lobby || lobby.status === 'playing' || lobby.players.length >= 4) return;
+
+    const fakeNames = ['Budi 🤖', 'Siti 🤖', 'Agus 🤖', 'Dewi 🤖'];
+    const fakeName = fakeNames.find(name => !lobby.players.some(p => p.name === name)) || `Tester-${lobby.players.length + 1} 🤖`;
+
+    const playerId = lobby.players.length;
+    const playerColor = PLAYER_COLORS.find(c => !lobby.players.some(p => p.color === c)) || PLAYER_COLORS[0];
+
+    const fakePlayer = {
+      id: playerId,
+      socketId: `fake-socket-${Math.random().toString(36).substr(2, 9)}`,
+      name: fakeName,
+      color: playerColor,
+      position: 1,
+      correctAnswers: 0,
+      wrongAnswers: 0
+    };
+
+    lobby.players.push(fakePlayer);
+
+    io.to(`room-${lobbyId}`).emit('lobby-update', {
+      players: lobby.players,
+      hostId: lobby.hostId,
+      status: lobby.status,
+      name: lobby.name
+    });
+    io.emit('lobbies-list', getLobbiesStatus());
+  });
+
   // 1. Send initial lobbies status
   socket.emit('lobbies-list', getLobbiesStatus());
 
@@ -221,7 +257,7 @@ io.on('connection', (socket) => {
 
     // Verify turn
     const activePlayer = lobby.gameState.players[lobby.gameState.currentPlayerIndex];
-    if (activePlayer.socketId !== socket.id) return;
+    if (!isDriver(activePlayer, lobby)) return;
 
     const diceValue = Math.floor(Math.random() * 6) + 1;
     const newPosition = activePlayer.position + diceValue;
@@ -248,7 +284,7 @@ io.on('connection', (socket) => {
     if (!lobby || !lobby.gameState || lobby.gameState.phase !== 'walking') return;
 
     const activePlayer = lobby.gameState.players[lobby.gameState.currentPlayerIndex];
-    if (activePlayer.socketId !== socket.id) return;
+    if (!isDriver(activePlayer, lobby)) return;
 
     lobby.gameState.players = lobby.gameState.players.map((p, idx) => 
       idx === lobby.gameState.currentPlayerIndex
@@ -269,7 +305,7 @@ io.on('connection', (socket) => {
     if (!lobby || !lobby.gameState || lobby.gameState.phase !== 'walking') return;
 
     const activePlayer = lobby.gameState.players[lobby.gameState.currentPlayerIndex];
-    if (activePlayer.socketId !== socket.id) return;
+    if (!isDriver(activePlayer, lobby)) return;
 
     const currentPos = activePlayer.position;
 
@@ -297,7 +333,7 @@ io.on('connection', (socket) => {
     if (!lobby || !lobby.gameState || lobby.gameState.phase !== 'pre_question') return;
 
     const activePlayer = lobby.gameState.players[lobby.gameState.currentPlayerIndex];
-    if (activePlayer.socketId !== socket.id) return;
+    if (!isDriver(activePlayer, lobby)) return;
 
     lobby.gameState.phase = 'question';
     lobby.gameState.currentQuestion = question;
@@ -314,7 +350,7 @@ io.on('connection', (socket) => {
     if (!lobby || !lobby.gameState || lobby.gameState.phase !== 'question') return;
 
     const activePlayer = lobby.gameState.players[lobby.gameState.currentPlayerIndex];
-    if (activePlayer.socketId !== socket.id) return;
+    if (!isDriver(activePlayer, lobby)) return;
 
     lobby.gameState.selectedAnswer = index;
     io.to(`room-${lobbyId}`).emit('game-state-update', lobby.gameState);
@@ -326,7 +362,7 @@ io.on('connection', (socket) => {
     if (!lobby || !lobby.gameState || lobby.gameState.phase !== 'question' || lobby.gameState.selectedAnswer === null || !lobby.gameState.currentQuestion) return;
 
     const activePlayer = lobby.gameState.players[lobby.gameState.currentPlayerIndex];
-    if (activePlayer.socketId !== socket.id) return;
+    if (!isDriver(activePlayer, lobby)) return;
 
     const isCorrect = lobby.gameState.selectedAnswer === lobby.gameState.currentQuestion.answer;
     const currentPos = activePlayer.position;
@@ -381,7 +417,7 @@ io.on('connection', (socket) => {
     if (!lobby || !lobby.gameState || lobby.gameState.phase !== 'result') return;
 
     const activePlayer = lobby.gameState.players[lobby.gameState.currentPlayerIndex];
-    if (activePlayer.socketId !== socket.id) return;
+    if (!isDriver(activePlayer, lobby)) return;
 
     let nextIndex = (lobby.gameState.currentPlayerIndex + 1) % lobby.gameState.players.length;
     // Skip finished players

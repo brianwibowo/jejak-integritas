@@ -6,6 +6,7 @@ import { io, Socket } from 'socket.io-client';
 import Board from './components/Board';
 import PlayerPanel from './components/PlayerPanel';
 import QuestionModal from './components/QuestionModal';
+import DevBypass from './components/DevBypass';
 import { generateBoard, getRandomQuestion } from './gameData';
 import { playHomeLobbyMusic, stopHomeLobbyMusic, setHomeLobbyMusicMute, playClickSound } from './audioHelper';
 
@@ -59,6 +60,16 @@ export default function GamePage() {
   const [isPaused, setIsPaused] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState<number | null>(null);
+
+  // === TRANSITION CURTAIN STATE ===
+  const [curtainActive, setCurtainActive] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setCurtainActive(false);
+    }, 50);
+    return () => clearTimeout(timer);
+  }, []);
 
   // === GET ACTIVE GAME STATE ===
   const activeState = onlineGameState;
@@ -137,7 +148,7 @@ export default function GamePage() {
       if (!isMuted) {
         const winAudio = new Audio('/winning.wav');
         winAudio.volume = 0.7;
-        winAudio.play().catch(() => {});
+        winAudio.play().catch(() => { });
       }
     } else {
       if (bgMusicRef.current) {
@@ -267,7 +278,10 @@ export default function GamePage() {
     if (!currentPlayer) return;
 
     const isMyTurn = myPlayer && currentPlayer.socketId === socketRef.current?.id;
-    if (!isMyTurn) return;
+    const isFakePlayer = currentPlayer.socketId.startsWith('fake-');
+    const isHost = myPlayer && roomHostId === socketRef.current?.id;
+    const isDriver = isMyTurn || (isFakePlayer && isHost);
+    if (!isDriver) return;
 
     const targetPos = onlineGameState.targetPosition;
 
@@ -280,7 +294,7 @@ export default function GamePage() {
     }, 800);
 
     return () => clearTimeout(timeoutId);
-  }, [onlineGameState?.phase, onlineGameState?.targetPosition, onlineGameState?.players, onlineGameState?.currentPlayerIndex, myPlayer, currentLobbyId]);
+  }, [onlineGameState?.phase, onlineGameState?.targetPosition, onlineGameState?.players, onlineGameState?.currentPlayerIndex, myPlayer, currentLobbyId, roomHostId]);
 
   // === DELAY: ONLINE PRE-QUESTION (Active Player Selects Question) ===
   useEffect(() => {
@@ -290,7 +304,10 @@ export default function GamePage() {
     if (!currentPlayer) return;
 
     const isMyTurn = myPlayer && currentPlayer.socketId === socketRef.current?.id;
-    if (!isMyTurn) return;
+    const isFakePlayer = currentPlayer.socketId.startsWith('fake-');
+    const isHost = myPlayer && roomHostId === socketRef.current?.id;
+    const isDriver = isMyTurn || (isFakePlayer && isHost);
+    if (!isDriver) return;
 
     const currentPos = currentPlayer.position;
     let targetBoxType: 'biru' | 'merah' | 'kuning' | 'hijau' | 'ungu' = 'biru';
@@ -312,7 +329,7 @@ export default function GamePage() {
     }, 600);
 
     return () => clearTimeout(timeoutId);
-  }, [onlineGameState?.phase, onlineGameState?.currentPlayerIndex, myPlayer, currentLobbyId]);
+  }, [onlineGameState?.phase, onlineGameState?.currentPlayerIndex, myPlayer, currentLobbyId, roomHostId]);
 
   // === ROLL DICE HANDLER ===
   const handleRollDice = useCallback(() => {
@@ -323,7 +340,7 @@ export default function GamePage() {
       isRollPlayingRef.current = true;
       const audio = rollSoundRef.current;
       audio.currentTime = 0;
-      audio.play().catch(() => {});
+      audio.play().catch(() => { });
       audio.onended = () => {
         isRollPlayingRef.current = false;
       };
@@ -431,104 +448,149 @@ export default function GamePage() {
     const displayLobbies = lobbies.length > 0 ? lobbies : defaultLobbies;
 
     return (
-      <div
-        className="flex flex-col items-center justify-center min-h-screen p-6 font-sans relative overflow-hidden bg-slate-100"
-        style={{
-          backgroundImage: "url('/belajar.png')",
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-        }}
-      >
-        {/* Backdrop filter overlay for contrast */}
-        <div className="absolute inset-0 bg-white/30 backdrop-blur-[1px] pointer-events-none" />
-
-        <div className="max-w-xl w-full z-10 bg-white/85 backdrop-blur-md border border-white/60 rounded-3xl p-6 sm:p-8 shadow-2xl">
-          <h2 className="text-2xl font-black text-center text-indigo-950 mb-1 tracking-wide flex items-center justify-center gap-2">
-            🌐 ONLINE LOBBIES
-          </h2>
-          <p className="text-xs text-center text-slate-500 font-extrabold uppercase tracking-widest mb-6">
-            Pilih lobby untuk bermain
-          </p>
-
-          {/* Nickname input */}
-          <div className="mb-6">
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-550 mb-2 text-left">
-              Nama Pemain
-            </label>
-            <input
-              type="text"
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value.slice(0, 12))}
-              placeholder="Masukkan Nickname..."
-              className="w-full px-4 py-3 bg-white/70 border border-slate-200 focus:border-indigo-500 rounded-xl text-sm text-slate-800 focus:outline-none transition-colors font-semibold shadow-sm"
-            />
-            {nicknameError && (
-              <p className="text-xs text-rose-500 font-semibold mt-1.5 flex items-center gap-1">
-                ⚠️ {nicknameError}
-              </p>
-            )}
-          </div>
-
-          {/* Lobby List */}
-          <div className="flex flex-col gap-3 mb-8">
-            <div className="text-xs font-bold text-slate-500 uppercase tracking-widest px-1 text-left">
-              Daftar Room (Maks. 5 Lobby)
+      <>
+        {/* TRANSITION CURTAIN */}
+        <div
+          className="fixed inset-0 z-50 pointer-events-none bg-neutral-900/95 transition-transform duration-500 ease-in-out flex flex-col items-center justify-center p-8 gap-8"
+          style={{
+            transform: curtainActive ? 'translateX(0%)' : 'translateX(100%)',
+            pointerEvents: curtainActive ? 'auto' : 'none',
+          }}
+        >
+          <div className="text-center animate-pulse flex flex-col items-center gap-2">
+            <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center text-3xl shadow-lg border border-white/20 animate-spin">
+              🎲
             </div>
-            
-            {displayLobbies.map((lobby) => {
-              const isFull = lobby.playerCount >= 4;
-              const isPlaying = lobby.status === 'playing';
-              const canJoin = !isFull && !isPlaying;
-
-              return (
-                <div
-                  key={lobby.id}
-                  className="flex justify-between items-center p-4 bg-white/95 border border-slate-150 rounded-2xl shadow-sm hover:border-slate-250 transition-colors text-left"
-                >
-                  <div>
-                    <div className="font-extrabold text-sm text-slate-800">
-                      {lobby.name}
-                    </div>
-                    <div className="text-[10px] text-slate-500 font-bold uppercase mt-1 flex items-center gap-2">
-                      <span>👥 {lobby.playerCount}/4 Pemain</span>
-                      <span>•</span>
-                      <span className={isPlaying ? 'text-indigo-600 font-extrabold' : 'text-emerald-600 font-extrabold'}>
-                        {isPlaying ? 'Sedang bermain 🎮' : 'Menunggu ⏳'}
-                      </span>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => handleJoinLobby(lobby.id)}
-                    disabled={!canJoin}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                      canJoin
-                        ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-md hover:shadow-indigo-500/10 active:scale-95'
-                        : 'bg-slate-100 border border-slate-200 text-slate-400 cursor-not-allowed'
-                    }`}
-                  >
-                    {isPlaying ? 'Dalam Game' : isFull ? 'Penuh' : 'Gabung'}
-                  </button>
-                </div>
-              );
-            })}
+            <h2 className="text-xl font-black text-white tracking-widest mt-2 uppercase">
+              MEMUAT PERMAINAN...
+            </h2>
           </div>
 
-          <div className="flex justify-between items-center border-t border-slate-200 pt-6">
-            <Link
-              href="/"
-              className="text-xs font-bold text-slate-500 hover:text-indigo-600 transition-colors"
-            >
-              ← Menu Utama
-            </Link>
-            <span className="flex items-center gap-1.5 text-[10px] text-slate-500 font-bold">
-              <span className={`w-2 h-2 rounded-full ${socketConnected ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
-              {socketConnected ? 'Server Terhubung' : 'Server Terputus'}
-            </span>
+          {/* Media Collage Showcase */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl w-full">
+            {[
+              { src: '/background_home_resmi.png', label: 'Jejak Integritas' },
+              { src: '/belajar.png', label: 'Edukasi Karakter' },
+              { src: '/menanam tanaman.png', label: 'Aksi Nyata' },
+              { src: '/background_orang.png', label: 'Sosial & Moral' }
+            ].map((item, i) => (
+              <div
+                key={i}
+                className="relative aspect-[4/3] rounded-2xl overflow-hidden border border-white/10 shadow-lg"
+              >
+                <img
+                  src={item.src}
+                  alt={item.label}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent flex items-end p-3">
+                  <span className="text-[10px] sm:text-xs font-bold text-white uppercase tracking-wider">
+                    {item.label}
+                  </span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
-      </div>
+
+        <div
+          className="flex flex-col items-center justify-center min-h-screen p-6 font-sans relative overflow-hidden bg-slate-100"
+          style={{
+            backgroundImage: "url('/belajar.png')",
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+          }}
+        >
+          {/* Backdrop filter overlay for contrast */}
+          <div className="absolute inset-0 bg-white/30 backdrop-blur-[1px] pointer-events-none" />
+
+          <div className="max-w-xl w-full z-10 bg-white/85 backdrop-blur-md border border-white/60 rounded-3xl p-6 sm:p-8 shadow-2xl">
+            <h2 className="text-2xl font-black text-center text-indigo-950 mb-1 tracking-wide flex items-center justify-center gap-2">
+              🌐 ONLINE LOBBIES
+            </h2>
+            <p className="text-xs text-center text-slate-500 font-extrabold uppercase tracking-widest mb-6">
+              Pilih lobby untuk bermain
+            </p>
+
+            {/* Nickname input */}
+            <div className="mb-6">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-550 mb-2 text-left">
+                Nama Pemain
+              </label>
+              <input
+                type="text"
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value.slice(0, 12))}
+                placeholder="Masukkan Nickname..."
+                className="w-full px-4 py-3 bg-white/70 border border-slate-200 focus:border-indigo-500 rounded-xl text-sm text-slate-800 focus:outline-none transition-colors font-semibold shadow-sm"
+              />
+              {nicknameError && (
+                <p className="text-xs text-rose-500 font-semibold mt-1.5 flex items-center gap-1">
+                  ⚠️ {nicknameError}
+                </p>
+              )}
+            </div>
+
+            {/* Lobby List */}
+            <div className="flex flex-col gap-3 mb-8">
+              <div className="text-xs font-bold text-slate-500 uppercase tracking-widest px-1 text-left">
+                Daftar Room (Maks. 5 Lobby)
+              </div>
+
+              {displayLobbies.map((lobby) => {
+                const isFull = lobby.playerCount >= 4;
+                const isPlaying = lobby.status === 'playing';
+                const canJoin = !isFull && !isPlaying;
+
+                return (
+                  <div
+                    key={lobby.id}
+                    className="flex justify-between items-center p-4 bg-white/95 border border-slate-150 rounded-2xl shadow-sm hover:border-slate-250 transition-colors text-left"
+                  >
+                    <div>
+                      <div className="font-extrabold text-sm text-slate-800">
+                        {lobby.name}
+                      </div>
+                      <div className="text-[10px] text-slate-500 font-bold uppercase mt-1 flex items-center gap-2">
+                        <span>👥 {lobby.playerCount}/4 Pemain</span>
+                        <span>•</span>
+                        <span className={isPlaying ? 'text-indigo-600 font-extrabold' : 'text-emerald-600 font-extrabold'}>
+                          {isPlaying ? 'Sedang bermain 🎮' : 'Menunggu ⏳'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => handleJoinLobby(lobby.id)}
+                      disabled={!canJoin}
+                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${canJoin
+                        ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-md hover:shadow-indigo-500/10 active:scale-95'
+                        : 'bg-slate-100 border border-slate-200 text-slate-400 cursor-not-allowed'
+                        }`}
+                    >
+                      {isPlaying ? 'Dalam Game' : isFull ? 'Penuh' : 'Gabung'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="flex justify-between items-center border-t border-slate-200 pt-6">
+              <Link
+                href="/"
+                className="text-xs font-bold text-slate-500 hover:text-indigo-600 transition-colors"
+              >
+                ← Menu Utama
+              </Link>
+              <span className="flex items-center gap-1.5 text-[10px] text-slate-500 font-bold">
+                <span className={`w-2 h-2 rounded-full ${socketConnected ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
+                {socketConnected ? 'Server Terhubung' : 'Server Terputus'}
+              </span>
+            </div>
+          </div>
+        </div>
+      </>
     );
   }
 
@@ -553,7 +615,7 @@ export default function GamePage() {
           {/* Static Lobby Name Header (No Rename Option) */}
           <div className="text-center mb-6">
             <h2 className="text-xl font-black text-indigo-950 tracking-wide">
-              🚪 {currentRoomName || `Lobby ${currentLobbyId}`}
+              {currentRoomName || `Lobby ${currentLobbyId}`}
             </h2>
             <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-1 inline-block">
               Lobby {currentLobbyId} • Menunggu Pemain Lain
@@ -562,8 +624,13 @@ export default function GamePage() {
 
           {/* Players list */}
           <div className="flex flex-col gap-3 mb-6">
-            <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1 text-left">
-              Pemain Tergabung ({roomPlayers.length}/4)
+            <div className="flex justify-between items-center mb-1">
+              <div className="text-xs font-bold text-slate-500 uppercase tracking-widest text-left">
+                Pemain Tergabung ({roomPlayers.length}/4)
+              </div>
+              {isHost && (
+                <DevBypass socket={socketRef.current} lobbyId={currentLobbyId} />
+              )}
             </div>
 
             {Array.from({ length: 4 }).map((_, i) => {
@@ -587,7 +654,7 @@ export default function GamePage() {
                     </span>
                     {isPlayerHost && (
                       <span className="text-[9px] bg-indigo-50 text-indigo-600 border border-indigo-100/60 px-2 py-0.5 rounded-md font-bold uppercase mr-1">
-                        👑 Host
+                        Host
                       </span>
                     )}
                     {showKickButton && (
@@ -626,19 +693,18 @@ export default function GamePage() {
               {AVAILABLE_COLORS.map((col) => {
                 const isTaken = isColorTaken(col.value);
                 const isMine = myCurrentColor === col.value;
-                
+
                 return (
                   <button
                     key={col.value}
                     disabled={isTaken && !isMine}
                     onClick={() => handleSelectColor(col.value)}
-                    className={`relative p-2 rounded-xl border flex flex-col items-center justify-center transition-all cursor-pointer ${
-                      isMine
-                        ? 'bg-indigo-55/60 border-indigo-400 text-indigo-650 scale-105 shadow-sm'
-                        : isTaken
+                    className={`relative p-2 rounded-xl border flex flex-col items-center justify-center transition-all cursor-pointer ${isMine
+                      ? 'bg-indigo-55/60 border-indigo-400 text-indigo-650 scale-105 shadow-sm'
+                      : isTaken
                         ? 'bg-slate-100 border-slate-200 opacity-20 cursor-not-allowed'
                         : 'bg-white border-slate-200 hover:border-slate-350 hover:bg-slate-50'
-                    }`}
+                      }`}
                   >
                     <img src={col.pion} alt={col.name} className="w-7 h-7 object-contain mb-1" />
                     <span className="text-[8px] font-bold uppercase tracking-wider text-slate-650">
@@ -670,7 +736,7 @@ export default function GamePage() {
               onClick={handleLeaveLobby}
               className="w-full py-3 bg-white border border-slate-200 hover:bg-slate-50 text-rose-500 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
             >
-              🚪 Keluar Lobby
+              Keluar Lobby
             </button>
           </div>
         </div>
@@ -744,6 +810,8 @@ export default function GamePage() {
   const activePlayer = activeState.players[activeState.currentPlayerIndex];
   const isMyTurn = !!(myPlayer && activePlayer && activePlayer.socketId === socketRef.current?.id);
   const isHost = !!(myPlayer && roomHostId === socketRef.current?.id);
+  const isFakePlayer = !!(activePlayer && activePlayer.socketId.startsWith('fake-'));
+  const isMyTurnOrDevDrive = isMyTurn || (isFakePlayer && isHost);
 
   // 6. FINISHED GAME SCREEN (Now handled via overlay VictoryModal)
 
@@ -771,7 +839,7 @@ export default function GamePage() {
             message={activeState.message}
             onNextTurn={() => socketRef.current?.emit('next-turn', { lobbyId: currentLobbyId })}
             onPause={handlePause}
-            isMyTurn={isMyTurn}
+            isMyTurn={isMyTurnOrDevDrive}
           />
         </div>
       </div>
@@ -788,7 +856,7 @@ export default function GamePage() {
             consequence={activeState.consequence}
             onNext={() => socketRef.current?.emit('next-turn', { lobbyId: currentLobbyId })}
             showResult={activeState.phase === 'result'}
-            isReadOnly={!isMyTurn}
+            isReadOnly={!isMyTurnOrDevDrive}
           />
         )}
 
@@ -822,7 +890,7 @@ export default function GamePage() {
 
             {isHost ? (
               <button className="pause-btn pause-btn-quit" onClick={handleQuit}>
-                🚪 Quit Game
+                Quit Game
               </button>
             ) : (
               <button
@@ -830,7 +898,7 @@ export default function GamePage() {
                 style={{ backgroundColor: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' }}
                 onClick={handleLeaveLobby}
               >
-                🚪 Keluar Game
+                Keluar Game
               </button>
             )}
           </div>
