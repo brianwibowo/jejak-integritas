@@ -7,7 +7,10 @@ import { Server } from 'socket.io';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+let PORT = process.env.PORT || 5001;
+if (PORT === '5000' || PORT === 5000) {
+  PORT = 5001;
+}
 
 app.use(cors());
 app.use(express.json());
@@ -25,8 +28,8 @@ const io = new Server(server, {
 });
 
 // Snakes & Ladders Config
-const snakes = { 47: 26, 80: 59, 86: 67, 69: 49, 97: 78 };
-const ladders = { 4: 23, 28: 47, 65: 95, 43: 62, 71: 92 };
+const snakes = { 48: 27, 44: 20, 40: 16, 36: 10 };
+const ladders = { 15: 26, 19: 38, 23: 45, 33: 49 };
 const PLAYER_COLORS = ['#E74C3C', '#3498DB', '#2ECC71', '#111111'];
 
 // Initialize 5 lobbies
@@ -50,6 +53,44 @@ function getLobbiesStatus() {
     playerCount: lobby.players.length,
     status: lobby.status
   }));
+}
+
+// Helper to handle a player reaching the finish line (box 52)
+function handlePlayerFinished(lobby, playerIdx) {
+  const player = lobby.gameState.players[playerIdx];
+  if (player.isFinished) return;
+
+  const bonus = [20, 15, 10, 5][lobby.gameState.finishOrder.length] || 0;
+  lobby.gameState.finishOrder.push(player.socketId);
+
+  lobby.gameState.players = lobby.gameState.players.map((p, idx) => {
+    if (idx === playerIdx) {
+      const correctAnswers = p.correctAnswers;
+      const baseScore = correctAnswers * 10;
+      const rowPoints = 25; // Crossed all 5 rows to reach 52
+      const score = baseScore + rowPoints + bonus;
+      return {
+        ...p,
+        position: 52,
+        isFinished: true,
+        finishRank: lobby.gameState.finishOrder.length,
+        score: score
+      };
+    }
+    return p;
+  });
+
+  const allFinished = lobby.gameState.players.every(p => p.isFinished);
+  if (allFinished) {
+    lobby.gameState.phase = 'finished';
+    // Sort players by score descending to find the overall winner
+    const sorted = [...lobby.gameState.players].sort((a, b) => b.score - a.score);
+    lobby.gameState.winner = sorted[0];
+    lobby.gameState.message = `🎉 Permainan selesai! Juara pertama adalah ${sorted[0].name} dengan skor ${sorted[0].score}!`;
+  } else {
+    lobby.gameState.phase = 'result';
+    lobby.gameState.message = `🎉 ${player.name} telah mencapai FINISH di posisi ke-${lobby.gameState.finishOrder.length}!`;
+  }
 }
 
 io.on('connection', (socket) => {
@@ -80,7 +121,7 @@ io.on('connection', (socket) => {
     }
 
     const playerId = lobby.players.length;
-    const playerColor = PLAYER_COLORS[playerId];
+    const playerColor = PLAYER_COLORS.find(c => !lobby.players.some(p => p.color === c)) || PLAYER_COLORS[0];
 
     const newPlayer = {
       id: playerId,
@@ -104,10 +145,39 @@ io.on('connection', (socket) => {
     io.to(`room-${lobbyId}`).emit('lobby-update', {
       players: lobby.players,
       hostId: lobby.hostId,
-      status: lobby.status
+      status: lobby.status,
+      name: lobby.name
     });
     io.emit('lobbies-list', getLobbiesStatus());
   });
+
+  // 2b. Select Color
+  socket.on('select-color', ({ lobbyId, color }) => {
+    const lobby = lobbies[lobbyId];
+    if (!lobby || lobby.status === 'playing') return;
+
+    // Find the player
+    const player = lobby.players.find(p => p.socketId === socket.id);
+    if (!player) return;
+
+    // Verify if color is already taken by another player
+    const colorTaken = lobby.players.some(p => p.socketId !== socket.id && p.color === color);
+    if (colorTaken) {
+      return socket.emit('color-error', 'Warna sudah dipilih pemain lain');
+    }
+
+    // Update player color
+    player.color = color;
+
+    // Broadcast updates
+    io.to(`room-${lobbyId}`).emit('lobby-update', {
+      players: lobby.players,
+      hostId: lobby.hostId,
+      status: lobby.status,
+      name: lobby.name
+    });
+  });
+
 
   // 3. Start Game
   socket.on('start-game', ({ lobbyId, boardColors }) => {
@@ -117,7 +187,15 @@ io.on('connection', (socket) => {
     lobby.status = 'playing';
     lobby.gameState = {
       phase: 'rolling',
-      players: lobby.players.map(p => ({ ...p, position: 1, correctAnswers: 0, wrongAnswers: 0 })),
+      players: lobby.players.map(p => ({
+        ...p,
+        position: 1,
+        correctAnswers: 0,
+        wrongAnswers: 0,
+        score: 0,
+        isFinished: false,
+        finishRank: null
+      })),
       currentPlayerIndex: 0,
       board: boardColors, // Passed from host generator
       diceValue: null,
@@ -128,6 +206,7 @@ io.on('connection', (socket) => {
       consequence: null,
       winner: null,
       usedQuestionIds: [],
+      finishOrder: [], // Track order in which players reach box 52
       message: null
     };
 
@@ -147,7 +226,7 @@ io.on('connection', (socket) => {
     const diceValue = Math.floor(Math.random() * 6) + 1;
     const newPosition = activePlayer.position + diceValue;
 
-    if (newPosition > 100) {
+    if (newPosition > 52) {
       lobby.gameState.diceValue = diceValue;
       lobby.gameState.phase = 'result';
       lobby.gameState.currentQuestion = null;
@@ -172,7 +251,13 @@ io.on('connection', (socket) => {
     if (activePlayer.socketId !== socket.id) return;
 
     lobby.gameState.players = lobby.gameState.players.map((p, idx) => 
-      idx === lobby.gameState.currentPlayerIndex ? { ...p, position: p.position + 1 } : p
+      idx === lobby.gameState.currentPlayerIndex
+        ? {
+            ...p,
+            position: p.position + 1,
+            score: p.correctAnswers * 10 + Math.max(0, Math.floor(((p.position + 1) - 2) / 10)) * 5
+          }
+        : p
     );
 
     io.to(`room-${lobbyId}`).emit('game-state-update', lobby.gameState);
@@ -188,10 +273,8 @@ io.on('connection', (socket) => {
 
     const currentPos = activePlayer.position;
 
-    if (currentPos === 100) {
-      lobby.gameState.phase = 'finished';
-      lobby.gameState.winner = { ...activePlayer };
-      lobby.gameState.message = `🎉 ${activePlayer.name} mencapai kotak 100 dan MENANG!`;
+    if (currentPos === 52) {
+      handlePlayerFinished(lobby, lobby.gameState.currentPlayerIndex);
     } else {
       const boxType = lobby.gameState.board[currentPos - 1];
       if (boxType === 'start' || boxType === 'finish') {
@@ -274,28 +357,20 @@ io.on('connection', (socket) => {
             position: newPosition,
             correctAnswers: p.correctAnswers + (isCorrect ? 1 : 0),
             wrongAnswers: p.wrongAnswers + (isCorrect ? 0 : 1),
+            score: (p.correctAnswers + (isCorrect ? 1 : 0)) * 10 + Math.max(0, Math.floor((newPosition - 2) / 10)) * 5
           }
         : p
     );
 
-    let phase = 'result';
-    let winner = lobby.gameState.winner;
-    if (newPosition === 100) {
-      phase = 'finished';
-      winner = {
-        ...activePlayer,
-        position: 100,
-        correctAnswers: activePlayer.correctAnswers + (isCorrect ? 1 : 0),
-        wrongAnswers: activePlayer.wrongAnswers + (isCorrect ? 0 : 1)
-      };
-      consequence += ` 🎉 ${activePlayer.name} mencapai kotak 100 dan MENANG!`;
-    }
-
-    lobby.gameState.phase = phase;
     lobby.gameState.answerCorrect = isCorrect;
     lobby.gameState.consequence = consequence;
-    lobby.gameState.winner = winner;
     lobby.gameState.usedQuestionIds = [...lobby.gameState.usedQuestionIds, lobby.gameState.currentQuestion.id];
+
+    if (newPosition === 52) {
+      handlePlayerFinished(lobby, lobby.gameState.currentPlayerIndex);
+    } else {
+      lobby.gameState.phase = 'result';
+    }
 
     io.to(`room-${lobbyId}`).emit('game-state-update', lobby.gameState);
   });
@@ -308,7 +383,13 @@ io.on('connection', (socket) => {
     const activePlayer = lobby.gameState.players[lobby.gameState.currentPlayerIndex];
     if (activePlayer.socketId !== socket.id) return;
 
-    const nextIndex = (lobby.gameState.currentPlayerIndex + 1) % lobby.gameState.players.length;
+    let nextIndex = (lobby.gameState.currentPlayerIndex + 1) % lobby.gameState.players.length;
+    // Skip finished players
+    let attempts = 0;
+    while (lobby.gameState.players[nextIndex].isFinished && attempts < lobby.gameState.players.length) {
+      nextIndex = (nextIndex + 1) % lobby.gameState.players.length;
+      attempts++;
+    }
 
     lobby.gameState.phase = 'rolling';
     lobby.gameState.currentPlayerIndex = nextIndex;
@@ -330,17 +411,10 @@ io.on('connection', (socket) => {
 
     const activePlayer = lobby.gameState.players[lobby.gameState.currentPlayerIndex];
     lobby.gameState.players = lobby.gameState.players.map((p, idx) => 
-      idx === lobby.gameState.currentPlayerIndex ? { ...p, position: 100, correctAnswers: p.correctAnswers + 1 } : p
+      idx === lobby.gameState.currentPlayerIndex ? { ...p, position: 52, correctAnswers: p.correctAnswers + 1 } : p
     );
 
-    lobby.gameState.phase = 'finished';
-    lobby.gameState.winner = {
-      ...activePlayer,
-      position: 100,
-      correctAnswers: activePlayer.correctAnswers + 1
-    };
-    lobby.gameState.message = `🎉 ${activePlayer.name} melakukan Quick Win untuk testing!`;
-
+    handlePlayerFinished(lobby, lobby.gameState.currentPlayerIndex);
     io.to(`room-${lobbyId}`).emit('game-state-update', lobby.gameState);
   });
 
@@ -351,7 +425,15 @@ io.on('connection', (socket) => {
 
     lobby.status = 'waiting';
     lobby.gameState = null;
-    lobby.players = lobby.players.map(p => ({ ...p, position: 1, correctAnswers: 0, wrongAnswers: 0 }));
+    lobby.players = lobby.players.map(p => ({
+      ...p,
+      position: 1,
+      correctAnswers: 0,
+      wrongAnswers: 0,
+      score: 0,
+      isFinished: false,
+      finishRank: null
+    }));
 
     io.to(`room-${lobbyId}`).emit('lobby-update', {
       players: lobby.players,
@@ -359,6 +441,47 @@ io.on('connection', (socket) => {
       status: lobby.status
     });
     io.to(`room-${lobbyId}`).emit('game-terminated');
+    io.emit('lobbies-list', getLobbiesStatus());
+  });
+
+  // 12b. Rename Lobby (Host only)
+  socket.on('rename-lobby', ({ lobbyId, name }) => {
+    const lobby = lobbies[lobbyId];
+    if (!lobby || lobby.hostId !== socket.id || !name.trim()) return;
+
+    lobby.name = name.trim();
+
+    io.to(`room-${lobbyId}`).emit('lobby-update', {
+      players: lobby.players,
+      hostId: lobby.hostId,
+      status: lobby.status,
+      name: lobby.name
+    });
+    io.emit('lobbies-list', getLobbiesStatus());
+  });
+
+  // 12c. Kick Player (Host only)
+  socket.on('kick-player', ({ lobbyId, targetSocketId }) => {
+    const lobby = lobbies[lobbyId];
+    if (!lobby || lobby.hostId !== socket.id || lobby.status === 'playing') return;
+
+    const playerIdx = lobby.players.findIndex(p => p.socketId === targetSocketId);
+    if (playerIdx === -1) return;
+
+    lobby.players.splice(playerIdx, 1);
+
+    const targetSocket = io.sockets.sockets.get(targetSocketId);
+    if (targetSocket) {
+      targetSocket.leave(`room-${lobbyId}`);
+      targetSocket.emit('kicked');
+    }
+
+    io.to(`room-${lobbyId}`).emit('lobby-update', {
+      players: lobby.players,
+      hostId: lobby.hostId,
+      status: lobby.status,
+      name: lobby.name
+    });
     io.emit('lobbies-list', getLobbiesStatus());
   });
 
@@ -409,7 +532,8 @@ function handleUserLeave(socket, lobbyId) {
       io.to(`room-${lobbyId}`).emit('lobby-update', {
         players: lobby.players,
         hostId: lobby.hostId,
-        status: lobby.status
+        status: lobby.status,
+        name: lobby.name
       });
     }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { Player, GamePhase } from '../gameLogic';
+import { Player, GamePhase } from '../gameData';
 import Dice from './Dice';
 
 interface PlayerPanelProps {
@@ -133,11 +133,20 @@ export default function PlayerPanel({
 
                 {/* Player details */}
                 <div className="flex-1 min-w-0">
-                  <div className="font-bold text-xs text-gray-800 truncate">
-                    {player.name}
+                  <div className="font-bold text-xs text-gray-800 flex justify-between items-center">
+                    <span className="truncate">{player.name}</span>
+                    <span className="text-indigo-600 font-extrabold text-[10px] bg-indigo-50 px-2 py-0.5 rounded-full flex-shrink-0">
+                      ⭐ {player.score || 0} Pts
+                    </span>
                   </div>
-                  <div className="text-[10px] text-gray-500 font-semibold flex flex-wrap items-center justify-between gap-x-2">
-                    <span>Kotak {player.position}</span>
+                  <div className="text-[10px] text-gray-500 font-semibold flex flex-wrap items-center justify-between gap-x-2 mt-0.5">
+                    <span>
+                      {player.isFinished 
+                        ? `🏁 FINISH (Ke-${player.finishRank})` 
+                        : player.position === 1 
+                        ? 'Kotak Start' 
+                        : `Kotak ${player.position - 1}`}
+                    </span>
                     <span className="text-[9px] text-slate-400">
                       Benar: <span className="text-emerald-600 font-bold">{player.correctAnswers || 0}</span> • Salah: <span className="text-rose-500 font-bold">{player.wrongAnswers || 0}</span>
                     </span>

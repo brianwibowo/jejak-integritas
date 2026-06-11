@@ -107,6 +107,19 @@ export default function QuestionModal({
                 >
                   {consequence}
                 </div>
+
+                {/* Discussion Block */}
+                {question.explanation && (
+                  <div className="p-4 bg-blue-50/80 rounded-lg border border-blue-100 mb-4 text-left shadow-sm">
+                    <div className="text-xs font-extrabold text-blue-700 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                      💡 Pembahasan
+                    </div>
+                    <p className="text-xs sm:text-sm text-blue-900 leading-relaxed font-medium">
+                      {question.explanation}
+                    </p>
+                  </div>
+                )}
+
                 <div className="w-full py-3 bg-slate-100 text-slate-500 rounded-lg font-bold text-sm text-center animate-pulse border border-slate-200">
                   ⏳ Menunggu giliran berikutnya...
                 </div>
@@ -133,6 +146,19 @@ export default function QuestionModal({
               >
                 {consequence}
               </div>
+
+              {/* Discussion Block */}
+              {question.explanation && (
+                <div className="p-4 bg-blue-50/80 rounded-lg border border-blue-100 mb-4 text-left shadow-sm">
+                  <div className="text-xs font-extrabold text-blue-700 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                    💡 Pembahasan
+                  </div>
+                  <p className="text-xs sm:text-sm text-blue-900 leading-relaxed font-medium">
+                    {question.explanation}
+                  </p>
+                </div>
+              )}
+
               <button
                 onClick={onNext}
                 className="w-full py-3 bg-blue-600 text-white rounded-lg font-bold text-sm hover:bg-blue-700 transition-colors"

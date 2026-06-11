@@ -25,7 +25,24 @@ export interface Question {
   question: string;
   options: [string, string, string, string];
   answer: 0 | 1 | 2 | 3;
+  explanation: string;
 }
+
+export interface Player {
+  id: number;
+  name: string;
+  position: number; // 1 = START, 52 = FINISH
+  color: string;
+  correctAnswers: number;
+  wrongAnswers: number;
+  score: number;
+  isFinished?: boolean;
+  finishRank?: number;
+  socketId?: string; // Optional for online socket mapping
+}
+
+export type GamePhase = 'setup' | 'rolling' | 'walking' | 'pre_question' | 'question' | 'result' | 'finished';
+
 
 // --- Box Type Display Info ---
 
@@ -51,39 +68,36 @@ export const themeLabels: Record<Theme, string> = {
 
 // --- Board Configuration ---
 
-export const BOARD_SIZE = 100;
+export const BOARD_SIZE = 52;
 
 // Snakes: head → tail (player goes DOWN if answer is wrong)
 export const snakes: Record<number, number> = {
-  47: 26,
-  80: 59,
-  86: 67,
-  69: 49,
-  97: 78,
+  48: 27,
+  44: 20,
+  40: 16,
+  36: 10,
 };
 
 // Ladders: bottom → top (player goes UP if answer is correct)
 export const ladders: Record<number, number> = {
-  4: 23,
-  28: 47,
-  65: 95,
-  43: 62,
-  71: 92,
+  15: 26,
+  19: 38,
+  23: 45,
+  33: 49,
 };
 
 /**
- * Generate board layout: position 1 = START, position 100 = FINISH.
- * Positions 2–99 are distributed evenly among 5 colors.
+ * Generate board layout: position 1 = START, position 52 = FINISH.
+ * Positions 2–51 (50 boxes) are distributed evenly among 5 colors.
  * Uses seeded PRNG for deterministic but shuffled distribution.
  */
 export function generateBoard(seed: number = 42): BoxType[] {
   const colors: ColoredBoxType[] = ['biru', 'merah', 'kuning', 'hijau', 'ungu'];
 
-  // Create pool: 20+20+20+19+19 = 98 colored squares for positions 2-99
+  // Create pool: 10 of each color = 50 gameplay squares for positions 2-51
   const pool: ColoredBoxType[] = [];
   for (let c = 0; c < colors.length; c++) {
-    const count = c < 3 ? 20 : 19;
-    for (let j = 0; j < count; j++) {
+    for (let j = 0; j < 10; j++) {
       pool.push(colors[c]);
     }
   }
@@ -96,7 +110,7 @@ export function generateBoard(seed: number = 42): BoxType[] {
     [pool[i], pool[j]] = [pool[j], pool[i]];
   }
 
-  // board[0] = position 1 (start), board[99] = position 100 (finish)
+  // board[0] = position 1 (start), board[51] = position 52 (finish)
   const board: BoxType[] = ['start', ...pool, 'finish'];
   return board;
 }
@@ -138,6 +152,8 @@ export const questions: Question[] = [
     question: 'Mengatakan hal yang sesuai dengan kenyataan disebut…',
     options: ['Disiplin', 'Tanggung jawab', 'Jujur', 'Peduli'],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 2,
@@ -152,6 +168,8 @@ export const questions: Question[] = [
       'Menyalahkan teman',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 3,
@@ -166,6 +184,8 @@ export const questions: Question[] = [
       'Membiarkannya di tempat',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 4,
@@ -180,6 +200,8 @@ export const questions: Question[] = [
       'Menghindari masalah dan tidak mau bertanggung jawab',
     ],
     answer: 1,
+
+    explanation: '-',
   },
   {
     id: 5,
@@ -194,6 +216,8 @@ export const questions: Question[] = [
       'Ingin terlihat berbeda',
     ],
     answer: 1,
+
+    explanation: '-',
   },
   {
     id: 6,
@@ -207,6 +231,8 @@ export const questions: Question[] = [
       'Membuat kita terkenal',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 7,
@@ -215,6 +241,8 @@ export const questions: Question[] = [
     question: 'Perilaku tidak jujur seperti korupsi dapat merugikan…',
     options: ['Diri sendiri saja', 'Teman saja', 'Masyarakat luas', 'Guru saja'],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 8,
@@ -229,6 +257,8 @@ export const questions: Question[] = [
       'Menunggu sampai guru mengetahui sendiri',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 9,
@@ -243,6 +273,8 @@ export const questions: Question[] = [
       'Agar terlihat baik di depan orang lain',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 10,
@@ -256,6 +288,8 @@ export const questions: Question[] = [
       'Menyalin pekerjaan teman',
     ],
     answer: 2,
+
+    explanation: '-',
   },
 
   // ===================== DISIPLIN (ID 11–20) =====================
@@ -271,6 +305,8 @@ export const questions: Question[] = [
       'Menghindari hukuman saja',
     ],
     answer: 1,
+
+    explanation: '-',
   },
   {
     id: 12,
@@ -285,6 +321,8 @@ export const questions: Question[] = [
       'Menyalahkan keadaan',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 13,
@@ -299,6 +337,8 @@ export const questions: Question[] = [
       'Tidak ikut terlibat',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 14,
@@ -313,6 +353,8 @@ export const questions: Question[] = [
       'Menunggu jawaban dari teman',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 15,
@@ -322,6 +364,8 @@ export const questions: Question[] = [
       'Rafi berjanji kepada guru untuk mengumpulkan tugas tepat waktu. Meskipun sedang malas, ia tetap mengerjakan tugasnya. Sikap Rafi menunjukkan…',
     options: ['Ketakutan', 'Komitmen', 'Kepedulian', 'Keberanian'],
     answer: 1,
+
+    explanation: '-',
   },
   {
     id: 16,
@@ -331,6 +375,8 @@ export const questions: Question[] = [
       'Siswa yang tidak mencontek saat ujian meskipun tidak diawasi menunjukkan sikap…',
     options: ['Takut', 'Taat aturan', 'Ingin dipuji', 'Terpaksa'],
     answer: 1,
+
+    explanation: '-',
   },
   {
     id: 17,
@@ -345,6 +391,8 @@ export const questions: Question[] = [
       'Tidak peduli',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 18,
@@ -359,6 +407,8 @@ export const questions: Question[] = [
       'Menyerah',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 19,
@@ -373,6 +423,8 @@ export const questions: Question[] = [
       'Menyalahkan keadaan',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 20,
@@ -387,6 +439,8 @@ export const questions: Question[] = [
       'Tidak percaya diri',
     ],
     answer: 1,
+
+    explanation: '-',
   },
 
   // ===================== TANGGUNG JAWAB (ID 21–30) =====================
@@ -403,6 +457,8 @@ export const questions: Question[] = [
       'Menyerah',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 22,
@@ -417,6 +473,8 @@ export const questions: Question[] = [
       'Membiarkan guru mencari tahu sendiri',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 23,
@@ -431,6 +489,8 @@ export const questions: Question[] = [
       'Menyerah',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 24,
@@ -445,6 +505,8 @@ export const questions: Question[] = [
       'Membiarkan teman mengambil sendiri uang kas',
     ],
     answer: 1,
+
+    explanation: '-',
   },
   {
     id: 25,
@@ -459,6 +521,8 @@ export const questions: Question[] = [
       'Mengabaikan masalah tersebut',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 26,
@@ -473,6 +537,8 @@ export const questions: Question[] = [
       'Mengikuti teman',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 27,
@@ -487,6 +553,8 @@ export const questions: Question[] = [
       'Menyalahkan keadaan',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 28,
@@ -501,6 +569,8 @@ export const questions: Question[] = [
       'Menghindari masalah',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 29,
@@ -515,6 +585,8 @@ export const questions: Question[] = [
       'Diam saja tanpa peduli',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 30,
@@ -529,6 +601,8 @@ export const questions: Question[] = [
       'Diam saja',
     ],
     answer: 2,
+
+    explanation: '-',
   },
 
   // ===================== KERJA KERAS (ID 31–40) =====================
@@ -545,6 +619,8 @@ export const questions: Question[] = [
       'Tidak ikut terlibat',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 32,
@@ -559,6 +635,8 @@ export const questions: Question[] = [
       'Membiarkan satu orang mengerjakan semuanya',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 33,
@@ -573,6 +651,8 @@ export const questions: Question[] = [
       'Tidak jadi ikut lomba karena merasa kalah',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 34,
@@ -587,6 +667,8 @@ export const questions: Question[] = [
       'Mengundurkan diri dari lomba',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 35,
@@ -601,6 +683,8 @@ export const questions: Question[] = [
       'Menyalahkan sistem ujian',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 36,
@@ -615,6 +699,8 @@ export const questions: Question[] = [
       'Mengabaikan nilai tersebut',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 37,
@@ -629,6 +715,8 @@ export const questions: Question[] = [
       'Mengeluarkan mereka dari kelompok tanpa bicara',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 38,
@@ -643,6 +731,8 @@ export const questions: Question[] = [
       'Nilai tinggi adalah tujuan utama',
     ],
     answer: 1,
+
+    explanation: '-',
   },
   {
     id: 39,
@@ -657,6 +747,8 @@ export const questions: Question[] = [
       'Tidak mengerjakan soal',
     ],
     answer: 1,
+
+    explanation: '-',
   },
   {
     id: 40,
@@ -671,6 +763,8 @@ export const questions: Question[] = [
       'Tidak belajar sama sekali',
     ],
     answer: 2,
+
+    explanation: '-',
   },
 
   // ===================== SEDERHANA (ID 41–50) =====================
@@ -687,6 +781,8 @@ export const questions: Question[] = [
       'Tidak jadi ikut lomba',
     ],
     answer: 1,
+
+    explanation: '-',
   },
   {
     id: 42,
@@ -701,6 +797,8 @@ export const questions: Question[] = [
       'Menganggap diri paling hebat',
     ],
     answer: 1,
+
+    explanation: '-',
   },
   {
     id: 43,
@@ -715,6 +813,8 @@ export const questions: Question[] = [
       'Tidak mau bergaul dengan teman',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 44,
@@ -729,6 +829,8 @@ export const questions: Question[] = [
       'Membiarkan anggota lain memutuskan',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 45,
@@ -743,6 +845,8 @@ export const questions: Question[] = [
       'Menyembunyikan sisa uang agar tidak ketahuan',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 46,
@@ -757,6 +861,8 @@ export const questions: Question[] = [
       'Membeli bahan mahal agar mendapat pujian',
     ],
     answer: 1,
+
+    explanation: '-',
   },
   {
     id: 47,
@@ -771,6 +877,8 @@ export const questions: Question[] = [
       'Mengurangi isi proyek agar fokus pada tampilan',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 48,
@@ -785,6 +893,8 @@ export const questions: Question[] = [
       'Mengabaikan kelompok lain',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 49,
@@ -799,6 +909,8 @@ export const questions: Question[] = [
       'Memberikan kepada teman tanpa alasan jelas',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 50,
@@ -813,6 +925,8 @@ export const questions: Question[] = [
       'Meremehkan teman lain',
     ],
     answer: 2,
+
+    explanation: '-',
   },
 
   // ===================== MANDIRI (ID 51–60) =====================
@@ -829,6 +943,8 @@ export const questions: Question[] = [
       'Hanya terjadi di sekolah',
     ],
     answer: 1,
+
+    explanation: '-',
   },
   {
     id: 52,
@@ -843,6 +959,8 @@ export const questions: Question[] = [
       'Nilainya selalu stabil',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 53,
@@ -857,6 +975,8 @@ export const questions: Question[] = [
       'Tidak masalah selama nilainya tinggi',
     ],
     answer: 1,
+
+    explanation: '-',
   },
   {
     id: 54,
@@ -871,6 +991,8 @@ export const questions: Question[] = [
       'Sikap saling membantu',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 55,
@@ -885,6 +1007,8 @@ export const questions: Question[] = [
       'Tidak ada perbedaan',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 56,
@@ -899,6 +1023,8 @@ export const questions: Question[] = [
       'Menghindari tantangan',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 57,
@@ -912,6 +1038,8 @@ export const questions: Question[] = [
       'Mencoba mengerjakan meskipun sulit',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 58,
@@ -926,6 +1054,8 @@ export const questions: Question[] = [
       'Mengosongkan jawaban',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 59,
@@ -940,6 +1070,8 @@ export const questions: Question[] = [
       'Tidak mengikuti presentasi',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 60,
@@ -954,6 +1086,8 @@ export const questions: Question[] = [
       'Tergantung situasi',
     ],
     answer: 1,
+
+    explanation: '-',
   },
 
   // ===================== ADIL (ID 61–70) =====================
@@ -970,6 +1104,8 @@ export const questions: Question[] = [
       'Bersikap pilih kasih',
     ],
     answer: 3,
+
+    explanation: '-',
   },
   {
     id: 62,
@@ -983,6 +1119,8 @@ export const questions: Question[] = [
       'Mengikuti pendapat mayoritas',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 63,
@@ -997,6 +1135,8 @@ export const questions: Question[] = [
       'Kurang tepat karena membebani siswa aktif',
     ],
     answer: 1,
+
+    explanation: '-',
   },
   {
     id: 64,
@@ -1011,6 +1151,8 @@ export const questions: Question[] = [
       'Wajar karena kondisi tertentu',
     ],
     answer: 1,
+
+    explanation: '-',
   },
   {
     id: 65,
@@ -1025,6 +1167,8 @@ export const questions: Question[] = [
       'Menyamakan nilai dengan siswa lain',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 66,
@@ -1039,6 +1183,8 @@ export const questions: Question[] = [
       'Tidak membagikan sama sekali',
     ],
     answer: 1,
+
+    explanation: '-',
   },
   {
     id: 67,
@@ -1053,6 +1199,8 @@ export const questions: Question[] = [
       'Kerja sama',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 68,
@@ -1067,6 +1215,8 @@ export const questions: Question[] = [
       'Mengikuti keputusan mayoritas',
     ],
     answer: 1,
+
+    explanation: '-',
   },
   {
     id: 69,
@@ -1081,6 +1231,8 @@ export const questions: Question[] = [
       'Tidak konsisten',
     ],
     answer: 1,
+
+    explanation: '-',
   },
   {
     id: 70,
@@ -1095,6 +1247,8 @@ export const questions: Question[] = [
       'Menunda keputusan',
     ],
     answer: 2,
+
+    explanation: '-',
   },
 
   // ===================== BERANI (ID 71–80) =====================
@@ -1110,6 +1264,8 @@ export const questions: Question[] = [
       'Menunggu orang lain bertindak',
     ],
     answer: 1,
+
+    explanation: '-',
   },
   {
     id: 72,
@@ -1124,6 +1280,8 @@ export const questions: Question[] = [
       'Tidak peduli dengan lingkungan',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 73,
@@ -1137,6 +1295,8 @@ export const questions: Question[] = [
       'Menjadi percaya diri',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 74,
@@ -1150,6 +1310,8 @@ export const questions: Question[] = [
       'Mempercepat pekerjaan',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 75,
@@ -1164,6 +1326,8 @@ export const questions: Question[] = [
       'Menyerahkan kepada orang lain',
     ],
     answer: 1,
+
+    explanation: '-',
   },
   {
     id: 76,
@@ -1178,6 +1342,8 @@ export const questions: Question[] = [
       'Bersikap keras',
     ],
     answer: 1,
+
+    explanation: '-',
   },
   {
     id: 77,
@@ -1192,6 +1358,8 @@ export const questions: Question[] = [
       'Menghindari situasi',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 78,
@@ -1206,6 +1374,8 @@ export const questions: Question[] = [
       'Bersikap bijaksana',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 79,
@@ -1220,6 +1390,8 @@ export const questions: Question[] = [
       'Kurang kerja sama',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 80,
@@ -1234,6 +1406,8 @@ export const questions: Question[] = [
       'Menghindari situasi',
     ],
     answer: 2,
+
+    explanation: '-',
   },
 
   // ===================== PEDULI (ID 81–90) =====================
@@ -1250,6 +1424,8 @@ export const questions: Question[] = [
       'Meningkatkan efisiensi',
     ],
     answer: 1,
+
+    explanation: '-',
   },
   {
     id: 82,
@@ -1259,6 +1435,8 @@ export const questions: Question[] = [
       'Perhatikan dua tindakan: (1) Membantu teman memahami pelajaran, (2) Mengerjakan tugas teman tanpa sepengetahuannya. Tindakan yang benar-benar mencerminkan empati adalah...',
     options: ['1 saja', '2 saja', 'Keduanya', 'Tidak keduanya'],
     answer: 0,
+
+    explanation: '-',
   },
   {
     id: 83,
@@ -1273,6 +1451,8 @@ export const questions: Question[] = [
       'Mengabaikan masalah',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 84,
@@ -1287,6 +1467,8 @@ export const questions: Question[] = [
       'Meningkatnya kerja sama',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 85,
@@ -1301,6 +1483,8 @@ export const questions: Question[] = [
       'Sangat membantu perkembangan',
     ],
     answer: 1,
+
+    explanation: '-',
   },
   {
     id: 86,
@@ -1315,6 +1499,8 @@ export const questions: Question[] = [
       'Menunda semua pekerjaan',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 87,
@@ -1329,6 +1515,8 @@ export const questions: Question[] = [
       'Melaporkan ke guru',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 88,
@@ -1343,6 +1531,8 @@ export const questions: Question[] = [
       'Mengabaikan',
     ],
     answer: 2,
+
+    explanation: '-',
   },
   {
     id: 89,
@@ -1352,6 +1542,8 @@ export const questions: Question[] = [
       'Perhatikan dua sikap berikut: Siswa A merasa kasihan melihat temannya kesulitan memahami materi. Siswa B tidak hanya merasa kasihan, tetapi juga membantu mencari solusi. Sikap yang menunjukkan tingkat kepedulian lebih tinggi adalah...',
     options: ['Siswa A', 'Siswa B', 'Keduanya sama', 'Tidak keduanya'],
     answer: 1,
+
+    explanation: '-',
   },
   {
     id: 90,
@@ -1366,5 +1558,7 @@ export const questions: Question[] = [
       'Membuat dirinya dijauhi tanpa alasan',
     ],
     answer: 2,
+
+    explanation: '-',
   },
 ];

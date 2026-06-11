@@ -1,7 +1,6 @@
 'use client';
 
-import { BoxType, snakes, ladders } from '../gameData';
-import { Player } from '../gameLogic';
+import { BoxType, snakes, ladders, Player } from '../gameData';
 
 interface BoardProps {
   board: BoxType[];
