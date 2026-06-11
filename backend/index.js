@@ -28,8 +28,8 @@ const io = new Server(server, {
 });
 
 // Snakes & Ladders Config
-const snakes = { 48: 27, 44: 20, 40: 16, 36: 10 };
-const ladders = { 15: 26, 19: 38, 23: 45, 33: 49 };
+const snakes = { 44: 21, 48: 34, 35: 12, 24: 7 };
+const ladders = { 19: 38, 15: 26, 11: 30, 36: 46 };
 const PLAYER_COLORS = ['#E74C3C', '#3498DB', '#2ECC71', '#111111'];
 
 // Initialize 5 lobbies
@@ -55,7 +55,13 @@ function getLobbiesStatus() {
   }));
 }
 
-// Helper to handle a player reaching the finish line (box 52)
+// Helper to calculate row points based on position (for 50 boxes board)
+function getRowPoints(pos) {
+  if (pos >= 50) return 25;
+  return Math.max(0, Math.floor((pos - 1) / 10)) * 5;
+}
+
+// Helper to handle a player reaching the finish line (box 50)
 function handlePlayerFinished(lobby, playerIdx) {
   const player = lobby.gameState.players[playerIdx];
   if (player.isFinished) return;
@@ -67,11 +73,11 @@ function handlePlayerFinished(lobby, playerIdx) {
     if (idx === playerIdx) {
       const correctAnswers = p.correctAnswers;
       const baseScore = correctAnswers * 10;
-      const rowPoints = 25; // Crossed all 5 rows to reach 52
+      const rowPoints = 25; // Crossed all 5 rows to reach 50
       const score = baseScore + rowPoints + bonus;
       return {
         ...p,
-        position: 52,
+        position: 50,
         isFinished: true,
         finishRank: lobby.gameState.finishOrder.length,
         score: score
@@ -116,7 +122,7 @@ io.on('connection', (socket) => {
       socketId: `fake-socket-${Math.random().toString(36).substr(2, 9)}`,
       name: fakeName,
       color: playerColor,
-      position: 1,
+      position: 0,
       correctAnswers: 0,
       wrongAnswers: 0
     };
@@ -164,7 +170,7 @@ io.on('connection', (socket) => {
       socketId: socket.id,
       name: playerName,
       color: playerColor,
-      position: 1,
+      position: 0,
       correctAnswers: 0,
       wrongAnswers: 0
     };
@@ -225,7 +231,7 @@ io.on('connection', (socket) => {
       phase: 'rolling',
       players: lobby.players.map(p => ({
         ...p,
-        position: 1,
+        position: 0,
         correctAnswers: 0,
         wrongAnswers: 0,
         score: 0,
@@ -262,7 +268,7 @@ io.on('connection', (socket) => {
     const diceValue = Math.floor(Math.random() * 6) + 1;
     const newPosition = activePlayer.position + diceValue;
 
-    if (newPosition > 52) {
+    if (newPosition > 50) {
       lobby.gameState.diceValue = diceValue;
       lobby.gameState.phase = 'result';
       lobby.gameState.currentQuestion = null;
@@ -291,7 +297,7 @@ io.on('connection', (socket) => {
         ? {
             ...p,
             position: p.position + 1,
-            score: p.correctAnswers * 10 + Math.max(0, Math.floor(((p.position + 1) - 2) / 10)) * 5
+            score: p.correctAnswers * 10 + getRowPoints(p.position + 1)
           }
         : p
     );
@@ -309,7 +315,7 @@ io.on('connection', (socket) => {
 
     const currentPos = activePlayer.position;
 
-    if (currentPos === 52) {
+    if (currentPos === 50) {
       handlePlayerFinished(lobby, lobby.gameState.currentPlayerIndex);
     } else {
       const boxType = lobby.gameState.board[currentPos - 1];
@@ -393,7 +399,7 @@ io.on('connection', (socket) => {
             position: newPosition,
             correctAnswers: p.correctAnswers + (isCorrect ? 1 : 0),
             wrongAnswers: p.wrongAnswers + (isCorrect ? 0 : 1),
-            score: (p.correctAnswers + (isCorrect ? 1 : 0)) * 10 + Math.max(0, Math.floor((newPosition - 2) / 10)) * 5
+            score: (p.correctAnswers + (isCorrect ? 1 : 0)) * 10 + getRowPoints(newPosition)
           }
         : p
     );
@@ -402,7 +408,7 @@ io.on('connection', (socket) => {
     lobby.gameState.consequence = consequence;
     lobby.gameState.usedQuestionIds = [...lobby.gameState.usedQuestionIds, lobby.gameState.currentQuestion.id];
 
-    if (newPosition === 52) {
+    if (newPosition === 50) {
       handlePlayerFinished(lobby, lobby.gameState.currentPlayerIndex);
     } else {
       lobby.gameState.phase = 'result';
@@ -445,12 +451,34 @@ io.on('connection', (socket) => {
     const lobby = lobbies[lobbyId];
     if (!lobby || !lobby.gameState || lobby.hostId !== socket.id) return;
 
-    const activePlayer = lobby.gameState.players[lobby.gameState.currentPlayerIndex];
-    lobby.gameState.players = lobby.gameState.players.map((p, idx) => 
-      idx === lobby.gameState.currentPlayerIndex ? { ...p, position: 52, correctAnswers: p.correctAnswers + 1 } : p
-    );
+    // Finish all players immediately to trigger the finished phase and victory modal
+    lobby.gameState.players = lobby.gameState.players.map((p, idx) => {
+      if (idx === lobby.gameState.currentPlayerIndex) {
+        return {
+          ...p,
+          position: 50,
+          correctAnswers: p.correctAnswers + 1,
+          score: p.score + 25 + 20, // Add row points and finish bonus
+          isFinished: true,
+          finishRank: 1
+        };
+      } else {
+        return {
+          ...p,
+          isFinished: true,
+          finishRank: 2
+        };
+      }
+    });
 
-    handlePlayerFinished(lobby, lobby.gameState.currentPlayerIndex);
+    lobby.gameState.finishOrder = lobby.gameState.players.map(p => p.socketId);
+    lobby.gameState.phase = 'finished';
+
+    // Sort players by score descending to find the overall winner
+    const sorted = [...lobby.gameState.players].sort((a, b) => b.score - a.score);
+    lobby.gameState.winner = sorted[0];
+    lobby.gameState.message = `🎉 Permainan selesai! Juara pertama adalah ${sorted[0].name} dengan skor ${sorted[0].score}!`;
+
     io.to(`room-${lobbyId}`).emit('game-state-update', lobby.gameState);
   });
 
@@ -463,7 +491,7 @@ io.on('connection', (socket) => {
     lobby.gameState = null;
     lobby.players = lobby.players.map(p => ({
       ...p,
-      position: 1,
+      position: 0,
       correctAnswers: 0,
       wrongAnswers: 0,
       score: 0,
@@ -543,6 +571,12 @@ function handleUserLeave(socket, lobbyId) {
     lobby.players.splice(playerIndex, 1);
     socket.leave(`room-${lobbyId}`);
 
+    // Dev Bypass clean up: If no real players remain in the lobby, clear it completely
+    const realPlayers = lobby.players.filter(p => !p.socketId.startsWith('fake-'));
+    if (realPlayers.length === 0) {
+      lobby.players = [];
+    }
+
     // If lobby becomes empty
     if (lobby.players.length === 0) {
       lobby.status = 'waiting';
@@ -558,7 +592,7 @@ function handleUserLeave(socket, lobbyId) {
       if (lobby.status === 'playing') {
         lobby.status = 'waiting';
         lobby.gameState = null;
-        lobby.players = lobby.players.map((p, idx) => ({ ...p, id: idx, position: 1, correctAnswers: 0, wrongAnswers: 0 }));
+        lobby.players = lobby.players.map((p, idx) => ({ ...p, id: idx, position: 0, correctAnswers: 0, wrongAnswers: 0 }));
         io.to(`room-${lobbyId}`).emit('game-terminated');
       }
 

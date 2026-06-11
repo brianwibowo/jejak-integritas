@@ -102,7 +102,9 @@ Mengatakan hal yang sesuai dengan kenyataan disebut…
 * D. Peduli
 
 **Jawaban: C**
+Mengatakan hal yang sesuai dengan kenyataan berarti menyampaikan sesuatu apa adanya, tidak berbohong, dan tidak mengada-ada. Sikap ini disebut jujur.
 
+Kejujuran penting karena dapat membuat orang lain percaya kepada kita. Misalnya, ketika siswa mengakui bahwa ia belum mengerjakan tugas, maka siswa tersebut sedang menunjukkan sikap jujur.
 ---
 
 ## 2. Kotak Pelanggaran Nilai (Merah) — (Terbuka)
@@ -118,7 +120,12 @@ jujur
 D. Menyalahkan teman
 
 **Jawaban: C**
+Sikap terbuka berarti berani menyampaikan keadaan yang sebenarnya tanpa menutupi kesalahan. Dalam kasus tersebut, Budi lupa mengerjakan PR karena bermain game. Sikap yang tepat adalah mengakui kesalahan dengan jujur kepada guru.
 
+Jawaban A, B, dan C tidak tepat karena menunjukkan perilaku tidak jujur, menghindari tanggung jawab, dan menyalahkan orang lain. Sikap seperti itu dapat merusak kepercayaan guru kepada siswa.
+Jawaban yang benar: D. Mengakui kesalahan dengan jujur
+Nilai yang ditanamkan:
+Kejujuran, tanggung jawab, dan keberanian mengakui kesalahan
 ---
 
 ## 3. Kotak Dilema Moral (Kuning) — (Bertindak benar)
@@ -131,7 +138,10 @@ Rina menemukan dompet di halaman sekolah. Tidak ada orang yang melihatnya. Sikap
 * D. Membiarkannya di tempat
 
 **Jawaban: C**
+Sikap jujur adalah perilaku yang menunjukkan kebenaran, tidak mengambil hak orang lain, dan berani melakukan hal yang benar meskipun tidak ada orang yang melihat.
 
+Pada soal tersebut, Rina menemukan dompet di halaman sekolah. Walaupun tidak ada orang yang melihatnya, Rina tetap harus bersikap jujur dengan tidak mengambil isi dompet tersebut. Tindakan yang paling tepat adalah mengembalikan dompet kepada guru atau pemiliknya agar dompet tersebut dapat kembali kepada orang yang berhak.
+Jawaban yang benar: C. 
 ---
 
 ## 4. Kotak Kearifan Lokal (Hijau) — (Bertindak benar)

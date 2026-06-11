@@ -31,6 +31,7 @@ export default function Home() {
   // === INTRO VIDEO AUTOPLAY FALLBACK ===
   useEffect(() => {
     if (showIntro && videoRef.current) {
+      videoRef.current.muted = false;
       const playPromise = videoRef.current.play();
       if (playPromise !== undefined) {
         playPromise.catch((err) => {
@@ -97,32 +98,6 @@ export default function Home() {
             MEMUAT PERMAINAN...
           </h2>
         </div>
-
-        {/* Media Collage Showcase */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl w-full">
-          {[
-            { src: '/background_home_resmi.png', label: 'Jejak Integritas' },
-            { src: '/belajar.png', label: 'Edukasi Karakter' },
-            { src: '/menanam tanaman.png', label: 'Aksi Nyata' },
-            { src: '/background_orang.png', label: 'Sosial & Moral' }
-          ].map((item, i) => (
-            <div
-              key={i}
-              className="relative aspect-[4/3] rounded-2xl overflow-hidden border border-white/10 shadow-lg"
-            >
-              <img
-                src={item.src}
-                alt={item.label}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent flex items-end p-3">
-                <span className="text-[10px] sm:text-xs font-bold text-white uppercase tracking-wider">
-                  {item.label}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
       </div>
 
       {/* INTRO VIDEO OVERLAY */}
@@ -133,7 +108,7 @@ export default function Home() {
             sessionStorage.setItem('introWatched', 'true');
             playHomeLobbyMusic();
           }}
-          className="fixed inset-0 bg-black flex items-center justify-center z-50 animate-fade-in cursor-pointer"
+          className="fixed inset-0 bg-black flex flex-col items-center justify-center z-50 animate-fade-in text-white font-sans cursor-pointer"
         >
           <video
             ref={videoRef}
@@ -208,7 +183,7 @@ export default function Home() {
               router.push('/game');
             }, 600);
           }}
-          className="absolute z-20 hover:scale-105 active:scale-95 transition-all cursor-pointer block bg-transparent border-0 p-0 outline-none focus:outline-none"
+          className="absolute z-20 hover:scale-105 active:scale-95 transition-all cursor-pointer block bg-transparent border-0 p-0 outline-none focus:outline-none animate-breath"
           style={{
             bottom: '3.4rem',
             left: '50%',

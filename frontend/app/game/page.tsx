@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { io, Socket } from 'socket.io-client';
 import Board from './components/Board';
 import PlayerPanel from './components/PlayerPanel';
@@ -34,6 +35,7 @@ const getBackendUrl = () => {
 
 export default function GamePage() {
   const gameMode = 'online';
+  const router = useRouter();
 
   // === ONLINE / SOCKET STATE ===
   const [socketConnected, setSocketConnected] = useState(false);
@@ -220,6 +222,7 @@ export default function GamePage() {
       setOnlineGameState(null);
       setIsPaused(false);
       alert('Permainan dihentikan karena host keluar atau pemain lain terputus.');
+      router.push('/');
     });
   }, []);
 
@@ -273,6 +276,7 @@ export default function GamePage() {
   // === ANIMATION TIMEOUT: ONLINE WALKING (Active Player Only) ===
   useEffect(() => {
     if (!onlineGameState || onlineGameState.phase !== 'walking' || onlineGameState.targetPosition === null) return;
+    if (isPaused) return;
 
     const currentPlayer = onlineGameState.players[onlineGameState.currentPlayerIndex];
     if (!currentPlayer) return;
@@ -294,11 +298,12 @@ export default function GamePage() {
     }, 800);
 
     return () => clearTimeout(timeoutId);
-  }, [onlineGameState?.phase, onlineGameState?.targetPosition, onlineGameState?.players, onlineGameState?.currentPlayerIndex, myPlayer, currentLobbyId, roomHostId]);
+  }, [onlineGameState?.phase, onlineGameState?.targetPosition, onlineGameState?.players, onlineGameState?.currentPlayerIndex, myPlayer, currentLobbyId, roomHostId, isPaused]);
 
   // === DELAY: ONLINE PRE-QUESTION (Active Player Selects Question) ===
   useEffect(() => {
     if (!onlineGameState || onlineGameState.phase !== 'pre_question') return;
+    if (isPaused) return;
 
     const currentPlayer = onlineGameState.players[onlineGameState.currentPlayerIndex];
     if (!currentPlayer) return;
@@ -311,16 +316,16 @@ export default function GamePage() {
 
     const currentPos = currentPlayer.position;
     let targetBoxType: 'biru' | 'merah' | 'kuning' | 'hijau' | 'ungu' = 'biru';
-    if (currentPos <= 11) {
-      targetBoxType = 'biru';      // 1 (Start) & 2-11 (Boxes 1-10)
-    } else if (currentPos <= 21) {
-      targetBoxType = 'merah';     // 12-21 (Boxes 11-20)
-    } else if (currentPos <= 31) {
-      targetBoxType = 'kuning';    // 22-31 (Boxes 21-30)
-    } else if (currentPos <= 41) {
-      targetBoxType = 'hijau';     // 32-41 (Boxes 31-40)
+    if (currentPos <= 10) {
+      targetBoxType = 'biru';      // 1-10 (Row 5)
+    } else if (currentPos <= 20) {
+      targetBoxType = 'merah';     // 11-20 (Row 4)
+    } else if (currentPos <= 30) {
+      targetBoxType = 'kuning';    // 21-30 (Row 3)
+    } else if (currentPos <= 40) {
+      targetBoxType = 'hijau';     // 31-40 (Row 2)
     } else {
-      targetBoxType = 'ungu';      // 42-51 (Boxes 41-50) & 52 (Finish fallback)
+      targetBoxType = 'ungu';      // 41-50 (Row 1)
     }
 
     const timeoutId = setTimeout(() => {
@@ -329,11 +334,12 @@ export default function GamePage() {
     }, 600);
 
     return () => clearTimeout(timeoutId);
-  }, [onlineGameState?.phase, onlineGameState?.currentPlayerIndex, myPlayer, currentLobbyId, roomHostId]);
+  }, [onlineGameState?.phase, onlineGameState?.currentPlayerIndex, myPlayer, currentLobbyId, roomHostId, isPaused]);
 
   // === ROLL DICE HANDLER ===
   const handleRollDice = useCallback(() => {
     if (!activeState || activeState.phase !== 'rolling') return;
+    if (isPaused) return;
 
     // Play sound locally
     if (!isRollPlayingRef.current && rollSoundRef.current && !isMuted) {
@@ -347,7 +353,7 @@ export default function GamePage() {
     }
 
     socketRef.current?.emit('roll-dice', { lobbyId: currentLobbyId });
-  }, [activeState?.phase, isMuted, currentLobbyId]);
+  }, [activeState?.phase, isMuted, currentLobbyId, isPaused]);
 
   // === PAUSE HANDLERS ===
   const handlePause = useCallback(() => {
@@ -372,7 +378,8 @@ export default function GamePage() {
     }
 
     socketRef.current?.emit('quit-game', { lobbyId: currentLobbyId });
-  }, [currentLobbyId]);
+    router.push('/');
+  }, [currentLobbyId, router]);
 
   const handleToggleMute = useCallback(() => {
     setIsMuted((prev) => !prev);
@@ -395,9 +402,13 @@ export default function GamePage() {
 
   const handleLeaveLobby = () => {
     socketRef.current?.emit('leave-lobby', { lobbyId: currentLobbyId });
+    const wasPlaying = onlineGameState !== null;
     setCurrentLobbyId(null);
     setMyPlayer(null);
     setOnlineGameState(null);
+    if (wasPlaying) {
+      router.push('/');
+    }
   };
 
   const handleStartOnlineGame = () => {
@@ -464,32 +475,6 @@ export default function GamePage() {
             <h2 className="text-xl font-black text-white tracking-widest mt-2 uppercase">
               MEMUAT PERMAINAN...
             </h2>
-          </div>
-
-          {/* Media Collage Showcase */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl w-full">
-            {[
-              { src: '/background_home_resmi.png', label: 'Jejak Integritas' },
-              { src: '/belajar.png', label: 'Edukasi Karakter' },
-              { src: '/menanam tanaman.png', label: 'Aksi Nyata' },
-              { src: '/background_orang.png', label: 'Sosial & Moral' }
-            ].map((item, i) => (
-              <div
-                key={i}
-                className="relative aspect-[4/3] rounded-2xl overflow-hidden border border-white/10 shadow-lg"
-              >
-                <img
-                  src={item.src}
-                  alt={item.label}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent flex items-end p-3">
-                  <span className="text-[10px] sm:text-xs font-bold text-white uppercase tracking-wider">
-                    {item.label}
-                  </span>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
 
@@ -747,6 +732,19 @@ export default function GamePage() {
 
   // 5. RENDER LOADING SCREEN OVERLAY (both online & offline)
   if (loadingProgress !== null) {
+    const loadingImages = [
+      { src: '/background_home_resmi.png', label: 'Jejak Integritas' },
+      { src: '/belajar.png', label: 'Edukasi Karakter' },
+      { src: '/menanam tanaman.png', label: 'Aksi Nyata' },
+      { src: '/background_orang.png', label: 'Sosial & Moral' }
+    ];
+
+    const activeImageIndex = Math.min(
+      Math.floor((loadingProgress / 100) * loadingImages.length),
+      loadingImages.length - 1
+    );
+    const currentImg = loadingImages[activeImageIndex];
+
     let loadingText = 'Mempersiapkan papan permainan...';
     if (loadingProgress > 75) {
       loadingText = 'Menyiapkan kartu pertanyaan & dadu...';
@@ -757,44 +755,51 @@ export default function GamePage() {
     }
 
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-950 text-white p-6 font-sans">
-        <div className="max-w-md w-full text-center flex flex-col items-center gap-6 animate-fade-in">
-          {/* Glowing game logo/icon */}
-          <div className="relative">
-            <div className="absolute inset-0 bg-blue-500 rounded-full filter blur-xl opacity-30 animate-pulse" />
-            <div className="w-24 h-24 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-3xl flex items-center justify-center text-4xl shadow-2xl border border-blue-400/30 animate-bounce">
-              🎮
+      <div className="fixed inset-0 bg-neutral-950 text-white font-sans z-50 select-none overflow-hidden animate-fade-in">
+        {/* Full-screen Loading Artwork */}
+        <div className="absolute inset-0 w-full h-full">
+          <img
+            src={currentImg.src}
+            alt={currentImg.label}
+            className="w-full h-full object-cover transition-all duration-700 ease-in-out"
+            key={currentImg.src} // forces re-render/fade transition on source change
+          />
+          {/* Subtle bottom dark gradient to ensure text readability */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
+        </div>
+
+        {/* Bottom-Left Corner: Image / Concept Art Info */}
+        <div className="absolute bottom-8 left-8 z-10 flex flex-col gap-1 bg-black/60 backdrop-blur-md border border-white/10 px-5 py-3 rounded-2xl animate-fade-in">
+          <span className="text-[10px] font-black text-emerald-450 uppercase tracking-widest">
+            ASET PERMAINAN
+          </span>
+          <span className="text-base font-black text-white uppercase tracking-wider">
+            {currentImg.label}
+          </span>
+        </div>
+
+        {/* Bottom-Right Corner: Loading progress info & bar */}
+        <div className="absolute bottom-8 right-8 z-10 flex flex-col items-end gap-2 max-w-xs w-full animate-fade-in">
+          {/* Status text and percentage count */}
+          <div className="flex flex-col items-end text-right gap-1 bg-black/60 backdrop-blur-md border border-white/10 px-4 py-2.5 rounded-2xl w-full">
+            <div className="flex justify-between items-center w-full">
+              <span className="text-[10px] font-black text-neutral-400 uppercase tracking-wider animate-pulse text-left pr-2 truncate">
+                {loadingText}
+              </span>
+              <span className="text-sm font-black text-emerald-400 tabular-nums ml-auto">
+                {loadingProgress}%
+              </span>
             </div>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <h2 className="text-2xl font-black bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent tracking-wide">
-              JEJAK INTEGRITAS
-            </h2>
-            <p className="text-xs text-slate-400 font-medium uppercase tracking-widest text-center">
-              Game Edukasi Anti Korupsi
-            </p>
-          </div>
-
-          {/* Progress bar container */}
-          <div className="w-full bg-slate-900 border border-slate-800/80 rounded-full h-4 p-0.5 overflow-hidden shadow-inner relative">
-            <div
-              className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 h-full rounded-full transition-all duration-150 ease-out shadow-lg relative"
-              style={{ width: `${loadingProgress}%` }}
-            >
-              {/* Glowing tip */}
-              <div className="absolute right-0 top-0 bottom-0 w-2 bg-white rounded-full filter blur-sm animate-pulse" />
+            {/* Progress bar container */}
+            <div className="w-full bg-neutral-950 border border-white/5 rounded-full h-2.5 p-0.5 overflow-hidden shadow-inner relative mt-1">
+              <div
+                className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 h-full rounded-full transition-all duration-150 ease-out shadow-lg relative"
+                style={{ width: `${loadingProgress}%` }}
+              >
+                {/* Glowing tip */}
+                <div className="absolute right-0 top-0 bottom-0 w-2 bg-white rounded-full filter blur-sm animate-pulse" />
+              </div>
             </div>
-          </div>
-
-          {/* Percentage and loading status */}
-          <div className="flex justify-between items-center w-full px-1">
-            <span className="text-xs font-semibold text-slate-400 tracking-wide animate-pulse">
-              {loadingText}
-            </span>
-            <span className="text-sm font-black text-blue-400 tabular-nums">
-              {loadingProgress}%
-            </span>
           </div>
         </div>
       </div>
@@ -818,18 +823,22 @@ export default function GamePage() {
 
   // 7. MAIN GAME BOARD SCREEN
   return (
-    <div className="h-screen bg-slate-950 p-0 flex items-center justify-center overflow-hidden">
-      {/* 80:20 Main Layout Container */}
-      <div className="flex flex-col lg:flex-row justify-center items-stretch w-full h-full">
-        {/* Board Container — takes all remaining space to maximize board size */}
-        <div className="flex-1 flex justify-center items-center h-full bg-slate-900/40">
-          <div className="h-full max-h-full" style={{ aspectRatio: '4/3' }}>
-            <Board board={activeState.board} players={activeState.players} />
-          </div>
-        </div>
+    <div className="h-screen w-screen overflow-hidden relative select-none">
+      {/* Fullscreen Main Game Board Screen */}
+      <div
+        className="w-full h-full relative"
+        style={{
+          backgroundImage: 'url(/game_board_utama.png)',
+          backgroundSize: '100% 100%',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+        }}
+      >
+        {/* Board Component (for player pawns) */}
+        <Board board={activeState.board} players={activeState.players} />
 
-        {/* Control & Dice & Leaderboard Panel (Fixed Width for perfect fit) */}
-        <div className="w-full lg:w-[380px] flex-shrink-0 flex flex-col h-full p-3 sm:p-4">
+        {/* Chalkboard Scoreboard & Controls Overlay */}
+        <div className="absolute left-[73.5%] top-[5.5%] w-[22.5%] h-[89.0%] overflow-y-auto flex flex-col justify-between select-none">
           <PlayerPanel
             players={activeState.players}
             currentPlayerIndex={activeState.currentPlayerIndex}
@@ -837,16 +846,20 @@ export default function GamePage() {
             onRollDice={handleRollDice}
             phase={activeState.phase}
             message={activeState.message}
-            onNextTurn={() => socketRef.current?.emit('next-turn', { lobbyId: currentLobbyId })}
+            onNextTurn={() => {
+              if (isPaused) return;
+              socketRef.current?.emit('next-turn', { lobbyId: currentLobbyId });
+            }}
             onPause={handlePause}
-            isMyTurn={isMyTurnOrDevDrive}
+            isMyTurn={isMyTurnOrDevDrive && !isPaused}
           />
         </div>
       </div>
 
       {/* Question Modal — shown when there's a question in 'question' or 'result' phase */}
       {activeState.currentQuestion &&
-        (activeState.phase === 'question' || activeState.phase === 'result') && (
+        (activeState.phase === 'question' || activeState.phase === 'result') &&
+        !isPaused && (
           <QuestionModal
             question={activeState.currentQuestion}
             selectedAnswer={activeState.selectedAnswer}
@@ -864,10 +877,10 @@ export default function GamePage() {
       {isPaused && (
         <div className="pause-overlay">
           <div className="pause-menu">
-            <h2>⏸ Game Paused</h2>
+            <h2>⏸ Game Dihentikan</h2>
 
             <button className="pause-btn pause-btn-resume" onClick={handleResume}>
-              ▶️ Resume Game
+              ▶️ Lanjutkan Game
             </button>
 
             <button className="pause-btn pause-btn-sound" onClick={handleToggleMute}>
@@ -890,7 +903,7 @@ export default function GamePage() {
 
             {isHost ? (
               <button className="pause-btn pause-btn-quit" onClick={handleQuit}>
-                Quit Game
+                Keluar Game
               </button>
             ) : (
               <button
@@ -914,14 +927,14 @@ export default function GamePage() {
               Permainan Selesai!
             </h2>
             <p className="text-sm sm:text-base text-gray-700 mb-5 font-semibold">
-              Selamat kepada juara kita,{" "}
+              Selamat kepada pemenang{" "}
               <span
-                className="font-extrabold text-base sm:text-lg px-3 py-1 rounded-full bg-yellow-100 inline-block mr-1 animate-pulse"
+                className="font-extrabold text-base sm:text-lg px-3 py-1 rounded-full bg-yellow-100 inline-block animate-pulse"
                 style={{ color: activeState.winner?.color }}
               >
                 {activeState.winner?.name}
-              </span>{" "}
-              dengan skor tertinggi!
+              </span>
+              !
             </p>
 
             {/* Winner Board / Final Leaderboard */}
@@ -950,13 +963,13 @@ export default function GamePage() {
                       {player.name}
                     </span>
                     <div className="flex flex-col items-end">
-                      <span className="text-[11px] sm:text-xs font-black text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-full font-sans">
+                      <span className="text-xs sm:text-sm font-black text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-full font-sans">
                         ⭐ {player.score || 0} Pts
                       </span>
-                      <span className="text-[9px] sm:text-[10px] text-slate-500 mt-0.5 font-medium font-sans">
-                        {player.isFinished ? `🏁 Selesai (Ke-${player.finishRank})` : `Kotak ${player.position - 1}`}
+                      <span className="text-[10px] sm:text-[11px] text-slate-500 mt-0.5 font-medium font-sans">
+                        {player.position === 0 ? 'Belum Mulai' : `Kotak ${player.position}`}
                       </span>
-                      <span className="text-[8px] sm:text-[9px] text-slate-400 mt-0.5 font-medium font-sans">
+                      <span className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 font-medium font-sans">
                         Benar: <span className="text-emerald-600 font-bold">{player.correctAnswers || 0}</span> • Salah: <span className="text-rose-500 font-bold">{player.wrongAnswers || 0}</span>
                       </span>
                     </div>
@@ -970,7 +983,7 @@ export default function GamePage() {
                 onClick={handleQuit} // Host resets to setup screen/lobby room
                 className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-base transition-all shadow-lg transform active:scale-95 cursor-pointer font-sans"
               >
-                Main Lagi 🔄
+                Kembali ke Lobby 🔄
               </button>
             ) : (
               <div className="w-full py-3 bg-slate-100 border border-slate-200 text-slate-500 rounded-xl font-bold text-xs text-center animate-pulse font-sans">

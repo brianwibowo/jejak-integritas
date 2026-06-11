@@ -31,7 +31,7 @@ export interface Question {
 export interface Player {
   id: number;
   name: string;
-  position: number; // 1 = START, 52 = FINISH
+  position: number; // 0 = OUTSIDE BOARD, 1 = START, 50 = FINISH
   color: string;
   correctAnswers: number;
   wrongAnswers: number;
@@ -68,38 +68,36 @@ export const themeLabels: Record<Theme, string> = {
 
 // --- Board Configuration ---
 
-export const BOARD_SIZE = 52;
+export const BOARD_SIZE = 50;
 
 // Snakes: head → tail (player goes DOWN if answer is wrong)
 export const snakes: Record<number, number> = {
-  48: 27,
-  44: 20,
-  40: 16,
-  36: 10,
+  44: 21,
+  48: 34,
+  35: 12,
+  24: 7,
 };
 
 // Ladders: bottom → top (player goes UP if answer is correct)
 export const ladders: Record<number, number> = {
-  15: 26,
   19: 38,
-  23: 45,
-  33: 49,
+  15: 26,
+  11: 30,
+  36: 46,
 };
 
 /**
- * Generate board layout: position 1 = START, position 52 = FINISH.
- * Positions 2–51 (50 boxes) are distributed evenly among 5 colors.
+ * Generate board layout: position 1 = START, position 50 = FINISH.
+ * Positions 2–49 (48 boxes) are distributed evenly among 5 colors.
  * Uses seeded PRNG for deterministic but shuffled distribution.
  */
 export function generateBoard(seed: number = 42): BoxType[] {
   const colors: ColoredBoxType[] = ['biru', 'merah', 'kuning', 'hijau', 'ungu'];
 
-  // Create pool: 10 of each color = 50 gameplay squares for positions 2-51
+  // Create pool: 48 gameplay squares for positions 2-49
   const pool: ColoredBoxType[] = [];
-  for (let c = 0; c < colors.length; c++) {
-    for (let j = 0; j < 10; j++) {
-      pool.push(colors[c]);
-    }
+  for (let i = 0; i < 48; i++) {
+    pool.push(colors[i % colors.length]);
   }
 
   // Seeded Fisher-Yates shuffle
@@ -110,8 +108,8 @@ export function generateBoard(seed: number = 42): BoxType[] {
     [pool[i], pool[j]] = [pool[j], pool[i]];
   }
 
-  // board[0] = position 1 (start), board[51] = position 52 (finish)
-  const board: BoxType[] = ['start', ...pool, 'finish'];
+  // board[0] = position 1 (start/blue), board[49] = position 50 (finish)
+  const board: BoxType[] = ['biru', ...pool, 'finish'];
   return board;
 }
 
@@ -144,16 +142,16 @@ export function getRandomQuestion(
 // ============================================================
 
 export const questions: Question[] = [
-  // ===================== JUJUR (ID 1–10) =====================
   {
     id: 1,
     theme: 'jujur',
     boxType: 'biru',
-    question: 'Mengatakan hal yang sesuai dengan kenyataan disebut…',
+    question:
+      'Mengatakan hal yang sesuai dengan kenyataan disebut…',
     options: ['Disiplin', 'Tanggung jawab', 'Jujur', 'Peduli'],
     answer: 2,
-
-    explanation: '-',
+    explanation:
+      'Mengatakan hal yang sesuai dengan kenyataan berarti menyampaikan sesuatu apa adanya, tidak berbohong, dan tidak mengada-ada. Sikap ini disebut jujur.\n\nKejujuran penting karena dapat membuat orang lain percaya kepada kita. Misalnya, ketika siswa mengakui bahwa ia belum mengerjakan tugas, maka siswa tersebut sedang menunjukkan sikap jujur.\n\nAnalisis pilihan jawaban:\nDisiplin berarti menaati aturan dan waktu.\nTanggung jawab berarti melaksanakan kewajiban dengan baik.\nJujur berarti berkata dan bertindak sesuai kenyataan.\nPeduli berarti memperhatikan dan membantu orang lain.',
   },
   {
     id: 2,
@@ -161,47 +159,32 @@ export const questions: Question[] = [
     boxType: 'merah',
     question:
       'Budi lupa mengerjakan PR karena bermain game. Ketika ditanya guru, sikap terbuka yang benar adalah…',
-    options: [
-      'Berbohong agar tidak dihukum',
-      'Mengaku sakit',
-      'Mengakui kesalahan dengan jujur',
-      'Menyalahkan teman',
-    ],
-    answer: 2,
-
-    explanation: '-',
+    options: ['Berbohong agar tidak dihukum', 'Mengaku sakit', 'Menyalahkan teman', 'Mengakui kesalahan dengan jujur'],
+    answer: 3,
+    explanation:
+      'Sikap terbuka berarti berani menyampaikan keadaan yang sebenarnya tanpa menutupi kesalahan. Dalam kasus tersebut, Budi lupa mengerjakan PR karena bermain game. Sikap yang tepat adalah mengakui kesalahan dengan jujur kepada guru.\n\nJawaban A, B, dan C tidak tepat karena menunjukkan perilaku tidak jujur, menghindari tanggung jawab, dan menyalahkan orang lain. Sikap seperti itu dapat merusak kepercayaan guru kepada siswa.\nJawaban yang benar: D. Mengakui kesalahan dengan jujur\nNilai yang ditanamkan:Kejujuran, tanggung jawab, dan keberanian mengakui kesalahan',
   },
   {
     id: 3,
     theme: 'jujur',
     boxType: 'kuning',
     question:
-      'Rina menemukan dompet di halaman sekolah. Tidak ada orang yang melihatnya. Sikap yang mencerminkan kejujuran adalah…',
-    options: [
-      'Mengambil uangnya saja',
-      'Menyimpan dompet tersebut',
-      'Mengembalikan kepada guru atau pemiliknya',
-      'Membiarkannya di tempat',
-    ],
+      'Rina menemukan dompet di halaman sekolah. Tidak ada orang yang melihatny a. Sikap yang mencerminkan kejujuran adalah…',
+    options: ['Mengambil uangnya saja', 'Menyimpan dompet tersebut', 'Mengembalikan kepada guru atau pemiliknya', 'Membiarkannya di tempat'],
     answer: 2,
-
-    explanation: '-',
+    explanation:
+      'Sikap jujur adalah perilaku yang menunjukkan kebenaran, tidak mengambil hak orang lain, dan berani melakukan hal yang benar meskipun tidak ada orang yang melihat.\n\nPada soal tersebut, Rina menemukan dompet di halaman sekolah. Walaupun tidak ada orang yang melihatnya, Rina tetap harus bersikap jujur dengan tidak mengambil isi dompet tersebut. Tindakan yang paling tepat adalah mengembalikan dompet kepada guru atau pemiliknya agar dompet tersebut dapat kembali kepada orang yang berhak.\nJawaban yang benar: C. \nMengembalikan kepada guru atau pemiliknya\nAlasan pilihan jawaban:\nMengambil uangnya saja → Salah, karena mengambil uang milik orang lain termasuk perbuatan tidak jujur.\nMenyimpan dompet tersebut → Salah, karena dompet tersebut bukan milik Rina.\nMengembalikan kepada guru atau pemiliknya → Benar, karena menunjukkan sikap jujur dan bertanggung jawab.\nMembiarkannya di tempat → Kurang tepat, karena dompet bisa hilang atau diambil orang lain.\nJadi, sikap yang mencerminkan nilai kejujuran adalah mengembalikan dompet kepada guru atau pemiliknya.',
   },
   {
     id: 4,
     theme: 'jujur',
     boxType: 'hijau',
     question:
-      'Dalam budaya Jawa dikenal nilai eling lan waspada, yaitu selalu sadar diri dan berani bertanggung jawab atas perbuatan sendiri. Sikap terbuka dalam kehidupan sehari-hari sesuai dengan nilai tersebut adalah…',
-    options: [
-      'Menyembunyikan kesalahan agar tidak dimarahi',
-      'Mengakui kesalahan yang dilakukan dengan jujur',
-      'Menutupi fakta agar terlihat baik',
-      'Menghindari masalah dan tidak mau bertanggung jawab',
-    ],
-    answer: 1,
-
-    explanation: '-',
+      'Dalam budaya Jawa dikenal nilai eling lan waspada, yaitu selalu sadar diri dan berani bertanggung jawab atas perbuatan sendiri.Sikap terbuka dalam kehidupan sehari-hari sesuai dengan nilai tersebut adalah…',
+    options: ['Mengakui kesalahan yang dilakukan dengan jujur', 'Menyembunyikan kesalahan agar tidak dimarahi', 'Menutupi fakta agar terlihat baik', 'Menghindari masalah dan tidak mau bertanggung jawab'],
+    answer: 0,
+    explanation:
+      'Nilai eling lan waspada dalam budaya Jawa berarti seseorang harus selalu ingat, sadar diri, berhati-hati dalam bertindak, serta berani bertanggung jawab atas perbuatan yang dilakukan. Nilai ini mengajarkan agar seseorang tidak lari dari kesalahan, tetapi mau bersikap jujur dan terbuka.\n\nSikap terbuka dalam kehidupan sehari-hari yang sesuai dengan nilai tersebut adalah mengakui kesalahan yang dilakukan dengan jujur. Dengan mengakui kesalahan, seseorang menunjukkan kesadaran diri, kejujuran, dan tanggung jawab.\nJawaban yang benar: A. Mengakui kesalahan yang dilakukan dengan jujur\n\nAlasan pilihan jawaban:\nBenar, karena mengakui kesalahan menunjukkan sikap jujur, terbuka, sadar diri, dan bertanggung jawab.\nSalah, karena menyembunyikan kesalahan menunjukkan sikap tidak jujur dan tidak bertanggung jawab.\nSalah, karena menutupi fakta berarti tidak terbuka dan hanya ingin terlihat baik di hadapan orang lain.\nSalah, karena menghindari masalah dan tidak mau bertanggung jawab bertentangan dengan nilai eling lan waspada.\n\nKesimpulan:Sikap terbuka yang sesuai dengan nilai eling lan waspada adalah berani mengakui kesalahan secara jujur dan bertanggung jawab atas perbuatan sendiri.',
   },
   {
     id: 5,
@@ -209,40 +192,32 @@ export const questions: Question[] = [
     boxType: 'ungu',
     question:
       'Siswa yang tidak mencontek saat ujian meskipun teman-temannya melakukannya menunjukkan sikap…',
-    options: [
-      'Takut ketahuan',
-      'Menghargai diri sendiri dan jujur',
-      'Tidak peduli teman',
-      'Ingin terlihat berbeda',
-    ],
+    options: ['Takut ketahuan', 'Menghargai diri sendiri dan jujur', 'Tidak peduli teman', 'Ingin terlihat berbeda'],
     answer: 1,
-
-    explanation: '-',
+    explanation:
+      'Siswa yang tidak mencontek saat ujian meskipun teman-temannya melakukannya menunjukkan bahwa ia memiliki sikap jujur dan mampu menghargai diri sendiri. Ia percaya pada kemampuan sendiri dan tidak ingin memperoleh nilai dengan cara yang curang.\n\nSikap tersebut termasuk nilai integritas karena siswa tetap melakukan hal yang benar, meskipun lingkungan sekitarnya melakukan tindakan yang salah.\nJawaban yang benar: B. Menghargai diri sendiri dan jujur\nAlasan pilihan jawaban:\nTakut ketahuan → kurang tepat, karena tidak mencontek bukan hanya karena takut dihukum, tetapi karena memiliki kesadaran untuk bersikap jujur.\nMenghargai diri sendiri dan jujur → tepat, karena siswa menunjukkan kejujuran dan percaya pada kemampuan dirinya sendiri.\nTidak peduli teman → kurang tepat, karena sikap jujur bukan berarti tidak peduli kepada teman.\nIngin terlihat berbeda → kurang tepat, karena tujuan utama tidak mencontek adalah menjaga kejujuran, bukan mencari perhatian.\nJadi, siswa tersebut menunjukkan sikap jujur, mandiri, dan berintegritas.',
   },
   {
     id: 6,
     theme: 'jujur',
     boxType: 'biru',
-    question: 'Sikap jujur sangat penting karena…',
-    options: [
-      'Membuat kita disukai semua orang',
-      'Menghindarkan dari hukuman saja',
-      'Membentuk pribadi berintegritas',
-      'Membuat kita terkenal',
-    ],
-    answer: 2,
-
-    explanation: '-',
+    question:
+      'Sikap jujur sangat penting karena…',
+    options: ['Membuat kita disukai semua orang', 'Membentuk pribadi berintegritas', 'Menghindarkan dari hukuman saja', 'Membuat kita terkenal'],
+    answer: 1,
+    explanation:
+      'Sikap jujur sangat penting karena kejujuran menjadi dasar terbentuknya pribadi yang berintegritas. Orang yang jujur akan berkata dan bertindak sesuai kebenaran, tidak menipu, tidak memalsukan sesuatu, serta dapat dipercaya oleh orang lain.\nJawaban yang tepat: B. Membentuk pribadi berintegritas\n\nPembahasan pilihan jawaban:\nMembuat kita disukai semua orangKurang tepat, karena orang jujur belum tentu selalu disukai semua orang, terutama oleh orang yang tidak suka kebenaran.\nMembentuk pribadi berintegritasTepat, karena kejujuran merupakan bagian penting dari integritas.\nMenghindarkan dari hukuman sajaKurang tepat, karena jujur bukan hanya untuk menghindari hukuman, tetapi sebagai sikap moral yang harus dibiasakan.\nMembuat kita terkenalTidak tepat, karena tujuan utama bersikap jujur bukan untuk mencari popularitas.\nKesimpulan:Sikap jujur penting karena dapat membentuk seseorang menjadi pribadi yang berintegritas, dapat dipercaya, dan bertanggung jawab.',
   },
   {
     id: 7,
     theme: 'jujur',
     boxType: 'merah',
-    question: 'Perilaku tidak jujur seperti korupsi dapat merugikan…',
+    question:
+      'Perilaku tidak jujur seperti korupsi dapat merugikan…',
     options: ['Diri sendiri saja', 'Teman saja', 'Masyarakat luas', 'Guru saja'],
     answer: 2,
-
-    explanation: '-',
+    explanation:
+      'Perilaku tidak jujur seperti korupsi bukan hanya merugikan satu orang saja, tetapi dapat berdampak pada banyak orang. Korupsi dapat menyebabkan dana atau fasilitas yang seharusnya digunakan untuk kepentingan bersama menjadi disalahgunakan.\nAkibatnya, masyarakat dapat mengalami kerugian, misalnya pembangunan terhambat, bantuan tidak tepat sasaran, pelayanan publik menjadi buruk, dan kepercayaan masyarakat menurun.\n\nAnalisis pilihan jawaban:\nDiri sendiri saja → kurang tepat, karena korupsi tidak hanya merugikan pelakunya.\nTeman saja → kurang tepat, karena dampaknya lebih luas daripada teman.\nMasyarakat luas → tepat, karena korupsi merugikan banyak orang dan kepentingan umum.\nGuru saja → kurang tepat, karena dampak korupsi tidak terbatas pada guru.\nJawaban yang benar: C. Masyarakat luas\n\nKesimpulan:Korupsi adalah perilaku tidak jujur yang dapat merugikan masyarakat luas karena mengambil atau menyalahgunakan sesuatu yang seharusnya digunakan untuk kepentingan bersama.',
   },
   {
     id: 8,
@@ -250,63 +225,43 @@ export const questions: Question[] = [
     boxType: 'kuning',
     question:
       'Saat guru bertanya siapa yang memecahkan kaca kelas, Andi sebenarnya tahu pelakunya adalah dirinya sendiri. Sikap jujur yang seharusnya dilakukan Andi adalah…',
-    options: [
-      'Diam agar tidak dimarahi',
-      'Menyalahkan teman lain',
-      'Mengakui perbuatannya kepada guru',
-      'Menunggu sampai guru mengetahui sendiri',
-    ],
-    answer: 2,
-
-    explanation: '-',
+    options: ['Diam agar tidak dimarahi', 'Menyalahkan teman lain', 'Menunggu sampai guru mengetahui sendiri', 'Mengakui perbuatannya kepada guru'],
+    answer: 3,
+    explanation:
+      'Soal tersebut menilai sikap jujur dalam kehidupan sehari-hari di sekolah. Andi mengetahui bahwa dirinya sendiri yang memecahkan kaca kelas. Sikap jujur berarti berani mengatakan kebenaran, tidak menutupi kesalahan, dan siap bertanggung jawab atas perbuatan yang dilakukan.\nPilihan A tidak tepat karena diam berarti menyembunyikan kebenaran.\nPilihan B tidak tepat karena menyalahkan teman lain merupakan tindakan tidak jujur dan dapat merugikan orang lain.\nPilihan C kurang tepat karena menunggu guru mengetahui sendiri menunjukkan Andi belum berani bertanggung jawab.\nPilihan D adalah jawaban yang tepat karena Andi mengakui perbuatannya kepada guru. Sikap ini mencerminkan kejujuran, keberanian, dan tanggung jawab.\nJawaban yang benar: D. \nMengakui perbuatannya kepada guru.\n\nKesimpulan:Sikap jujur harus dilakukan meskipun kita melakukan kesalahan. Dengan mengakui kesalahan, Andi menunjukkan integritas dan tanggung jawab sebagai siswa.',
   },
   {
     id: 9,
     theme: 'jujur',
     boxType: 'hijau',
     question:
-      'Dalam budaya Jawa dikenal nilai isin. Mengapa kita harus tetap jujur meskipun tidak ada yang melihat?',
-    options: [
-      'Agar dipuji orang lain',
-      'Karena takut dihukum',
-      'Karena menghargai diri sendiri dan memiliki rasa malu',
-      'Agar terlihat baik di depan orang lain',
-    ],
+      'Dalam budaya Jawa dikenal nilai Isin. Mengapa kita harus tetap jujur meskipun tidak ada yang melihat?',
+    options: ['Agar dipuji orang lain', 'Karena takut dihukum', 'Karena menghargai diri sendiri dan memiliki rasa malu', 'Agar terlihat baik di depan orang lain'],
     answer: 2,
-
-    explanation: '-',
+    explanation:
+      'Dalam budaya Jawa, nilai isin berarti rasa malu yang mendorong seseorang untuk menjaga perilaku, ucapan, dan tindakan agar tetap baik. Nilai ini bukan hanya berkaitan dengan malu kepada orang lain, tetapi juga malu kepada diri sendiri jika melakukan perbuatan yang tidak benar.\nSikap jujur harus tetap dilakukan meskipun tidak ada yang melihat karena kejujuran merupakan bentuk penghargaan terhadap diri sendiri. Orang yang memiliki rasa isin akan merasa tidak pantas melakukan kecurangan, kebohongan, atau tindakan tidak jujur, walaupun tidak diketahui orang lain.\n\nPilihan A dan D kurang tepat karena kejujuran tidak seharusnya dilakukan hanya untuk mendapat pujian atau terlihat baik. Pilihan B juga kurang tepat karena jujur bukan semata-mata karena takut dihukum, melainkan karena kesadaran moral dari dalam diri.\nJawaban yang tepat: C. Karena menghargai diri sendiri dan memiliki rasa malu.\n\nKesimpulan:Nilai isin dalam budaya Jawa mengajarkan bahwa seseorang perlu bersikap jujur karena memiliki kesadaran diri, harga diri, dan rasa malu untuk melakukan perbuatan yang tidak benar.',
   },
   {
     id: 10,
     theme: 'jujur',
     boxType: 'ungu',
-    question: 'Contoh tindakan jujur di sekolah adalah…',
-    options: [
-      'Titip absen kepada teman',
-      'Mencontek saat ujian',
-      'Mengumpulkan tugas hasil kerja sendiri',
-      'Menyalin pekerjaan teman',
-    ],
+    question:
+      'Contoh tindakan jujur di sekolah adalah…',
+    options: ['Titip absen kepada teman', 'Mencontek saat ujian', 'Mengumpulkan tugas hasil kerja sendiri', 'Menyalin pekerjaan teman'],
     answer: 2,
-
-    explanation: '-',
+    explanation:
+      'Sikap jujur berarti berkata dan bertindak sesuai dengan kenyataan, tidak berbohong, tidak curang, serta berani bertanggung jawab atas hasil kerja sendiri.\nPada soal tersebut, tindakan jujur di sekolah ditunjukkan oleh pilihan:\nC. Mengumpulkan tugas hasil kerja sendiri\nJawaban ini benar karena siswa mengerjakan tugas dengan kemampuan sendiri tanpa menyalin atau mengambil hasil pekerjaan orang lain. Hal tersebut mencerminkan nilai kejujuran, tanggung jawab, dan integritas dalam lingkungan sekolah.\n\nPilihan lain tidak tepat karena:\nA. Titip absen kepada teman termasuk tindakan tidak jujur karena memalsukan kehadiran.\nB. Mencontek saat ujian merupakan bentuk kecurangan dan tidak mencerminkan kejujuran.\nD. Menyalin pekerjaan teman juga termasuk perbuatan tidak jujur karena menggunakan hasil kerja orang lain seolah-olah milik sendiri.\n\nJadi, jawaban yang benar adalah C. Mengumpulkan tugas hasil kerja sendiri.',
   },
-
-  // ===================== DISIPLIN (ID 11–20) =====================
   {
     id: 11,
     theme: 'disiplin',
     boxType: 'biru',
-    question: 'Sikap disiplin dapat mencegah perilaku korupsi karena…',
-    options: [
-      'Membuat kita terkenal',
-      'Membiasakan taat aturan dan tanggung jawab',
-      'Membuat kita disukai teman',
-      'Menghindari hukuman saja',
-    ],
+    question:
+      'Sikap disiplin dapat mencegah perilaku korupsi karena…',
+    options: ['Membuat kita terkenal', 'Membiasakan taat aturan dan tanggung jawab', 'Membuat kita disukai teman', 'Menghindari hukuman saja'],
     answer: 1,
-
-    explanation: '-',
+    explanation:
+      'Sikap disiplin dapat mencegah perilaku korupsi karena disiplin membiasakan seseorang untuk taat pada aturan, menjalankan kewajiban dengan tepat, dan bertanggung jawab terhadap tugasnya. Orang yang disiplin tidak mudah melanggar aturan, tidak menyalahgunakan waktu, jabatan, atau kepercayaan yang diberikan.\nJawaban yang benar: B. Membiasakan taat aturan dan tanggung jawab\n\nPembahasan pilihan lain:\nMembuat kita terkenal — Salah, karena disiplin bukan bertujuan untuk mencari popularitas.\nMembuat kita disukai teman — Salah, karena meskipun disiplin bisa membuat orang dihargai, itu bukan alasan utama mencegah korupsi.\nMenghindari hukuman saja — Salah, karena disiplin seharusnya muncul dari kesadaran diri, bukan hanya karena takut dihukum.\nKesimpulan:Sikap disiplin penting dalam pendidikan antikorupsi karena membentuk kebiasaan untuk taat aturan, bertanggung jawab, dan menjauhi perilaku curang.',
   },
   {
     id: 12,
@@ -314,15 +269,10 @@ export const questions: Question[] = [
     boxType: 'merah',
     question:
       'Sinta sering datang terlambat ke sekolah dan beralasan macet, padahal ia bangun kesiangan. Apa sikap disiplin yang seharusnya dilakukan?',
-    options: [
-      'Terus menggunakan alasan',
-      'Datang sesuka hati',
-      'Bangun lebih awal agar tepat waktu',
-      'Menyalahkan keadaan',
-    ],
+    options: ['Terus menggunakan alasan', 'Datang sesuka hati', 'Bangun lebih awal agar tepat waktu', 'Menyalahkan keadaan'],
     answer: 2,
-
-    explanation: '-',
+    explanation:
+      'Sikap disiplin berarti mampu mengatur waktu, menaati aturan, dan bertanggung jawab terhadap kewajiban. Dalam kasus tersebut, Sinta sering datang terlambat bukan karena macet, tetapi karena bangun kesiangan. Sikap yang seharusnya dilakukan adalah bangun lebih awal agar dapat berangkat ke sekolah tepat waktu.\nJawaban yang benar: C. Bangun lebih awal agar tepat waktu\nPilihan A tidak tepat karena terus menggunakan alasan menunjukkan sikap tidak jujur dan tidak bertanggung jawab. \nPilihan B juga salah karena datang sesuka hati menunjukkan perilaku tidak disiplin. \nPilihan D tidak tepat karena menyalahkan keadaan berarti tidak mau mengakui kesalahan sendiri.\n\nDengan demikian, sikap disiplin yang benar adalah bangun lebih awal agar tepat waktu.',
   },
   {
     id: 13,
@@ -330,42 +280,32 @@ export const questions: Question[] = [
     boxType: 'kuning',
     question:
       'Raka berjanji akan mengerjakan tugas kelompok. Namun, ia lebih memilih bermain game dan berharap temannya menyelesaikan tugas tersebut. Apa yang seharusnya dilakukan Raka?',
-    options: [
-      'Membiarkan teman mengerjakan',
-      'Mengerjakan sebagian saja',
-      'Menepati janji dan ikut bertanggung jawab',
-      'Tidak ikut terlibat',
-    ],
+    options: ['Membiarkan teman mengerjakan', 'Mengerjakan sebagian saja', 'Menepati janji dan ikut bertanggung jawab', 'Tidak ikut terlibat'],
     answer: 2,
-
-    explanation: '-',
+    explanation:
+      'Raka sudah berjanji akan mengerjakan tugas kelompok. Ketika seseorang berjanji, ia memiliki kewajiban untuk menepatinya. Namun, Raka justru memilih bermain game dan berharap temannya menyelesaikan tugas tersebut. \n\nSikap ini menunjukkan kurangnya rasa tanggung jawab, tidak disiplin, dan tidak menghargai kerja sama dalam kelompok.\nDalam kerja kelompok, setiap anggota harus ikut berperan sesuai tugasnya. Jika Raka tidak ikut mengerjakan, maka beban tugas akan menjadi tidak adil karena hanya dikerjakan oleh teman-temannya. Oleh karena itu, sikap yang seharusnya dilakukan Raka adalah menepati janji, ikut mengerjakan tugas, dan bertanggung jawab terhadap tugas kelompok.\nJawaban yang benar: C. Menepati janji dan ikut bertanggung jawab\n\nJawaban ini tepat karena mencerminkan nilai tanggung jawab, kejujuran, dan kerja sama. Raka harus menyadari bahwa tugas kelompok adalah kewajiban bersama, bukan hanya tanggung jawab satu atau beberapa orang saja.',
   },
   {
     id: 14,
     theme: 'disiplin',
     boxType: 'hijau',
     question:
-      'Dalam pepatah Jawa Jer basuki mawa beya (keberhasilan membutuhkan usaha), Roni merasa tugas IPS sulit dan ingin menyalin dari temannya. Apa yang seharusnya dilakukan Roni?',
-    options: [
-      'Menyalin agar cepat selesai',
-      'Membiarkan tugas tidak dikerjakan',
-      'Berusaha mengerjakan sendiri meskipun sulit',
-      'Menunggu jawaban dari teman',
-    ],
-    answer: 2,
-
-    explanation: '-',
+      'Dalam pepatah Jawa “Jer basuki mawa beya” (keberhasilan membutuhkan usaha), Roni merasa tugas IPS sulit dan ingin menyalin dari temanny a. Apa yang seharusnya dilakukan Roni?',
+    options: ['Menyalin agar cepat selesai', 'Membiarkan tugas tidak dikerjakan', 'Menunggu jawaban dari teman', 'Berusaha mengerjakan sendiri meskipun sulit'],
+    answer: 3,
+    explanation:
+      'Pepatah Jawa “Jer basuki mawa beya” berarti bahwa setiap keberhasilan membutuhkan usaha, kerja keras, dan pengorbanan. Dalam soal tersebut, Roni merasa tugas IPS sulit dan ingin menyalin jawaban dari temannya.\n\nSikap menyalin jawaban bukanlah perilaku yang baik karena menunjukkan ketidakjujuran dan tidak mencerminkan tanggung jawab sebagai siswa. Meskipun tugas terasa sulit, Roni seharusnya tetap berusaha mengerjakan sendiri. Jika mengalami kesulitan, Roni boleh bertanya kepada guru atau teman untuk memahami materi, bukan menyalin jawaban.\n\nDengan berusaha mengerjakan sendiri, Roni belajar menjadi pribadi yang jujur, mandiri, bertanggung jawab, dan bekerja keras. Sikap ini sesuai dengan makna pepatah “Jer basuki mawa beya”, yaitu keberhasilan hanya dapat dicapai melalui usaha.\n\nJawaban yang tepat adalah D. Berusaha mengerjakan sendiri meskipun sulit.',
   },
   {
     id: 15,
     theme: 'disiplin',
     boxType: 'ungu',
     question:
-      'Rafi berjanji kepada guru untuk mengumpulkan tugas tepat waktu. Meskipun sedang malas, ia tetap mengerjakan tugasnya. Sikap Rafi menunjukkan…',
+      'Rafi berjanji kepada guru untuk mengumpulkan tugas tepat waktu. Meskipun sedang malas, ia tetap mengerjakan tugasny a. Sikap Rafi menunjukkan…',
     options: ['Ketakutan', 'Komitmen', 'Kepedulian', 'Keberanian'],
     answer: 1,
-
-    explanation: '-',
+    explanation:
+      'Rafi berjanji kepada guru untuk mengumpulkan tugas tepat waktu. Walaupun ia sedang merasa malas, Rafi tetap berusaha mengerjakan dan menyelesaikan tugasnya sesuai janji.\nSikap tersebut menunjukkan komitmen, yaitu kesungguhan seseorang untuk menepati janji, menjalankan tanggung jawab, dan tetap melakukan kewajiban meskipun menghadapi rasa malas atau hambatan.\nJawaban yang tepat: B. Komitmen\nAlasan pilihan lain kurang tepat:\nKetakutanTidak tepat, karena Rafi mengerjakan tugas bukan karena takut, tetapi karena ingin menepati janji.\nKepedulianKurang tepat, karena kepedulian lebih berkaitan dengan perhatian terhadap orang lain atau lingkungan.\nKeberanianKurang tepat, karena keberanian biasanya berkaitan dengan sikap berani menghadapi risiko atau mengatakan kebenaran.\nJadi, sikap Rafi menunjukkan komitmen dalam menepati janji dan menjalankan tanggung jawab.',
   },
   {
     id: 16,
@@ -373,10 +313,10 @@ export const questions: Question[] = [
     boxType: 'biru',
     question:
       'Siswa yang tidak mencontek saat ujian meskipun tidak diawasi menunjukkan sikap…',
-    options: ['Takut', 'Taat aturan', 'Ingin dipuji', 'Terpaksa'],
-    answer: 1,
-
-    explanation: '-',
+    options: ['Takut', 'Ingin dipuji', 'Taat aturan', 'Terpaksa'],
+    answer: 2,
+    explanation:
+      'Siswa yang tidak mencontek saat ujian meskipun tidak diawasi menunjukkan bahwa ia memiliki kesadaran untuk bersikap jujur dan mematuhi aturan ujian. Sikap tersebut bukan karena takut, ingin dipuji, atau terpaksa, melainkan karena memahami bahwa mencontek adalah perbuatan yang tidak benar.\nPerilaku ini mencerminkan sikap taat aturan, karena siswa tetap mengikuti peraturan ujian meskipun tidak ada guru yang mengawasi secara langsung.\nJawaban yang benar: C. Taat aturan\n\nAlasan pilihan lain kurang tepat:\nTakut kurang tepat, karena siswa tidak mencontek bukan karena rasa takut, melainkan karena kesadaran diri.\nIngin dipuji kurang tepat, karena tindakannya dilakukan meskipun tidak ada yang melihat.\nTerpaksa kurang tepat, karena siswa menunjukkan sikap patuh secara sukarela.\nJadi, sikap yang ditunjukkan adalah taat aturan.',
   },
   {
     id: 17,
@@ -384,47 +324,32 @@ export const questions: Question[] = [
     boxType: 'merah',
     question:
       'Saat ujian mendekat, kamu belum belajar. Temanmu menawarkan jawaban saat ujian nanti. Apa yang seharusnya kamu lakukan?',
-    options: [
-      'Menerima bantuan',
-      'Mengandalkan teman',
-      'Belajar meskipun waktunya sedikit',
-      'Tidak peduli',
-    ],
-    answer: 2,
-
-    explanation: '-',
+    options: ['Menerima bantuan', 'Mengandalkan teman', 'Tidak peduli', 'Belajar meskipun waktunya sedikit'],
+    answer: 3,
+    explanation:
+      'Saat ujian mendekat dan kamu belum belajar, pilihan yang paling tepat adalah tetap berusaha belajar meskipun waktunya sedikit. Sikap ini menunjukkan kejujuran, tanggung jawab, kerja keras, dan kemandirian.\nMenerima jawaban dari teman saat ujian termasuk tindakan tidak jujur karena sama dengan menyontek. Walaupun belum siap, siswa tetap harus berusaha dengan kemampuan sendiri.\nJawaban yang benar: D. Belajar meskipun waktunya sedikit\n\nAlasan:\nA. Menerima bantuanTidak tepat, karena bantuan berupa jawaban saat ujian termasuk menyontek.\nB. Mengandalkan temanTidak tepat, karena menunjukkan sikap tidak mandiri dan tidak bertanggung jawab.\nC. Tidak peduliTidak tepat, karena siswa seharusnya tetap berusaha menghadapi ujian dengan serius.\nD. Belajar meskipun waktunya sedikitTepat, karena menunjukkan sikap jujur, bertanggung jawab, dan mau berusaha walaupun persiapan belum maksimal.\nKesimpulan:Sikap yang benar saat belum siap menghadapi ujian adalah tetap belajar dan mengerjakan soal dengan kemampuan sendiri, bukan menerima jawaban dari teman.',
   },
   {
     id: 18,
     theme: 'disiplin',
     boxType: 'kuning',
     question:
-      'Saat ujian, Andi tergoda melihat jawaban temannya karena tidak fokus belajar sebelumnya. Apa tindakan yang menunjukkan disiplin?',
-    options: [
-      'Mencontek',
-      'Bertanya pada teman',
-      'Mengerjakan sesuai kemampuan sendiri',
-      'Menyerah',
-    ],
-    answer: 2,
-
-    explanation: '-',
+      'Saat ujian, Andi tergoda melihat jawaban temannya karena tidak fokus belajar sebelumny a. Apa tindakan yang menunjukkan disiplin?',
+    options: ['Mengerjakan sesuai kemampuan sendiri', 'Mencontek', 'Bertanya pada teman', 'Menyerah'],
+    answer: 0,
+    explanation:
+      'Soal tersebut mengukur nilai disiplin dalam menghadapi situasi ujian. Disiplin berarti taat pada aturan, bertanggung jawab terhadap kewajiban, dan mampu mengendalikan diri meskipun berada dalam keadaan sulit.\nDalam situasi tersebut, Andi tidak fokus belajar sebelumnya sehingga merasa tergoda untuk melihat jawaban temannya. Namun, tindakan yang menunjukkan sikap disiplin adalah tetap mengerjakan ujian sesuai kemampuan sendiri. Dengan begitu, Andi tetap mematuhi aturan ujian dan tidak melakukan kecurangan.\nJawaban yang benar: A. Mengerjakan sesuai kemampuan sendiri\n\nAlasan pilihan lain kurang tepat:\nB. MencontekTidak menunjukkan disiplin karena melanggar aturan ujian dan termasuk tindakan tidak jujur.\nC. Bertanya pada temanTidak tepat karena saat ujian siswa harus mengerjakan secara mandiri, bukan meminta bantuan teman.\nD. MenyerahTidak menunjukkan sikap disiplin karena Andi tidak berusaha menyelesaikan tanggung jawabnya.\nKesimpulan:Tindakan disiplin saat ujian adalah tetap mematuhi aturan dan mengerjakan soal dengan jujur sesuai kemampuan sendiri, meskipun hasilnya belum tentu sempurna.',
   },
   {
     id: 19,
     theme: 'disiplin',
     boxType: 'hijau',
     question:
-      'Filosofi Jawa ajining diri saka lathi berarti harga diri dilihat dari ucapan dan perilaku. Rina sering berkata akan belajar setiap hari, tetapi tidak pernah melakukannya. Apa sikap yang benar?',
-    options: [
-      'Tetap berjanji tanpa melakukan',
-      'Mengabaikan',
-      'Menepati ucapan dengan tindakan yang konsisten',
-      'Menyalahkan keadaan',
-    ],
-    answer: 2,
-
-    explanation: '-',
+      'Filosofi Jawa ajining diri saka lathi berarti harga diri dilihat dari ucapan dan perilaku.Rina sering berkata akan belajar setiap hari, tetapi tidak pernah melakukanny a. Apa sikap yang benar?',
+    options: ['Tetap berjanji tanpa melakukan', 'Menepati ucapan dengan tindakan yang konsisten', 'Mengabaikan', 'Menyalahkan keadaan'],
+    answer: 1,
+    explanation:
+      'Filosofi Jawa “ajining diri saka lathi” berarti bahwa harga diri, kehormatan, dan kepercayaan seseorang dapat dilihat dari ucapan serta perilakunya. Seseorang yang baik tidak hanya pandai berkata-kata, tetapi juga mampu membuktikan ucapannya melalui tindakan nyata.\nDalam soal, Rina sering mengatakan akan belajar setiap hari, tetapi ia tidak pernah melakukannya. Sikap tersebut menunjukkan bahwa Rina belum konsisten antara ucapan dan perbuatan. Padahal, agar dipercaya dan dihargai orang lain, seseorang harus mampu menepati janji dan bertanggung jawab atas ucapannya.\nJawaban yang benar adalah B. Menepati ucapan dengan tindakan yang konsisten.\nPilihan B tepat karena mencerminkan nilai jujur, tanggung jawab, dan disiplin. Rina seharusnya tidak hanya berjanji, tetapi juga benar-benar melaksanakan kebiasaan belajar setiap hari sesuai ucapannya.\n\nAlasan pilihan lain kurang tepat:\nA. Tetap berjanji tanpa melakukan tidak tepat karena menunjukkan sikap tidak bertanggung jawab.C. Mengabaikan tidak tepat karena masalah ketidaksesuaian ucapan dan tindakan harus diperbaiki.D. Menyalahkan keadaan tidak tepat karena seseorang harus berani bertanggung jawab atas janji dan tindakannya.\nJadi, sikap yang sesuai dengan filosofi ajining diri saka lathi adalah menepati ucapan dengan tindakan yang konsisten.',
   },
   {
     id: 20,
@@ -432,33 +357,21 @@ export const questions: Question[] = [
     boxType: 'ungu',
     question:
       'Andi membuat jadwal belajar agar semua tugasnya selesai tepat waktu. Hal tersebut menunjukkan sikap…',
-    options: [
-      'Malas',
-      'Disiplin dalam perencanaan',
-      'Terpaksa',
-      'Tidak percaya diri',
-    ],
-    answer: 1,
-
-    explanation: '-',
+    options: ['Malas', 'Terpaksa', 'Disiplin dalam perencanaan', 'Tidak percaya diri'],
+    answer: 2,
+    explanation:
+      'Andi membuat jadwal belajar agar semua tugasnya dapat selesai tepat waktu. Tindakan tersebut menunjukkan bahwa Andi mampu mengatur waktu, merencanakan kegiatan, dan memiliki tanggung jawab terhadap tugas-tugasnya. Sikap ini termasuk disiplin dalam perencanaan, karena Andi tidak menunda pekerjaan dan berusaha menyelesaikan tugas sesuai jadwal.\nJawaban yang tepat: C. Disiplin dalam perencanaan\n\nAlasan pilihan lain kurang tepat:\nA. Malas → Salah, karena Andi justru berusaha mengatur waktu belajar.B. Terpaksa → Salah, karena soal tidak menunjukkan bahwa Andi dipaksa.D. Tidak percaya diri → Salah, karena membuat jadwal bukan tanda tidak percaya diri, melainkan tanda tanggung jawab dan disiplin.\nJadi, sikap Andi menunjukkan disiplin dalam perencanaan.',
   },
-
-  // ===================== TANGGUNG JAWAB (ID 21–30) =====================
   {
     id: 21,
     theme: 'tanggung_jawab',
     boxType: 'biru',
     question:
       'Seorang siswa diberi tanggung jawab mengatur kegiatan kelas. Ia menghadapi banyak kendala dan tekanan dari teman. Apa sikap yang mencerminkan tanggung jawab sejati?',
-    options: [
-      'Menghindari tugas',
-      'Menyalahkan orang lain',
-      'Tetap menjalankan tugas dengan jujur dan berani',
-      'Menyerah',
-    ],
+    options: ['Menghindari tugas', 'Menyalahkan orang lain', 'Tetap menjalankan tugas dengan jujur dan berani', 'Menyerah'],
     answer: 2,
-
-    explanation: '-',
+    explanation:
+      'Seorang siswa yang diberi tanggung jawab mengatur kegiatan kelas harus mampu menjalankan amanah dengan baik, meskipun menghadapi kendala dan tekanan dari teman-temannya. Sikap tanggung jawab sejati tidak hanya terlihat saat keadaan mudah, tetapi justru ketika seseorang tetap berusaha menyelesaikan tugas dengan jujur, berani, dan tidak lari dari kewajiban.\nJawaban yang benar adalah C. Tetap menjalankan tugas dengan jujur dan berani.\nPilihan ini mencerminkan sikap tanggung jawab, karena siswa tersebut tetap melaksanakan tugas yang diberikan kepadanya. Selain itu, sikap jujur menunjukkan bahwa ia tidak menyalahgunakan tugasnya, sedangkan sikap berani menunjukkan bahwa ia mampu menghadapi tekanan dari teman-temannya.\n\nPembahasan pilihan jawaban:\nMenghindari tugasPilihan ini tidak tepat karena menghindari tugas menunjukkan sikap tidak bertanggung jawab.\nMenyalahkan orang lainPilihan ini tidak tepat karena menyalahkan orang lain berarti tidak mau menerima tanggung jawab atas tugas yang diberikan.\nTetap menjalankan tugas dengan jujur dan beraniPilihan ini tepat karena menunjukkan sikap bertanggung jawab, jujur, dan berani menghadapi tekanan.\nMenyerahPilihan ini tidak tepat karena menyerah menunjukkan kurangnya ketekunan dan tanggung jawab dalam menyelesaikan tugas.\nKesimpulan:Sikap yang mencerminkan tanggung jawab sejati adalah tetap menjalankan amanah dengan jujur dan berani, meskipun menghadapi kendala atau tekanan.',
   },
   {
     id: 22,
@@ -466,15 +379,10 @@ export const questions: Question[] = [
     boxType: 'merah',
     question:
       'Raka tanpa sengaja menjatuhkan alat praktikum hingga rusak. Tidak ada yang melihat kejadian tersebut. Ia khawatir jika mengaku akan dimarahi dan diminta mengganti. Apa tindakan paling bertanggung jawab?',
-    options: [
-      'Diam saja agar tidak mendapat masalah',
-      'Menyalahkan teman lain',
-      'Mengakui perbuatannya meskipun harus menanggung konsekuensi',
-      'Membiarkan guru mencari tahu sendiri',
-    ],
-    answer: 2,
-
-    explanation: '-',
+    options: ['Diam saja agar tidak mendapat masalah', 'Menyalahkan teman lain', 'Membiarkan guru mencari tahu sendiri', 'Mengakui perbuatannya meskipun harus menanggung konsekuensi'],
+    answer: 3,
+    explanation:
+      'Tindakan paling bertanggung jawab yang harus dilakukan Raka adalah mengakui perbuatannya meskipun harus menanggung konsekuensi.\nRaka memang tidak sengaja menjatuhkan alat praktikum hingga rusak. Namun, karena kerusakan itu terjadi akibat perbuatannya, ia tetap memiliki tanggung jawab untuk berkata jujur kepada guru. Sikap ini menunjukkan nilai tanggung jawab, kejujuran, dan keberanian.\n\nAnalisis Pilihan Jawaban\nPilihan A tidak tepat karena diam saja berarti menghindari tanggung jawab.Pilihan B tidak tepat karena menyalahkan teman lain adalah tindakan tidak jujur dan merugikan orang lain.Pilihan C kurang tepat karena membiarkan guru mencari tahu sendiri menunjukkan Raka tidak berani bertanggung jawab atas perbuatannya.Pilihan D paling tepat karena Raka berani mengakui kesalahan dan siap menerima akibat dari tindakannya.\nJawaban yang benar: D. Mengakui perbuatannya meskipun harus menanggung konsekuensi.',
   },
   {
     id: 23,
@@ -482,31 +390,21 @@ export const questions: Question[] = [
     boxType: 'kuning',
     question:
       'Rafi menjadi ketua kelompok, tetapi beberapa anggota tidak bekerja dengan baik. Ia bingung antara membiarkan atau memperbaiki keadaan. Apa sikap yang mencerminkan tanggung jawab?',
-    options: [
-      'Membiarkan anggota lain',
-      'Mengerjakan sendiri tanpa komunikasi',
-      'Mengajak anggota bekerja dan memastikan tugas selesai',
-      'Menyerah',
-    ],
+    options: ['Membiarkan anggota lain', 'Mengerjakan sendiri tanpa komunikasi', 'Mengajak anggota bekerja dan memastikan tugas selesai', 'Menyerah'],
     answer: 2,
-
-    explanation: '-',
+    explanation:
+      'Pada soal tersebut, Rafi sebagai ketua kelompok menghadapi masalah karena ada beberapa anggota yang tidak bekerja dengan baik. Sikap yang mencerminkan tanggung jawab adalah tidak membiarkan masalah begitu saja, tetapi berusaha memperbaiki keadaan agar tugas kelompok tetap selesai dengan baik.\nSebagai ketua kelompok, Rafi perlu mengajak anggota lain untuk bekerja sama, membagi tugas, berkomunikasi dengan baik, dan memastikan semua anggota menjalankan tanggung jawabnya. Dengan begitu, Rafi tidak hanya menyelesaikan tugas, tetapi juga membantu kelompok bekerja secara adil dan tertib.\n\nAnalisis Pilihan Jawaban\nPilihan A kurang tepat karena membiarkan anggota lain tidak bekerja menunjukkan sikap tidak peduli.Pilihan B kurang tepat karena mengerjakan sendiri tanpa komunikasi dapat membuat kerja kelompok tidak berjalan baik.Pilihan D juga tidak tepat karena menyerah bukan sikap bertanggung jawab.\nJadi, jawaban yang paling tepat adalah:\nC. Mengajak anggota bekerja dan memastikan tugas selesai\nNilai karakter yang ditunjukkan: tanggung jawab, kerja sama, kepedulian, dan kepemimpinan.',
   },
   {
     id: 24,
     theme: 'tanggung_jawab',
     boxType: 'hijau',
     question:
-      'Di kelas, kamu ditunjuk sebagai bendahara untuk menyimpan uang kas. Temanmu meminta meminjam uang kas untuk keperluan pribadi dan berjanji akan mengembalikannya. Dalam budaya Jawa dikenal nilai tepo seliro (tenggang rasa). Apa yang sebaiknya kamu lakukan?',
-    options: [
-      'Memberikan uang kas karena kasihan pada teman',
-      'Menolak dengan sopan karena uang tersebut adalah amanah bersama',
-      'Memberikan sebagian saja agar tidak mengecewakan',
-      'Membiarkan teman mengambil sendiri uang kas',
-    ],
+      'Di kelas, kamu ditunjuk sebagai bendahara untuk menyimpan uang kas. Temanmu meminta meminjam uang kas untuk keperluan pribadi dan berjanji akan mengembalikanny a. Dalam budaya Jawa dikenal nilai tepo seliro (tenggang rasa). Apa yang sebaiknya kamu lakukan?',
+    options: ['Memberikan uang kas karena kasihan pada teman', 'Menolak dengan sopan karena uang tersebut adalah amanah bersama', 'Memberikan sebagian saja agar tidak mengecewakan', 'Membiarkan teman mengambil sendiri uang kas'],
     answer: 1,
-
-    explanation: '-',
+    explanation:
+      'Soal ini berkaitan dengan sikap tanggung jawab, jujur, amanah, dan adil dalam mengelola uang kas kelas. Sebagai bendahara, uang kas bukan milik pribadi, melainkan milik bersama seluruh anggota kelas. Oleh karena itu, uang tersebut harus digunakan sesuai kesepakatan kelas, bukan untuk kepentingan pribadi seseorang.\nNilai budaya Jawa tepo seliro berarti tenggang rasa atau mampu memahami perasaan orang lain. Namun, tepo seliro tidak berarti membenarkan tindakan yang salah. Menolong teman tetap harus dilakukan dengan cara yang benar dan tidak merugikan orang lain. Dalam kasus ini, bendahara boleh menunjukkan empati kepada teman, tetapi tetap harus menjaga amanah uang kas.\nJawaban yang paling tepat adalah B. Menolak dengan sopan karena uang tersebut adalah amanah bersama.\n\nAnalisis Pilihan Jawaban\nA. Memberikan uang kas karena kasihan pada temanKurang tepat, karena uang kas bukan milik bendahara pribadi. Rasa kasihan tidak boleh menjadi alasan untuk menyalahgunakan amanah.\nB. Menolak dengan sopan karena uang tersebut adalah amanah bersamaTepat. Sikap ini menunjukkan tanggung jawab, amanah, dan tetap menerapkan tepo seliro dengan cara yang benar.\nC. Memberikan sebagian saja agar tidak mengecewakanKurang tepat, karena meskipun hanya sebagian, tetap termasuk menggunakan uang kas untuk kepentingan pribadi tanpa persetujuan bersama.\nD. Membiarkan teman mengambil sendiri uang kasSalah, karena bendahara berarti lalai menjaga amanah dan membiarkan tindakan yang tidak bertanggung jawab.\n\nKesimpulan\nTepo seliro harus diterapkan dengan tetap memegang prinsip kejujuran dan tanggung jawab. Menolak permintaan teman secara sopan adalah tindakan yang paling tepat karena uang kas merupakan amanah bersama.',
   },
   {
     id: 25,
@@ -514,15 +412,10 @@ export const questions: Question[] = [
     boxType: 'ungu',
     question:
       'Sinta dipercaya menjadi bendahara kelas. Ia menemukan selisih uang kas, tetapi jika dilaporkan, ia takut dianggap tidak becus. Apa yang seharusnya dilakukan Sinta?',
-    options: [
-      'Menutupinya agar tidak disalahkan',
-      'Menggunakan uang lain untuk menutupi tanpa laporan',
-      'Melaporkan secara jujur dan mencari solusi bersama',
-      'Mengabaikan masalah tersebut',
-    ],
+    options: ['Menutupinya agar tidak disalahkan', 'Menggunakan uang lain untuk menutupi tanpa laporan', 'Melaporkan secara jujur dan mencari solusi bersama', 'Mengabaikan masalah tersebut'],
     answer: 2,
-
-    explanation: '-',
+    explanation:
+      'Sikap yang paling tepat dilakukan Sinta adalah melaporkan secara jujur adanya selisih uang kas dan mencari solusi bersama. Sebagai bendahara kelas, Sinta memiliki tanggung jawab untuk mengelola uang kas dengan transparan. Jika ada selisih uang, masalah tersebut tidak boleh ditutupi karena dapat menimbulkan kecurigaan dan memperbesar masalah.\nDengan melaporkan secara jujur, Sinta menunjukkan sikap jujur, bertanggung jawab, berani, dan amanah. Ia juga dapat mengajak wali kelas atau teman-teman untuk memeriksa kembali catatan pemasukan dan pengeluaran kas agar ditemukan penyebab selisih tersebut.\n\nPilihan A, B, dan D tidak tepat karena menunjukkan sikap tidak jujur, menghindari tanggung jawab, dan tidak menyelesaikan masalah.\nJawaban yang benar: C. Melaporkan secara jujur dan mencari solusi bersama.',
   },
   {
     id: 26,
@@ -530,15 +423,10 @@ export const questions: Question[] = [
     boxType: 'biru',
     question:
       'Saat ujian, kamu melihat kesalahan pada lembar jawabanmu yang bisa diperbaiki jika mencontek. Tidak ada pengawas. Apa tindakan terbaik?',
-    options: [
-      'Mencontek',
-      'Membiarkan saja',
-      'Tetap jujur meskipun nilainya kecil',
-      'Mengikuti teman',
-    ],
-    answer: 2,
-
-    explanation: '-',
+    options: ['Tetap jujur meskipun nilainya kecil', 'Mencontek', 'Membiarkan saja', 'Mengikuti teman'],
+    answer: 0,
+    explanation:
+      'Soal tersebut berkaitan dengan nilai kejujuran dalam menghadapi ujian. Saat ujian, peserta didik diuji bukan hanya kemampuan akademiknya, tetapi juga sikap integritasnya. Meskipun ada kesempatan untuk mencontek karena tidak ada pengawas, tindakan tersebut tetap tidak benar.\nTindakan terbaik adalah tetap jujur meskipun nilainya kecil, karena nilai yang diperoleh dengan usaha sendiri lebih bermakna daripada nilai tinggi yang didapat dengan cara tidak jujur.\n\nAnalisis Pilihan Jawaban:\nA. Tetap jujur meskipun nilainya kecilBenar. Sikap ini menunjukkan kejujuran, tanggung jawab, dan integritas dalam ujian.\nB. MencontekSalah. Mencontek merupakan perilaku tidak jujur dan merugikan diri sendiri.\nC. Membiarkan sajaKurang tepat. Jika kesalahan tidak dapat diperbaiki tanpa mencontek, maka lebih baik menerima hasilnya dengan jujur.\nD. Mengikuti temanSalah. Mengikuti teman untuk berbuat tidak jujur tetap merupakan tindakan yang tidak bertanggung jawab.\n\nJawaban yang benar: A. Tetap jujur meskipun nilainya kecil\nNilai antikorupsi yang ditanamkan:Jujur, karena peserta didik memilih tidak mencontek meskipun ada kesempatan.',
   },
   {
     id: 27,
@@ -546,31 +434,21 @@ export const questions: Question[] = [
     boxType: 'merah',
     question:
       'Dina ketahuan tidak mengerjakan tugas karena lalai. Ia punya kesempatan untuk berbohong agar tidak dihukum. Apa keputusan yang paling tepat?',
-    options: [
-      'Berbohong agar aman',
-      'Menghindar dari guru',
-      'Jujur dan menerima konsekuensi',
-      'Menyalahkan keadaan',
-    ],
+    options: ['Berbohong agar aman', 'Menghindar dari guru', 'Jujur dan menerima konsekuensi', 'Menyalahkan keadaan'],
     answer: 2,
-
-    explanation: '-',
+    explanation:
+      'Dina ketahuan tidak mengerjakan tugas karena lalai. Dalam situasi ini, Dina memiliki pilihan untuk berbohong agar terhindar dari hukuman. Namun, tindakan berbohong bukanlah keputusan yang tepat karena menunjukkan sikap tidak jujur dan tidak bertanggung jawab.\nKeputusan yang paling tepat adalah jujur dan menerima konsekuensi. Dengan bersikap jujur, Dina menunjukkan keberanian untuk mengakui kesalahan serta tanggung jawab atas kelalaiannya. Meskipun mungkin mendapat teguran atau hukuman, sikap jujur akan membuat Dina belajar agar lebih disiplin dan tidak mengulangi kesalahan yang sama.\nJawaban yang benar: C. Jujur dan menerima konsekuensi\n\nAlasan pilihan lain salah:\nA. Berbohong agar aman → Salah, karena berbohong merupakan tindakan tidak jujur.B. Menghindar dari guru → Salah, karena menghindar tidak menyelesaikan masalah.D. Menyalahkan keadaan → Salah, karena tidak menunjukkan tanggung jawab atas kesalahan sendiri.\nNilai antikorupsi yang ditanamkan:Jujur, tanggung jawab, dan berani.',
   },
   {
     id: 28,
     theme: 'tanggung_jawab',
     boxType: 'kuning',
     question:
-      'Seorang siswa mengetahui temannya melakukan kecurangan dalam lomba. Jika melapor, ia takut dijauhi teman. Apa tindakan yang paling bertanggung jawab?',
-    options: [
-      'Diam saja',
-      'Ikut menutupi',
-      'Menyampaikan dengan cara yang tepat',
-      'Menghindari masalah',
-    ],
-    answer: 2,
-
-    explanation: '-',
+      'Seorang siswa mengetahui temannya melakukan kecurangan dalam lomb a. Jika melapor, ia takut dijauhi teman. Apa tindakan yang paling bertanggung jawab?',
+    options: ['Diam saja', 'Menyampaikan dengan cara yang tepat', 'Ikut menutupi', 'Menghindari masalah'],
+    answer: 1,
+    explanation:
+      'Soal tersebut menggambarkan sikap tanggung jawab, kejujuran, dan keberanian ketika melihat adanya kecurangan dalam lomba. Siswa yang mengetahui temannya berbuat curang tidak boleh diam atau ikut menutupi, karena kecurangan dapat merugikan peserta lain dan membuat lomba menjadi tidak adil.\nTindakan yang paling bertanggung jawab adalah menyampaikan kecurangan tersebut dengan cara yang tepat, misalnya melapor kepada guru, panitia, atau pihak yang berwenang secara sopan dan tidak mempermalukan teman di depan umum.\nJawaban yang benar: B. Menyampaikan dengan cara yang tepat\nAlasan pilihan lain salah:\nA. Diam saja → tidak tepat, karena membiarkan kecurangan berarti membiarkan ketidakadilan.\nB. Menyampaikan dengan cara yang tepat → tepat, karena menunjukkan sikap jujur, berani, dan bertanggung jawab.\nC. Ikut menutupi → tidak tepat, karena berarti ikut mendukung perbuatan curang.\nD. Menghindari masalah → tidak tepat, karena sikap bertanggung jawab tidak boleh lari dari masalah.\n\nJadi, tindakan yang paling bertanggung jawab adalah melaporkan atau menyampaikan kecurangan dengan cara yang baik dan tepat.',
   },
   {
     id: 29,
@@ -578,49 +456,32 @@ export const questions: Question[] = [
     boxType: 'hijau',
     question:
       'Kamu mendapat tugas kelompok, tetapi tidak mengerjakan bagianmu. Saat presentasi, kelompokmu mendapat nilai rendah. Dalam budaya Jawa dikenal nilai nrimo ing pandum (menerima dengan lapang dada). Apa sikap yang tepat?',
-    options: [
-      'Menyalahkan anggota lain',
-      'Mengelak dan mencari alasan',
-      'Mengakui kesalahan dan berjanji memperbaiki',
-      'Diam saja tanpa peduli',
-    ],
+    options: ['Menyalahkan anggota lain', 'Mengelak dan mencari alasan', 'Mengakui kesalahan dan berjanji memperbaiki', 'Diam saja tanpa peduli'],
     answer: 2,
-
-    explanation: '-',
+    explanation:
+      'Soal tersebut menilai sikap tanggung jawab, jujur, dan berani mengakui kesalahan dalam kerja kelompok. Dalam kasus ini, siswa tidak mengerjakan bagian tugasnya sehingga kelompok mendapat nilai rendah. Sikap yang tepat bukan menyalahkan orang lain atau mencari alasan, tetapi mengakui kesalahan dan berusaha memperbaikinya.\nNilai budaya Jawa nrimo ing pandum bukan berarti pasrah tanpa usaha, tetapi menerima kenyataan dengan lapang dada sambil tetap bertanggung jawab atas akibat dari perbuatan sendiri. Oleh karena itu, siswa perlu menerima hasil nilai rendah tersebut sebagai konsekuensi, mengakui kesalahan, dan berkomitmen untuk memperbaiki sikapnya pada tugas berikutnya.\nAnalisis Pilihan Jawaban\nA. Menyalahkan anggota lainTidak tepat, karena sikap ini menunjukkan tidak bertanggung jawab dan tidak jujur terhadap kesalahan sendiri.\nB. Mengelak dan mencari alasanTidak tepat, karena menghindari tanggung jawab dan tidak menunjukkan sikap berani mengakui kesalahan.\nC. Mengakui kesalahan dan berjanji memperbaikiTepat, karena menunjukkan sikap jujur, tanggung jawab, berani, serta sesuai dengan makna nrimo ing pandum, yaitu menerima konsekuensi dengan lapang dada dan memperbaiki diri.\nD. Diam saja tanpa peduliTidak tepat, karena menunjukkan sikap tidak peduli terhadap kelompok dan tidak bertanggung jawab.\n\nJawaban yang benar: C. Mengakui kesalahan dan berjanji memperbaiki.',
   },
   {
     id: 30,
     theme: 'tanggung_jawab',
     boxType: 'ungu',
     question:
-      'Dalam kerja kelompok, tugas belum selesai karena Andi tidak mengerjakan bagiannya. Saat guru bertanya, Andi ingin beralasan agar tidak disalahkan. Apa sikap yang benar?',
-    options: [
-      'Menyalahkan anggota lain',
-      'Beralasan agar tidak dimarahi',
-      'Mengakui kesalahan dan siap memperbaiki',
-      'Diam saja',
-    ],
-    answer: 2,
-
-    explanation: '-',
+      'Dalam kerja kelompok, tugas belum selesai karena Andi tidak mengerjakan bagianny a. Saat guru bertanya, Andi ingin beralasan agar tidak disalahkan. Apa sikap yang benar?',
+    options: ['Mengakui kesalahan dan siap memperbaiki', 'Menyalahkan anggota lain', 'Beralasan agar tidak dimarahi', 'Diam saja'],
+    answer: 0,
+    explanation:
+      'Dalam kerja kelompok, setiap anggota memiliki tanggung jawab untuk menyelesaikan bagian tugasnya. Jika Andi tidak mengerjakan bagiannya, maka sikap yang benar adalah mengakui kesalahan dan bersedia memperbaiki.\nMengakui kesalahan menunjukkan sikap jujur, bertanggung jawab, dan berani menerima konsekuensi. Selain itu, Andi juga perlu memperbaiki kelalaiannya agar tugas kelompok tetap dapat diselesaikan dengan baik.\n\nAnalisis Pilihan Jawaban\nA. Mengakui kesalahan dan siap memperbaikiBenar. Sikap ini menunjukkan tanggung jawab, kejujuran, dan kemauan untuk memperbaiki kesalahan.\nB. Menyalahkan anggota lain Salah. Sikap ini tidak jujur dan dapat merugikan teman satu kelompok.\nC. Beralasan agar tidak dimarahiSalah. Memberi alasan untuk menghindari kesalahan menunjukkan sikap tidak bertanggung jawab.\nD. Diam sajaSalah. Diam tidak menyelesaikan masalah dan membuat tugas kelompok tetap terbengkalai.\n\nJawaban yang Benar\nA. Mengakui kesalahan dan siap memperbaiki\nNilai Karakter\nSoal ini menanamkan nilai jujur, tanggung jawab, dan berani.',
   },
-
-  // ===================== KERJA KERAS (ID 31–40) =====================
   {
     id: 31,
     theme: 'kerja_keras',
     boxType: 'biru',
     question:
       'Kelompok Dina mendapat tugas membuat proyek IPS yang cukup sulit. Apa yang sebaiknya dilakukan Dina?',
-    options: [
-      'Menunggu teman lain mengerjakan',
-      'Menyalin dari internet tanpa memahami',
-      'Mengerjakan secara bertahap dengan tekun',
-      'Tidak ikut terlibat',
-    ],
+    options: ['Menunggu teman lain mengerjakan', 'Menyalin dari internet tanpa memahami', 'Mengerjakan secara bertahap dengan tekun', 'Tidak ikut terlibat'],
     answer: 2,
-
-    explanation: '-',
+    explanation:
+      'Dalam mengerjakan proyek IPS yang sulit, Dina sebaiknya tidak mudah menyerah. Tugas yang sulit dapat diselesaikan jika dikerjakan secara bertahap, tekun, dan bekerja sama dengan anggota kelompok.\nSikap tekun menunjukkan bahwa Dina memiliki nilai kerja keras dan tanggung jawab. Dengan membagi pekerjaan menjadi beberapa tahap, tugas yang sulit akan terasa lebih ringan dan dapat diselesaikan dengan baik.\n\nAnalisis Pilihan Jawaban\nA. Menunggu teman lain mengerjakanSalah. Sikap ini menunjukkan tidak bertanggung jawab dalam kerja kelompok.\nB. Menyalin dari internet tanpa memahamiSalah. Sikap ini tidak jujur dan tidak membantu Dina memahami materi IPS.\nC. Mengerjakan secara bertahap dengan tekunBenar. Sikap ini menunjukkan kerja keras, ketekunan, dan tanggung jawab dalam menyelesaikan tugas.\nD. Tidak ikut terlibatSalah. Sikap ini menunjukkan kurangnya kepedulian dan tanggung jawab terhadap kelompok.\n\nJawaban yang Benar\nC. Mengerjakan secara bertahap dengan tekun\n\nNilai Karakter\nSoal ini menanamkan nilai kerja keras, tanggung jawab, dan mandiri.',
   },
   {
     id: 32,
@@ -628,15 +489,10 @@ export const questions: Question[] = [
     boxType: 'merah',
     question:
       'Kelompokmu belum menyelesaikan proyek. Salah satu anggota mengusulkan menyalin dari internet agar cepat selesai. Apa keputusan terbaik jika mempertimbangkan kerja keras dan integritas?',
-    options: [
-      'Menyalin agar tugas selesai tepat waktu',
-      'Menunda pengumpulan tugas',
-      'Tetap mengerjakan sendiri meskipun sederhana',
-      'Membiarkan satu orang mengerjakan semuanya',
-    ],
-    answer: 2,
-
-    explanation: '-',
+    options: ['Menyalin agar tugas selesai tepat waktu', 'Tetap mengerjakan sendiri meskipun sederhana', 'Menunda pengumpulan tugas', 'Membiarkan satu orang mengerjakan semuanya'],
+    answer: 1,
+    explanation:
+      'Dalam kerja kelompok, menyelesaikan proyek memang penting. Namun, tugas harus dikerjakan dengan cara yang jujur, bertanggung jawab, dan menunjukkan kerja keras. Menyalin dari internet tanpa mengolah sendiri termasuk tindakan tidak berintegritas karena hasil pekerjaan bukan murni usaha kelompok.\nKeputusan terbaik adalah tetap mengerjakan sendiri meskipun hasilnya sederhana. Hal ini menunjukkan bahwa kelompok mau berusaha, belajar dari proses, dan tidak mengambil jalan pintas yang tidak jujur.\n\n\nAnalisis Pilihan Jawaban\nA. Menyalin agar tugas selesai tepat waktuSalah. Meskipun tugas cepat selesai, menyalin dari internet bukan sikap jujur dan tidak menunjukkan kerja keras.\nB. Tetap mengerjakan sendiri meskipun sederhanaBenar. Sikap ini menunjukkan kerja keras, kejujuran, tanggung jawab, dan integritas dalam menyelesaikan tugas.\nC. Menunda pengumpulan tugasSalah. Menunda tugas bukan keputusan terbaik karena menunjukkan kurangnya kedisiplinan dan tanggung jawab.\nD. Membiarkan satu orang mengerjakan semuanyaSalah. Kerja kelompok harus dilakukan bersama. Membebankan tugas kepada satu orang tidak adil dan tidak bertanggung jawab.\n\nJawaban yang Benar\nB. Tetap mengerjakan sendiri meskipun sederhana\n\nNilai Karakter\nSoal ini menanamkan nilai kerja keras, jujur, tanggung jawab, dan integritas.',
   },
   {
     id: 33,
@@ -644,31 +500,21 @@ export const questions: Question[] = [
     boxType: 'kuning',
     question:
       'Rafi mengikuti lomba karya tulis. Ia sudah berusaha keras, tetapi hasilnya belum maksimal. Temannya menawarkan karya jadi dari internet yang bisa langsung dikumpulkan agar menang. Apa keputusan terbaik yang mencerminkan kerja keras dan integritas?',
-    options: [
-      'Menggunakan karya tersebut agar menang lomba',
-      'Menggabungkan sedikit hasil sendiri dengan karya dari internet',
-      'Tetap menggunakan hasil sendiri dan memperbaikinya semampunya',
-      'Tidak jadi ikut lomba karena merasa kalah',
-    ],
-    answer: 2,
-
-    explanation: '-',
+    options: ['Menggunakan karya tersebut agar menang lomba', 'Menggabungkan sedikit hasil sendiri dengan karya dari internet', 'Tidak jadi ikut lomba karena merasa kalah', 'Tetap menggunakan hasil sendiri dan memperbaikinya semampunya'],
+    answer: 3,
+    explanation:
+      'Dalam mengikuti lomba karya tulis, Rafi sudah menunjukkan sikap kerja keras karena ia berusaha membuat karya sendiri. Meskipun hasilnya belum maksimal, menggunakan karya jadi dari internet bukanlah keputusan yang benar karena termasuk tindakan tidak jujur dan tidak mencerminkan integritas.\nKeputusan terbaik adalah tetap menggunakan hasil karya sendiri, lalu memperbaikinya semampunya. Sikap ini menunjukkan bahwa Rafi menghargai proses, tidak mengambil jalan pintas, dan tetap bertanggung jawab terhadap usahanya sendiri.\n\n\n\nAnalisis Pilihan Jawaban\nA. Menggunakan karya tersebut agar menang lombaSalah. Sikap ini tidak jujur karena menggunakan karya orang lain seolah-olah karya sendiri.\nB. Menggabungkan sedikit hasil sendiri dengan karya dari internetSalah. Jika karya dari internet digunakan tanpa kejujuran atau pengolahan yang benar, hal ini tetap dapat melanggar integritas.\nC. Tidak jadi ikut lomba karena merasa kalahSalah. Sikap ini menunjukkan mudah menyerah dan tidak mencerminkan kerja keras.\nD. Tetap menggunakan hasil sendiri dan memperbaikinya semampunyaBenar. Sikap ini menunjukkan kerja keras, kejujuran, tanggung jawab, dan integritas.\n\nJawaban yang Benar\nD. Tetap menggunakan hasil sendiri dan memperbaikinya semampunya\nNilai Karakter\nSoal ini menanamkan nilai kerja keras, jujur, tanggung jawab, dan integritas. Rafi belajar bahwa hasil yang baik harus diperoleh melalui usaha sendiri, bukan dengan mengambil karya orang lain.',
   },
   {
     id: 34,
     theme: 'kerja_keras',
     boxType: 'hijau',
     question:
-      'Dalam pepatah Jawa "Jer Basuki Mawa Beya" (keberhasilan membutuhkan usaha), Ardi sedang mengikuti lomba IPS. Ia merasa lelah dan ingin mengambil jalan pintas dengan menyalin karya orang lain. Apa keputusan yang paling tepat?',
-    options: [
-      'Menyalin karya agar cepat selesai',
-      'Menggabungkan sedikit karya sendiri dengan milik orang lain',
-      'Tetap berusaha menyelesaikan sendiri meskipun sulit',
-      'Mengundurkan diri dari lomba',
-    ],
+      'Dalam pepatah Jawa “Jer Basuki Mawa Beya” (keberhasilan membutuhkan usaha), Ardi sedang mengikuti lomba IPS. Ia merasa lelah dan ingin mengambil jalan pintas dengan menyalin karya orang lain. Apa keputusan yang paling tepat?',
+    options: ['Menyalin karya agar cepat selesai', 'Menggabungkan sedikit karya sendiri dengan milik orang lain', 'Tetap berusaha menyelesaikan sendiri meskipun sulit', 'Mengundurkan diri dari lomba'],
     answer: 2,
-
-    explanation: '-',
+    explanation:
+      'Pepatah Jawa “Jer Basuki Mawa Beya” berarti bahwa setiap keberhasilan membutuhkan usaha, perjuangan, dan pengorbanan. Dalam soal tersebut, Ardi sedang mengikuti lomba IPS tetapi merasa lelah dan tergoda untuk menyalin karya orang lain.\nSikap yang paling tepat adalah tetap berusaha menyelesaikan karya sendiri meskipun sulit. Hal ini menunjukkan bahwa Ardi memiliki sikap kerja keras, jujur, mandiri, dan bertanggung jawab. Menyalin karya orang lain termasuk tindakan tidak jujur dan dapat merugikan diri sendiri maupun orang lain.\n\n\n\n\nAnalisis Pilihan Jawaban\nA. Menyalin karya agar cepat selesaiSalah. Sikap ini tidak jujur dan termasuk bentuk plagiarisme.\nB. Menggabungkan sedikit karya sendiri dengan milik orang lainSalah. Meskipun ada karya sendiri, mengambil karya orang lain tanpa izin atau tanpa mencantumkan sumber tetap tidak dibenarkan.\nC. Tetap berusaha menyelesaikan sendiri meskipun sulitBenar. Sikap ini sesuai dengan makna pepatah “Jer Basuki Mawa Beya”, yaitu keberhasilan harus dicapai melalui usaha dan kerja keras.\nD. Mengundurkan diri dari lombaSalah. Mengundurkan diri bukan pilihan terbaik jika Ardi masih bisa berusaha menyelesaikan tugasnya.\n\nJawaban yang Benar\nC. Tetap berusaha menyelesaikan sendiri meskipun sulit\nNilai Karakter\nSoal ini menanamkan nilai kerja keras, jujur, mandiri, dan tanggung jawab.',
   },
   {
     id: 35,
@@ -676,15 +522,10 @@ export const questions: Question[] = [
     boxType: 'ungu',
     question:
       'Doni sudah belajar keras untuk ujian, tetapi nilainya masih di bawah teman yang menyontek. Apa sikap paling tepat?',
-    options: [
-      'Ikut menyontek di ujian berikutnya',
-      'Protes keras kepada guru',
-      'Tetap belajar dan memperbaiki cara belajar',
-      'Menyalahkan sistem ujian',
-    ],
-    answer: 2,
-
-    explanation: '-',
+    options: ['Ikut menyontek di ujian berikutnya', 'Protes keras kepada guru', 'Menyalahkan sistem ujian', 'Tetap belajar dan memperbaiki cara belajar'],
+    answer: 3,
+    explanation:
+      'Dalam situasi tersebut, Doni sudah menunjukkan sikap kerja keras karena ia telah belajar dengan sungguh-sungguh. Meskipun hasilnya belum sesuai harapan, Doni tidak boleh meniru perilaku teman yang menyontek.\nSikap paling tepat adalah tetap belajar dan memperbaiki cara belajar. Dengan begitu, Doni dapat meningkatkan kemampuannya secara jujur dan bertanggung jawab. Nilai yang diperoleh dari usaha sendiri lebih bermakna daripada nilai tinggi yang didapat dengan cara tidak jujur.\n\n\n\nAnalisis Pilihan Jawaban\nA. Ikut menyontek di ujian berikutnyaSalah. Menyontek adalah tindakan tidak jujur dan merugikan diri sendiri.\nB. Protes keras kepada guruSalah. Protes keras bukan sikap yang tepat. Jika ada kecurangan, sebaiknya disampaikan dengan sopan dan sesuai aturan.\nC. Menyalahkan sistem ujianSalah. Menyalahkan keadaan tidak membantu Doni memperbaiki diri.\nD. Tetap belajar dan memperbaiki cara belajarBenar. Sikap ini menunjukkan kerja keras, kejujuran, kesabaran, dan tanggung jawab untuk terus memperbaiki diri.\n\nJawaban yang Benar\nD. Tetap belajar dan memperbaiki cara belajar\nNilai Karakter\nSoal ini menanamkan nilai jujur, kerja keras, tanggung jawab, dan pantang menyerah.',
   },
   {
     id: 36,
@@ -692,873 +533,603 @@ export const questions: Question[] = [
     boxType: 'biru',
     question:
       'Nilai tugasmu rendah padahal kamu merasa sudah belajar. Apa langkah paling tepat?',
-    options: [
-      'Menyalahkan guru',
-      'Menyalin tugas di kesempatan berikutnya',
-      'Mengevaluasi cara belajar dan mencoba strategi baru',
-      'Mengabaikan nilai tersebut',
-    ],
-    answer: 2,
-
-    explanation: '-',
+    options: ['Menyalahkan guru', 'Menyalin tugas dikesempatan berikutnya', 'Mengabaikan nilai tersebut', 'Mengevaluasi cara belajar dan mencoba strategi baru'],
+    answer: 3,
+    explanation:
+      'Ketika nilai tugas rendah meskipun sudah belajar, langkah yang paling tepat adalah mengevaluasi cara belajar. Nilai rendah bukan berarti gagal, tetapi menjadi bahan untuk mengetahui bagian mana yang perlu diperbaiki.\nSiswa perlu mencari tahu penyebabnya, misalnya kurang memahami materi, cara belajar kurang tepat, kurang latihan soal, atau belum teliti dalam mengerjakan tugas. Setelah itu, siswa dapat mencoba strategi baru agar hasil belajar berikutnya lebih baik.\n\nAnalisis Pilihan Jawaban\nA. Menyalahkan guruSalah. Menyalahkan guru tidak menyelesaikan masalah dan tidak membantu memperbaiki hasil belajar.\nB. Menyalin tugas di kesempatan berikutnyaSalah. Menyalin tugas termasuk perilaku tidak jujur dan tidak membuat siswa benar-benar memahami materi.\nC. Mengabaikan nilai tersebut Salah. Mengabaikan nilai membuat siswa kehilangan kesempatan untuk memperbaiki diri.\nD. Mengevaluasi cara belajar dan mencoba strategi baruBenar. Sikap ini menunjukkan tanggung jawab, kerja keras, dan kemauan untuk memperbaiki diri.\n\nJawaban yang Benar\nD. Mengevaluasi cara belajar dan mencoba strategi baru\nNilai Karakter\n\nSoal ini menanamkan nilai tanggung jawab, kerja keras, mandiri, dan jujur dalam belajar.',
   },
   {
     id: 37,
     theme: 'kerja_keras',
     boxType: 'merah',
     question:
-      'Dalam kerja kelompok, dua anggota tidak bekerja. Kamu bisa melaporkan mereka atau diam saja agar tidak terjadi konflik. Apa tindakan terbaik?',
-    options: [
-      'Diam agar kelompok tetap aman',
-      'Mengerjakan semuanya sendiri',
-      'Mengajak mereka berdiskusi dan membagi tugas secara adil',
-      'Mengeluarkan mereka dari kelompok tanpa bicara',
-    ],
+      'Dalam kerja kelompok, dua anggota tidak bekerj a. Kamu bisa melaporkan mereka atau diam saja agar tidak terjadi konflik. Apa tindakan terbaik?',
+    options: ['Diam agar kelompok tetap aman', 'Mengerjakan semuanya sendiri', 'Mengajak mereka berdiskusi dan membagi tugas secara adil', 'Mengeluarkan mereka dari kelompok tanpa bicara'],
     answer: 2,
-
-    explanation: '-',
+    explanation:
+      'Dalam kerja kelompok, setiap anggota seharusnya ikut berperan dan bertanggung jawab terhadap tugas yang diberikan. Jika ada dua anggota yang tidak bekerja, tindakan terbaik bukan langsung melaporkan, diam, atau mengerjakan semuanya sendiri, tetapi mengajak mereka berdiskusi.\nDengan berdiskusi, masalah dapat diselesaikan secara baik-baik tanpa menimbulkan konflik. Pembagian tugas secara adil juga membuat semua anggota merasa memiliki tanggung jawab yang sama dalam kelompok.\n\nAnalisis Pilihan Jawaban\nA. Diam agar kelompok tetap amanSalah. Diam tidak menyelesaikan masalah. Anggota yang tidak bekerja tetap tidak belajar bertanggung jawab.\nB. Mengerjakan semuanya sendiriSalah. Sikap ini memang terlihat membantu, tetapi tidak adil dan membuat anggota lain tidak menjalankan tanggung jawabnya.\nC. Mengajak mereka berdiskusi dan membagi tugas secara adilBenar. Sikap ini menunjukkan keadilan, tanggung jawab, kerja sama, dan kemampuan menyelesaikan masalah dengan cara yang baik.\nD. Mengeluarkan mereka dari kelompok tanpa bicaraSalah. Tindakan ini kurang bijak karena dilakukan tanpa komunikasi dan dapat menimbulkan konflik.\n\nJawaban yang Benar\nC. Mengajak mereka berdiskusi dan membagi tugas secara adil\n\nNilai Karakter\nSoal ini menanamkan nilai adil, tanggung jawab, peduli, dan kerja sama.',
   },
   {
     id: 38,
     theme: 'kerja_keras',
     boxType: 'kuning',
     question:
-      'Seorang siswa memiliki dua pilihan: (1) Belajar dengan sungguh-sungguh tetapi hasil belum pasti, (2) Menggunakan cara curang dengan hasil tinggi. Jika ia memilih kerja keras, apa prinsip utama yang dipegang?',
-    options: [
-      'Hasil lebih penting daripada proses',
-      'Proses jujur lebih bernilai daripada hasil instan',
-      'Semua cara boleh dilakukan',
-      'Nilai tinggi adalah tujuan utama',
-    ],
-    answer: 1,
-
-    explanation: '-',
+      'Seorang siswa memiliki dua pilihan: Belajar dengan sungguh-sungguh tetapi hasil belum pasti Menggunakan cara curang dengan hasil tinggi Jika ia memilih kerja keras, apa prinsip utama yang dipegang?',
+    options: ['Semua cara boleh dilakukan', 'Hasil lebih penting daripada proses', 'Proses jujur lebih bernilai daripada hasil instan', 'Nilai tinggi adalah tujuan utama'],
+    answer: 0,
+    explanation:
+      'Soal ini membahas pilihan antara belajar dengan sungguh-sungguh dan menggunakan cara curang untuk mendapatkan hasil tinggi. Jika siswa memilih kerja keras, berarti ia memegang prinsip bahwa keberhasilan harus dicapai melalui cara yang jujur, benar, dan bertanggung jawab.\nDalam pendidikan antikorupsi, nilai yang ditekankan bukan hanya hasil akhir, tetapi juga proses yang ditempuh. Nilai tinggi tidak bermakna baik apabila diperoleh dengan kecurangan.\n\nAnalisis Pilihan Jawaban\nA. Semua cara boleh dilakukanSalah. Pilihan ini justru membenarkan cara curang, sehingga tidak sesuai dengan prinsip kerja keras dan kejujuran.\nB. Hasil lebih penting daripada prosesSalah. Sikap ini dapat mendorong siswa melakukan kecurangan demi mendapatkan nilai tinggi.\nC. Proses jujur lebih bernilai daripada hasil instanBenar. Sikap ini menunjukkan bahwa siswa menghargai usaha, kejujuran, dan kerja keras meskipun hasilnya belum pasti.\nD. Nilai tinggi adalah tujuan utamaSalah. Nilai tinggi memang baik, tetapi harus diperoleh melalui proses yang jujur dan benar.\n\nJawaban yang Benar\nC. Proses jujur lebih bernilai daripada hasil instan\nCatatan\nPada soal tertulis jawaban A, tetapi berdasarkan isi soal dan pilihan jawaban, jawaban yang tepat adalah C.\n\nNilai Karakter\nSoal ini menanamkan nilai jujur, kerja keras, tanggung jawab, dan integritas.',
   },
   {
     id: 39,
     theme: 'kerja_keras',
     boxType: 'hijau',
     question:
-      'Pepatah "Sapa temen bakal tinemu" berarti siapa yang bersungguh-sungguh akan berhasil. Rina kesulitan memahami materi IPS dan tergoda menyontek saat ujian. Apa sikap yang sesuai dengan nilai tersebut?',
-    options: [
-      'Menyontek agar nilainya baik',
-      'Berusaha belajar dan mengerjakan sendiri',
-      'Meminta jawaban dari teman',
-      'Tidak mengerjakan soal',
-    ],
-    answer: 1,
-
-    explanation: '-',
+      'Pepatah “Sapa temen bakal tinemu” berarti siapa yang bersungguh-sungguh akan berhasil. Rina kesulitan memahami materi IPS dan tergoda menyontek saat ujian. Apa sikap yang sesuai dengan nilai tersebut?',
+    options: ['Meminta jawaban dari teman', 'Menyontek agar nilainya baik', 'Berusaha belajar dan mengerjakan sendiri', 'Tidak mengerjakan soal'],
+    answer: 0,
+    explanation:
+      'Pepatah “Sapa temen bakal tinemu” bermakna bahwa orang yang bersungguh-sungguh, tekun, dan berusaha keras akan memperoleh hasil yang baik.\nDalam soal, Rina mengalami kesulitan memahami materi IPS dan tergoda untuk menyontek. Sikap yang sesuai dengan pepatah tersebut adalah tetap berusaha belajar dan mengerjakan ujian sendiri, bukan mencari jalan pintas dengan menyontek.\n\nAnalisis Pilihan Jawaban\nA. Meminta jawaban dari temanSalah. Sikap ini tidak menunjukkan kesungguhan dan termasuk perilaku tidak jujur.\nB. Menyontek agar nilainya baikSalah. Menyontek bertentangan dengan nilai kejujuran dan kerja keras.\nC. Berusaha belajar dan mengerjakan sendiriBenar. Sikap ini sesuai dengan pepatah “Sapa temen bakal tinemu” karena menunjukkan kerja keras, kesungguhan, kejujuran, dan kemandirian.\nD. Tidak mengerjakan soalSalah. Sikap ini menunjukkan mudah menyerah dan tidak bertanggung jawab.\n\nJawaban yang Benar\nC. Berusaha belajar dan mengerjakan sendiri\nCatatan\nKunci jawaban yang tertulis A kurang tepat. Jawaban yang paling sesuai dengan makna pepatah dan nilai karakter adalah C.\nNilai Karakter\nSoal ini menanamkan nilai kerja keras, jujur, mandiri, dan tanggung jawab.',
   },
   {
     id: 40,
     theme: 'kerja_keras',
     boxType: 'ungu',
     question:
-      'Teman-temanmu menganggap belajar terlalu serius itu "tidak keren" dan mengajakmu untuk santai saja menjelang ujian. Apa sikap terbaik?',
-    options: [
-      'Mengikuti mereka agar tidak dikucilkan',
-      'Belajar diam-diam tetapi tetap ikut malas-malasan',
-      'Tetap fokus belajar meskipun berbeda dari teman',
-      'Tidak belajar sama sekali',
-    ],
+      'Teman-temanmu menganggap belajar terlalu serius itu “tidak keren” dan mengajakmu untuk santai saja menjelang ujian. Apa sikap terbaik?',
+    options: ['Mengikuti mereka agar tidak dikucilkan', 'Belajar diam-diam tetapi tetap ikut malas-malasan', 'Tetap fokus belajar meskipun berbeda dari teman', 'Tidak belajar sama sekali'],
     answer: 2,
-
-    explanation: '-',
+    explanation:
+      'Menjelang ujian, sikap yang tepat adalah tetap fokus belajar meskipun ada teman yang menganggap belajar serius itu “tidak keren”. Setiap siswa memiliki tanggung jawab terhadap hasil belajarnya sendiri.\nMengikuti ajakan teman untuk malas-malasan dapat merugikan diri sendiri. Sikap terbaik adalah tetap percaya diri, disiplin, dan tidak mudah terpengaruh oleh lingkungan yang kurang baik.\n\nAnalisis Pilihan Jawaban\nA. Mengikuti mereka agar tidak dikucilkanSalah. Sikap ini menunjukkan mudah terpengaruh dan tidak memiliki pendirian.\nB. Belajar diam-diam tetapi tetap ikut malas-malasanSalah. Sikap ini tidak konsisten dan kurang menunjukkan keberanian untuk bersikap benar.\nC. Tetap fokus belajar meskipun berbeda dari temanBenar. Sikap ini menunjukkan disiplin, mandiri, kerja keras, dan berani mengambil keputusan yang baik.\nD. Tidak belajar sama sekaliSalah. Sikap ini menunjukkan kurang tanggung jawab terhadap kewajiban sebagai siswa.\n\nJawaban yang Benar\nC. Tetap fokus belajar meskipun berbeda dari teman\nNilai Karakter\nSoal ini menanamkan nilai disiplin, kerja keras, mandiri, dan berani.',
   },
-
-  // ===================== SEDERHANA (ID 41–50) =====================
   {
     id: 41,
     theme: 'sederhana',
-    boxType: 'merah',
+    boxType: 'biru',
     question:
       'Reno ingin mengikuti lomba sekolah. Ia melihat temannya menggunakan perlengkapan mahal agar terlihat lebih hebat, padahal Reno memiliki perlengkapan sederhana yang masih layak. Apa sikap yang paling tepat?',
-    options: [
-      'Membeli perlengkapan mahal agar terlihat setara',
-      'Menggunakan perlengkapan sederhana dan fokus pada kemampuan',
-      'Meminjam barang mahal dari teman agar terlihat bagus',
-      'Tidak jadi ikut lomba',
-    ],
+    options: ['Membeli perlengkapan mahal agar terlihat setara', 'Menggunakan perlengkapan sederhana dan fokus pada kemampuan', 'Meminjam barang mahal dari teman agar terlihat bagus', 'Tidak jadi ikut lomba'],
     answer: 1,
-
-    explanation: '-',
+    explanation:
+      'Dalam mengikuti lomba, hal yang paling penting bukanlah perlengkapan yang mahal, tetapi kemampuan, usaha, dan percaya diri. Reno sudah memiliki perlengkapan sederhana yang masih layak digunakan, sehingga ia tidak perlu memaksakan diri membeli atau meminjam barang mahal hanya agar terlihat hebat.\nSikap yang tepat adalah menggunakan perlengkapan yang ada dengan sebaik-baiknya dan fokus meningkatkan kemampuan. Hal ini menunjukkan sikap sederhana, mandiri, dan percaya diri.\n\nAnalisis Pilihan Jawaban\nA. Membeli perlengkapan mahal agar terlihat setaraSalah. Sikap ini menunjukkan keinginan untuk terlihat hebat secara penampilan, bukan fokus pada kemampuan.\nB. Menggunakan perlengkapan sederhana dan fokus pada kemampuanBenar. Sikap ini menunjukkan kesederhanaan, percaya diri, dan tidak mudah terpengaruh oleh gaya hidup konsumtif.\nC. Meminjam barang mahal dari teman agar terlihat bagusSalah. Tujuan meminjam hanya agar terlihat bagus bukan sikap yang tepat, karena lebih mementingkan penampilan daripada usaha.\nD. Tidak jadi ikut lombaSalah. Reno sebaiknya tetap mengikuti lomba karena perlengkapan sederhana yang masih layak tetap dapat digunakan.\n\nJawaban yang Benar\nB. Menggunakan perlengkapan sederhana dan fokus pada kemampuan\nNilai Karakter\nSoal ini menanamkan nilai sederhana, mandiri, dan percaya diri.',
   },
   {
     id: 42,
     theme: 'sederhana',
     boxType: 'merah',
     question:
-      'Setelah berhasil menjadi juara kelas, Dinda sering memamerkan prestasinya kepada teman-teman. Apa sikap yang mencerminkan kesederhanaan?',
-    options: [
-      'Terus menunjukkan prestasi agar dihargai',
-      'Bersikap biasa saja dan tetap rendah hati',
-      'Membandingkan diri dengan teman lain',
-      'Menganggap diri paling hebat',
-    ],
-    answer: 1,
-
-    explanation: '-',
+      'Teman-temanmu sering membawa barang mahal ke sekolah. Kamu merasa tidak percaya diri dengan barang sederhana yang kamu miliki. Apa sikap yang tepat?',
+    options: ['Memaksa orang tua membeli barang mahal', 'Meminjam barang teman agar terlihat sama', 'Tetap menggunakan barang yang ada dengan percaya diri', 'Tidak mau bergaul dengan teman'],
+    answer: 2,
+    explanation:
+      'Dalam kehidupan sehari-hari, setiap orang memiliki kondisi ekonomi yang berbeda-beda. Ketika teman-teman membawa barang mahal ke sekolah, sikap yang tepat adalah tetap percaya diri dengan barang yang dimiliki.\nBarang sederhana bukan berarti buruk atau memalukan. Yang lebih penting adalah manfaat barang tersebut dan bagaimana kita menggunakannya dengan baik. Sikap ini menunjukkan nilai sederhana, percaya diri, dan tidak mudah terpengaruh gaya hidup konsumtif.\n\n\n\nAnalisis Pilihan Jawaban\nA. Memaksa orang tua membeli barang mahalSalah. Sikap ini tidak mencerminkan kesederhanaan dan dapat membebani orang tua.\nB. Meminjam barang teman agar terlihat samaSalah. Sikap ini menunjukkan kurang percaya diri dan hanya ingin mengikuti penampilan orang lain.\nC. Tetap menggunakan barang yang ada dengan percaya diriBenar. Sikap ini menunjukkan rasa syukur, percaya diri, dan kesederhanaan.\nD. Tidak mau bergaul dengan temanSalah. Perbedaan barang yang dimiliki tidak seharusnya menjadi alasan untuk menjauhi teman.\n\nJawaban yang Benar\nC. Tetap menggunakan barang yang ada dengan percaya diri\nNilai Karakter\nSoal ini menanamkan nilai sederhana, percaya diri, mandiri, dan rasa syukur.',
   },
   {
     id: 43,
     theme: 'sederhana',
     boxType: 'kuning',
     question:
-      'Teman-temanmu sering membawa barang mahal ke sekolah. Kamu merasa tidak percaya diri dengan barang sederhana yang kamu miliki. Apa keputusan yang paling tepat?',
-    options: [
-      'Memaksa orang tua membeli barang mahal',
-      'Meminjam barang teman agar terlihat sama',
-      'Tetap menggunakan barang yang ada dengan percaya diri',
-      'Tidak mau bergaul dengan teman',
-    ],
+      'Dalam laporan kegiatan, kelompokmu diminta melaporkan penggunaan dan a. Ada sisa uang yang cukup banyak. Apa yang sebaiknya dilakukan?',
+    options: ['Mengubah laporan agar terlihat habis', 'Membagi sisa uang di antara anggota', 'Melaporkan sesuai kenyataan apa adanya', 'Menyembunyikan sisa uang'],
     answer: 2,
-
-    explanation: '-',
+    explanation:
+      'Dalam laporan kegiatan, penggunaan dana harus disampaikan secara jujur, transparan, dan sesuai kenyataan. Jika ada sisa uang yang cukup banyak, kelompok tidak boleh mengubah laporan, membagi uang tanpa izin, atau menyembunyikannya.\nSikap yang benar adalah melaporkan sisa uang tersebut apa adanya kepada guru atau pihak yang berwenang. Dengan begitu, kelompok menunjukkan sikap bertanggung jawab dan dapat dipercaya.\n\n\n\nAnalisis Pilihan Jawaban\nA. Mengubah laporan agar terlihat habisSalah. Tindakan ini tidak jujur dan termasuk manipulasi laporan.\nB. Membagi sisa uang di antara anggotaSalah. Sisa uang bukan milik pribadi anggota kelompok, sehingga tidak boleh dibagi tanpa izin.\nC. Melaporkan sesuai kenyataan apa adanyaBenar. Sikap ini menunjukkan kejujuran, transparansi, dan tanggung jawab dalam penggunaan dana.\nD. Menyembunyikan sisa uangSalah. Menyembunyikan uang menunjukkan sikap tidak jujur dan dapat menimbulkan penyalahgunaan dana.\n\nJawaban yang Benar\nC. Melaporkan sesuai kenyataan apa adanya\nNilai Karakter\nSoal ini menanamkan nilai jujur, tanggung jawab, adil, dan integritas.',
   },
   {
     id: 44,
     theme: 'sederhana',
     boxType: 'hijau',
     question:
-      'Kelompokmu diminta membuat presentasi. Ada usulan untuk menambahkan data yang dilebih-lebihkan agar terlihat lebih bagus. Apa sikap terbaik?',
-    options: [
-      'Menyetujui agar presentasi menarik',
-      'Menambahkan sedikit saja agar bagus',
-      'Menolak dan tetap menyajikan data apa adanya',
-      'Membiarkan anggota lain memutuskan',
-    ],
-    answer: 2,
-
-    explanation: '-',
+      '“Ojo Dumeh” Jangan merasa sombong. Sekolahmu mengadakan pameran proyek. Beberapa kelompok sengaja menghias stan secara berlebihan agar terlihat paling menarik, bahkan menggunakan dana di luar kebutuhan. Kelompokmu memiliki pilihan untuk melakukan hal yang sam a. Apa keputusan yang paling tepat?',
+    options: ['Menampilkan hasil sederhana namun sesuai isi dan usaha', 'Menghias semewah mungkin agar terlihat unggul', 'Mengikuti kelompok lain agar tidak kalah', 'Mengurangi isi proyek agar fokus pada tampilan'],
+    answer: 0,
+    explanation:
+      'Ungkapan “Ojo Dumeh” dalam budaya Jawa berarti jangan merasa sombong, jangan berlebihan, dan jangan menggunakan kelebihan untuk merendahkan orang lain. Dalam konteks pameran proyek sekolah, sikap yang tepat adalah menampilkan hasil kerja secara wajar, sederhana, dan sesuai dengan isi proyek.\nMenghias stan boleh dilakukan, tetapi tidak perlu berlebihan sampai menggunakan dana di luar kebutuhan. Yang lebih penting dalam pameran proyek adalah isi, proses kerja, kejujuran, dan usaha kelompok, bukan sekadar tampilan luar.\n\nAnalisis Pilihan Jawaban\nA. Menampilkan hasil sederhana namun sesuai isi dan usahaBenar. Pilihan ini mencerminkan sikap sederhana, jujur, tidak sombong, dan tetap menghargai proses kerja kelompok.\nB. Menghias semewah mungkin agar terlihat unggulSalah. Sikap ini bertentangan dengan nilai Ojo Dumeh karena terlalu menonjolkan tampilan dan ingin terlihat lebih unggul dari kelompok lain.\nC. Mengikuti kelompok lain agar tidak kalahSalah. Keputusan yang baik tidak harus mengikuti tindakan orang lain, apalagi jika tindakan tersebut berlebihan.\nD. Mengurangi isi proyek agar fokus pada tampilanSalah. Isi proyek lebih penting daripada tampilan. Mengurangi isi proyek justru menunjukkan kurangnya tanggung jawab terhadap tugas.\n\nJawaban yang Benar\nA. Menampilkan hasil sederhana namun sesuai isi dan usaha\nNilai Karakter\nSoal ini menanamkan nilai sederhana, jujur, tanggung jawab, dan tidak sombong sesuai dengan makna kearifan lokal Ojo Dumeh.',
   },
   {
     id: 45,
     theme: 'sederhana',
     boxType: 'ungu',
     question:
-      'Dalam laporan kegiatan, kelompokmu diminta melaporkan penggunaan dana. Ada sisa uang yang cukup banyak. Apa yang sebaiknya dilakukan?',
-    options: [
-      'Mengubah laporan agar terlihat habis',
-      'Membagi sisa uang di antara anggota',
-      'Melaporkan sesuai kenyataan apa adanya',
-      'Menyembunyikan sisa uang agar tidak ketahuan',
-    ],
-    answer: 2,
-
-    explanation: '-',
+      'Kamu mendapat uang saku lebih dari orang tua untuk keperluan sekolah, tetapi tidak semuanya terpakai. Apa yang sebaiknya kamu lakukan?',
+    options: ['Menghabiskan semuanya agar tidak terlihat sisa', 'Menyimpan atau mengembalikan sisa dengan jujur', 'Menggunakan untuk hal yang tidak perlu', 'Memberikan kepada teman tanpa alasan jelas'],
+    answer: 1,
+    explanation:
+      'Uang saku yang diberikan orang tua untuk keperluan sekolah harus digunakan sesuai kebutuhan. Jika uang tersebut masih tersisa, sikap yang baik adalah menyimpan atau mengembalikannya dengan jujur kepada orang tua.\nTindakan ini menunjukkan bahwa kita dapat dipercaya, tidak boros, dan mampu menggunakan uang dengan bertanggung jawab.\n\nAnalisis Pilihan Jawaban\nA. Menghabiskan semuanya agar tidak terlihat sisaSalah. Sikap ini menunjukkan perilaku boros dan tidak bertanggung jawab.\nB. Menyimpan atau mengembalikan sisa dengan jujurBenar. Sikap ini menunjukkan kejujuran, tanggung jawab, dan kesederhanaan dalam menggunakan uang.\nC. Menggunakan untuk hal yang tidak perluSalah. Uang saku untuk keperluan sekolah sebaiknya tidak digunakan untuk hal yang tidak bermanfaat.\nD. Memberikan kepada teman tanpa alasan jelasSalah. Memberi kepada teman memang bisa baik, tetapi harus ada alasan yang jelas dan tetap sepengetahuan orang tua jika uang itu berasal dari mereka.\n\nJawaban yang Benar\nB. Menyimpan atau mengembalikan sisa dengan jujur\nNilai Karakter\nSoal ini menanamkan nilai jujur, tanggung jawab, dan sederhana.',
   },
   {
     id: 46,
     theme: 'sederhana',
     boxType: 'biru',
     question:
-      'Sekolah memberikan dana untuk membuat proyek kelompok. Ketua kelompok ingin membeli bahan yang mahal agar terlihat lebih menarik, padahal ada alternatif lebih sederhana. Apa keputusan terbaik?',
-    options: [
-      'Menggunakan semua dana agar hasil terlihat mewah',
-      'Menggunakan bahan sesuai kebutuhan dan efisien',
-      'Menyimpan sisa dana untuk kepentingan pribadi',
-      'Membeli bahan mahal agar mendapat pujian',
-    ],
-    answer: 1,
-
-    explanation: '-',
+      'Setelah berhasil menjadi juara kelas, Dinda sering memamerkan prestasinya kepada teman-teman. Apa sikap yang mencerminkan kesederhanaan?',
+    options: ['Bersikap biasa saja dan tetap rendah hati', 'Terus menunjukkan prestasi agar dihargai', 'Membandingkan diri dengan teman lain', 'Menganggap diri paling hebat'],
+    answer: 0,
+    explanation:
+      'Setelah menjadi juara kelas, Dinda sebaiknya tetap bersikap rendah hati dan tidak berlebihan dalam menunjukkan prestasinya. Prestasi memang boleh disyukuri, tetapi tidak perlu dipamerkan secara berlebihan kepada teman-teman.\nSikap sederhana ditunjukkan dengan cara bersikap biasa saja, tidak sombong, tidak merasa paling hebat, serta tetap menghargai teman lain.\n\nAnalisis Pilihan Jawaban\nA. Bersikap biasa saja dan tetap rendah hatiBenar. Sikap ini mencerminkan nilai kesederhanaan karena Dinda tidak sombong meskipun berprestasi.\nB. Terus menunjukkan prestasi agar dihargaiSalah. Sikap ini menunjukkan keinginan untuk dipuji dan kurang mencerminkan kesederhanaan.\nC. Membandingkan diri dengan teman lainSalah. Membandingkan diri dapat membuat orang lain merasa rendah dan menunjukkan sikap kurang bijak.\nD. Menganggap diri paling hebatSalah. Sikap ini menunjukkan kesombongan dan tidak mencerminkan nilai kesederhanaan.\n\nJawaban yang Benar\nA. Bersikap biasa saja dan tetap rendah hati\nNilai Karakter\nSoal ini menanamkan nilai sederhana, rendah hati, dan menghargai orang lain.',
   },
   {
     id: 47,
     theme: 'sederhana',
-    boxType: 'kuning',
+    boxType: 'merah',
     question:
-      '"Ojo Dumeh" Jangan merasa sombong. Sekolahmu mengadakan pameran proyek. Beberapa kelompok sengaja menghias stan secara berlebihan agar terlihat paling menarik, bahkan menggunakan dana di luar kebutuhan. Kelompokmu memiliki pilihan untuk melakukan hal yang sama. Apa keputusan yang paling tepat?',
-    options: [
-      'Menghias semewah mungkin agar terlihat unggul',
-      'Mengikuti kelompok lain agar tidak kalah',
-      'Menampilkan hasil sederhana namun sesuai isi dan usaha',
-      'Mengurangi isi proyek agar fokus pada tampilan',
-    ],
-    answer: 2,
-
-    explanation: '-',
+      'Kelompokmu diminta membuat presentasi. Ada usulan untuk menambahkan data yang dilebih-lebihkan agar terlihat lebih bagus. Apa sikap terbaik?',
+    options: ['Menyetujui agar presentasi menarik', 'Menambahkan sedikit saja agar tidak ketahuan', 'Membiarkan anggota lain memutuskan', 'Menolak dan tetap menyajikan data apa adanya'],
+    answer: 3,
+    explanation:
+      'Soal tersebut menggambarkan situasi ketika siswa diminta membuat presentasi kelompok, tetapi ada anggota kelompok yang mengusulkan untuk melebih-lebihkan data agar hasil presentasi terlihat lebih baik. Sikap seperti ini tidak tepat karena data yang disajikan dalam presentasi harus jujur, benar, dan sesuai fakta.\nJawaban yang paling tepat adalah:\nD. Menolak dan tetap menyajikan data apa adanya\nSikap tersebut menunjukkan nilai kejujuran, tanggung jawab, dan integritas. Dalam kerja kelompok, siswa harus berani menolak tindakan yang tidak benar, meskipun tujuannya agar presentasi terlihat menarik. Presentasi yang baik bukan hanya dinilai dari tampilannya, tetapi juga dari kebenaran isi dan kejujuran dalam menyampaikan informasi.\n\nAlasan pilihan lain kurang tepat:\nA. Menyetujui agar presentasi menarikTidak tepat, karena menarik bukan berarti boleh memalsukan atau melebih-lebihkan data.\nB. Menambahkan sedikit saja agar tidak ketahuanTidak tepat, karena sekecil apa pun manipulasi data tetap termasuk tindakan tidak jujur.\nC. Membiarkan anggota lain memutuskanKurang tepat, karena sikap ini menunjukkan kurangnya tanggung jawab dan keberanian dalam mencegah kesalahan.\n\nKesimpulan:Sikap terbaik adalah menolak usulan tersebut dan tetap menyajikan data sesuai fakta, karena hal ini mencerminkan perilaku jujur, bertanggung jawab, dan berintegritas dalam kegiatan akademik maupun kerja kelompok.',
   },
   {
     id: 48,
     theme: 'sederhana',
-    boxType: 'hijau',
+    boxType: 'kuning',
     question:
-      '"Andhap Asor" memiliki nilai rendah hati, tidak sombong, dan menghargai orang lain. Setelah presentasi, kelompokmu mendapat pujian dari guru. Teman kelompok lain terlihat kurang percaya diri. Apa sikap yang paling tepat?',
-    options: [
-      'Membanggakan diri di depan teman',
-      'Membandingkan hasil dengan kelompok lain',
-      'Tetap rendah hati dan menghargai usaha kelompok lain',
-      'Mengabaikan kelompok lain',
-    ],
-    answer: 2,
-
-    explanation: '-',
+      'Sekolah memberikan dana untuk membuat proyek kelompok. Ketua kelompok ingin membeli bahan yang mahal agar terlihat lebih menarik, padahal ada alternatif lebih sederhan a. Apa keputusan terbaik?',
+    options: ['Menggunakan semua dana agar hasil terlihat mewah', 'Menggunakan bahan sesuai kebutuhan dan efisien', 'Menyimpan sisa dana untuk kepentingan pribadi', 'Membeli bahan mahal agar mendapat pujian'],
+    answer: 1,
+    explanation:
+      'Soal tersebut menggambarkan situasi ketika kelompok diberi dana oleh sekolah untuk membuat proyek. Dalam penggunaan dana, siswa harus mampu mengambil keputusan yang jujur, bertanggung jawab, sederhana, dan efisien.\nKeputusan terbaik adalah menggunakan dana sesuai kebutuhan, bukan untuk mencari pujian atau membuat hasil terlihat mewah. Dana sekolah harus dipakai secara tepat, transparan, dan tidak berlebihan. Jika ada alternatif bahan yang lebih sederhana tetapi tetap sesuai tujuan proyek, maka pilihan tersebut lebih bijak.\n\nAnalisis Pilihan Jawaban:\nA. Menggunakan semua dana agar hasil terlihat mewahKurang tepat, karena penggunaan dana seharusnya berdasarkan kebutuhan, bukan sekadar agar terlihat mewah.\nB. Menggunakan bahan sesuai kebutuhan dan efisienBenar, karena menunjukkan sikap sederhana, bertanggung jawab, dan bijak dalam mengelola dana.\nC. Menyimpan sisa dana untuk kepentingan pribadiSalah, karena termasuk tindakan tidak jujur dan menyalahgunakan dana kelompok.\nD. Membeli bahan mahal agar mendapat pujianSalah, karena keputusan tersebut didasarkan pada keinginan pribadi, bukan kebutuhan proyek.\n\nJawaban yang benar: B. Menggunakan bahan sesuai kebutuhan dan efisien.\nNilai antikorupsi yang terkandung:Soal ini menekankan nilai sederhana, tanggung jawab, jujur, dan adil dalam menggunakan dana bersama.',
   },
   {
     id: 49,
     theme: 'sederhana',
-    boxType: 'biru',
+    boxType: 'hijau',
     question:
-      'Kamu mendapat uang saku lebih dari orang tua untuk keperluan sekolah, tetapi tidak semuanya terpakai. Apa yang sebaiknya kamu lakukan?',
-    options: [
-      'Menghabiskan semuanya agar tidak terlihat sisa',
-      'Menggunakan untuk hal yang tidak perlu',
-      'Menyimpan atau mengembalikan sisa dengan jujur',
-      'Memberikan kepada teman tanpa alasan jelas',
-    ],
+      'Andhap Asor memiliki nilai rendah hati, tidak sombong, dan menghargai orang lain. Setelah presentasi, kelompokmu mendapat pujian dari guru. Teman kelompok lain terlihat kurang percaya diri. Apa sikap yang paling tepat?',
+    options: ['Menunjukkan bahwa kelompokmu lebih unggul', 'Membandingkan hasil dengan kelompok lain', 'Tetap rendah hati dan menghargai usaha kelompok lain', 'Mengabaikan kelompok lain'],
     answer: 2,
-
-    explanation: '-',
+    explanation:
+      'Andhap asor merupakan salah satu nilai kearifan lokal Jawa yang mengajarkan sikap rendah hati, tidak sombong, serta tetap menghargai orang lain meskipun mendapatkan keberhasilan atau pujian. Dalam situasi setelah presentasi, kelompok yang mendapat pujian dari guru sebaiknya tidak merasa lebih unggul daripada kelompok lain.\n\nSikap yang tepat adalah tetap rendah hati dan menghargai usaha kelompok lain. Hal ini menunjukkan bahwa keberhasilan tidak digunakan untuk merendahkan orang lain, tetapi menjadi dorongan untuk saling menghormati dan mendukung. Dengan menghargai kelompok lain yang kurang percaya diri, siswa dapat menciptakan suasana belajar yang baik, adil, dan penuh empati.\n\nPilihan A tidak tepat karena menunjukkan kesombongan.\nPilihan B tidak tepat karena membandingkan hasil dapat membuat kelompok lain merasa rendah diri. \nPilihan D juga tidak tepat karena mengabaikan kelompok lain berarti tidak menunjukkan kepedulian.\n\nJadi, jawaban yang paling tepat adalah:\nC. Tetap rendah hati dan menghargai usaha kelompok lain\nNilai utama yang ditekankan dalam soal ini adalah rendah hati, menghargai orang lain, dan tidak menyombongkan keberhasilan.',
   },
   {
     id: 50,
     theme: 'sederhana',
     boxType: 'ungu',
     question:
-      'Kamu mendapat pujian dari guru karena hasil tugasmu yang sangat baik. Sikap apa yang mencerminkan kesederhanaan?',
-    options: [
-      'Menunjukkan bahwa kelompokmu lebih unggul',
-      'Menganggap diri paling pintar',
-      'Menerima pujian dengan rendah hati dan tetap belajar',
-      'Meremehkan teman lain',
-    ],
+      'Kamu mendapat pujian dari guru karena hasil tugasmu bagus. Apa sikap yang mencerminkan kesederhanaan?',
+    options: ['Membanggakan diri di depan teman', 'Menganggap diri paling pintar', 'Menerima pujian dengan rendah hati dan tetap belajar', 'Meremehkan teman lain'],
     answer: 2,
-
-    explanation: '-',
+    explanation:
+      'Sikap sederhana berarti tidak berlebihan dalam bersikap, tidak sombong, dan tidak membanggakan diri meskipun mendapatkan keberhasilan atau pujian. Ketika seseorang mendapat pujian dari guru karena hasil tugasnya bagus, sikap yang tepat adalah menerima pujian tersebut dengan rendah hati.\n\nPilihan A, B, dan D tidak mencerminkan kesederhanaan karena menunjukkan sikap sombong, merasa paling pintar, dan meremehkan orang lain. Sikap tersebut dapat membuat teman merasa tidak dihargai.\n\nJadi, sikap yang mencerminkan nilai kesederhanaan adalah menerima pujian dengan rendah hati dan tetap belajar.\nJawaban yang benar: C. Menerima pujian dengan rendah hati dan tetap belajar.',
   },
-
-  // ===================== MANDIRI (ID 51–60) =====================
   {
     id: 51,
     theme: 'mandiri',
     boxType: 'biru',
     question:
-      'Perilaku tidak mandiri dalam belajar dapat berhubungan dengan perilaku koruptif karena...',
-    options: [
-      'Kemampuan belajarnya meningkat',
-      'Membiasakan ketergantungan dan mencari jalan instan',
-      'Tidak berpengaruh pada karakter',
-      'Hanya terjadi di sekolah',
-    ],
+      'Perilaku tidak mandiri dalam belajar dapat berhubungan dengan perilaku koruptif karena…',
+    options: ['Membuat siswa lebih cepat berhasil', 'Membiasakan ketergantungan dan mencari jalan instan', 'Tidak berpengaruh pada karakter', 'Hanya terjadi di sekolah'],
     answer: 1,
-
-    explanation: '-',
+    explanation:
+      'Perilaku tidak mandiri dalam belajar, misalnya selalu bergantung pada teman, menyalin tugas, menyontek, atau tidak mau berusaha sendiri, dapat membentuk kebiasaan buruk. Siswa menjadi terbiasa mencari cara mudah atau jalan instan untuk mendapatkan hasil.\n\nKebiasaan ini berhubungan dengan perilaku koruptif karena korupsi juga sering berawal dari sikap ingin memperoleh keuntungan tanpa usaha yang jujur dan bertanggung jawab. Orang yang terbiasa tidak mandiri cenderung mudah bergantung pada orang lain, menghindari proses, dan mencari cara cepat meskipun tidak benar.\nJawaban yang tepat: B. Membiasakan ketergantungan dan mencari jalan instan\n\nAlasan pilihan lain kurang tepat:\nA. Salah, karena perilaku tidak mandiri tidak membuat siswa benar-benar berhasil.C. Salah, karena perilaku tidak mandiri dapat memengaruhi pembentukan karakter.D. Salah, karena sikap tidak mandiri tidak hanya terjadi di sekolah, tetapi juga dapat terbawa dalam kehidupan sehari-hari.\n\nJadi, perilaku tidak mandiri dalam belajar dapat menjadi awal terbentuknya kebiasaan mencari jalan pintas yang bertentangan dengan nilai integritas.',
   },
   {
     id: 52,
     theme: 'mandiri',
     boxType: 'merah',
     question:
-      'Seorang siswa terbiasa menyalin pekerjaan teman setiap kali mendapat tugas. Kemungkinan akibat dari kebiasaan tersebut adalah...',
-    options: [
-      'Membuat siswa lebih cepat berhasil',
-      'Ia menjadi lebih mandiri',
-      'Ia kesulitan saat menghadapi tugas individu',
-      'Nilainya selalu stabil',
-    ],
+      'Seorang siswa terbiasa menyalin pekerjaan teman setiap kali mendapat tugas. Kemungkinan akibat dari kebiasaan tersebut adalah…',
+    options: ['Kemampuan belajarnya meningkat', 'Ia menjadi lebih mandiri', 'Ia kesulitan saat menghadapi tugas individu', 'Nilainya selalu stabil'],
     answer: 2,
-
-    explanation: '-',
+    explanation:
+      'Seorang siswa yang terbiasa menyalin pekerjaan teman menunjukkan perilaku tidak mandiri dan tidak jujur dalam belajar. Kebiasaan ini membuat siswa tidak terbiasa berpikir sendiri, tidak memahami materi dengan baik, dan terlalu bergantung pada orang lain.\nAkibatnya, ketika siswa tersebut harus mengerjakan tugas individu, ulangan, atau soal tanpa bantuan teman, ia akan mengalami kesulitan karena kemampuan belajarnya tidak berkembang.\n\nJawaban yang tepat adalah: C. Ia kesulitan saat menghadapi tugas individu\nAlasan pilihan lain kurang tepat:\nA. Kemampuan belajarnya meningkatTidak tepat, karena menyalin pekerjaan teman justru membuat siswa tidak berlatih memahami materi.\nB. Ia menjadi lebih mandiriTidak tepat, karena kebiasaan menyalin menunjukkan ketergantungan pada orang lain.\nD. Nilainya selalu stabilTidak tepat, karena nilai yang diperoleh dari menyalin tidak mencerminkan kemampuan sebenarnya.\nKesimpulan:Menyalin pekerjaan teman dapat merugikan diri sendiri karena membuat siswa tidak terbiasa belajar mandiri dan kesulitan ketika harus mengerjakan tugas secara individu.',
   },
   {
     id: 53,
     theme: 'mandiri',
     boxType: 'kuning',
     question:
-      'Seorang siswa menggunakan jasa orang lain untuk membuat tugasnya. Ia mendapatkan nilai tinggi tetapi tidak memahami materi. Keputusan tersebut dapat dinilai sebagai...',
-    options: [
-      'Tepat karena hasilnya bagus',
-      'Kurang tepat karena menghambat kemandirian belajar',
-      'Wajar karena semua siswa melakukannya',
-      'Tidak masalah selama nilainya tinggi',
-    ],
+      'Seorang siswa menggunakan jasa orang lain untuk membuat tugasny a. Ia mendapatkan nilai tinggi tetapi tidak memahami materi. Keputusan tersebut dapat dinilai sebagai…',
+    options: ['Tepat karena hasilnya bagus', 'Kurang tepat karena menghambat kemandirian belajar', 'Wajar karena semua siswa melakukannya', 'Tidak masalah selama nilainya tinggi'],
     answer: 1,
-
-    explanation: '-',
+    explanation:
+      'Keputusan siswa menggunakan jasa orang lain untuk membuat tugasnya merupakan tindakan yang kurang tepat. Meskipun ia mendapatkan nilai tinggi, siswa tersebut tidak memperoleh manfaat utama dari tugas, yaitu memahami materi, melatih kemampuan berpikir, dan mengembangkan kemandirian belajar.\nTindakan tersebut juga bertentangan dengan nilai integritas, terutama kejujuran, tanggung jawab, dan kemandirian. Nilai yang tinggi seharusnya diperoleh melalui usaha sendiri, bukan dari hasil pekerjaan orang lain.\n\nJawaban yang benar: B. Kurang tepat karena menghambat kemandirian belajar\nAlasan pilihan lain kurang tepat:\nA. Tepat karena hasilnya bagus → Salah, karena hasil bagus tidak bermakna jika diperoleh dengan cara tidak jujur.C. Wajar karena semua siswa melakukannya → Salah, tindakan tidak jujur tidak menjadi benar hanya karena banyak dilakukan.D. Tidak masalah selama nilainya tinggi → Salah, tujuan belajar bukan hanya nilai, tetapi juga pemahaman dan pembentukan karakter.\nKesimpulan:Keputusan tersebut tidak mencerminkan sikap jujur dan mandiri. Siswa seharusnya mengerjakan tugas sendiri agar memahami materi dan bertanggung jawab terhadap proses belajarnya.',
   },
   {
     id: 54,
     theme: 'mandiri',
     boxType: 'hijau',
     question:
-      'Dalam budaya Jawa dikenal prinsip "ora gumantung marang wong liya" (tidak bergantung pada orang lain). Doni selalu meminta temannya mengerjakan tugas karena merasa lebih cepat selesai. Jika dilihat dari nilai tersebut, sikap Doni menunjukkan...',
-    options: [
-      'Kerja sama yang baik',
-      'Efisiensi dalam belajar',
-      'Ketergantungan dan kurang mandiri',
-      'Sikap saling membantu',
-    ],
+      'Dalam budaya Jawa dikenal prinsip “ora gumantung marang wong liya” (tidak bergantung pada orang lain).Doni selalu meminta temannya mengerjakan tugas karena merasa lebih cepat selesai. Jika dilihat dari nilai tersebut, sikap Doni menunjukkan…',
+    options: ['Kerja sama yang baik', 'Efisiensi dalam belajar', 'Ketergantungan dan kurang mandiri', 'Sikap saling membantu'],
     answer: 2,
-
-    explanation: '-',
+    explanation:
+      'Dalam budaya Jawa, prinsip “ora gumantung marang wong liya” berarti tidak selalu bergantung kepada orang lain. Nilai ini mengajarkan seseorang untuk memiliki sikap mandiri, bertanggung jawab, dan berusaha menyelesaikan tugas dengan kemampuan sendiri.\nPada kasus tersebut, Doni selalu meminta temannya mengerjakan tugas karena merasa tugasnya akan lebih cepat selesai. Sikap ini menunjukkan bahwa Doni tidak berusaha menyelesaikan tanggung jawabnya sendiri. Ia terlalu bergantung kepada orang lain, sehingga bertentangan dengan nilai kemandirian.\n\nJawaban yang tepat adalah C. Ketergantungan dan kurang mandiri.\nPilihan A dan D kurang tepat karena kerja sama atau saling membantu seharusnya dilakukan dengan tetap melibatkan usaha dari diri sendiri, bukan menyerahkan seluruh tugas kepada teman. Pilihan B juga kurang tepat karena efisiensi belajar bukan berarti meminta orang lain mengerjakan tugas pribadi.',
   },
   {
     id: 55,
     theme: 'mandiri',
     boxType: 'ungu',
     question:
-      'Dua siswa memiliki cara berbeda dalam mengerjakan tugas: Siswa A selalu mengerjakan sendiri meskipun hasilnya belum sempurna, sedangkan Siswa B sering meminta orang lain mengerjakan agar hasilnya bagus. Dampak jangka panjang yang paling mungkin terjadi adalah...',
-    options: [
-      'Keduanya memiliki kemampuan yang sama',
-      'Siswa B lebih berkembang karena hasilnya bagus',
-      'Siswa A lebih berkembang karena terbiasa mandiri',
-      'Tidak ada perbedaan',
-    ],
+      'Dua siswa memiliki cara berbeda dalam mengerjakan tugas: Siswa A selalu mengerjakan sendiri meskipun hasilnya belum sempurna Siswa B sering meminta orang lain mengerjakan agar hasilnya bagus Dampak jangka panjang yang paling mungkin terjadi adalah…',
+    options: ['Keduanya memiliki kemampuan yang samaSiswa', 'lebih berkembang karena hasilnya bagus', 'Siswa A lebih berkembang karena terbiasa mandiri', 'Tidak ada perbedaan'],
     answer: 2,
-
-    explanation: '-',
+    explanation:
+      'Soal tersebut membandingkan dua sikap siswa dalam mengerjakan tugas. Siswa A memilih mengerjakan sendiri meskipun hasilnya belum sempurna. Sikap ini menunjukkan nilai mandiri, tanggung jawab, jujur, dan mau belajar dari proses. \n\nWalaupun hasil awalnya belum maksimal, siswa A akan terbiasa berpikir, mencoba, memperbaiki kesalahan, dan mengembangkan kemampuannya sendiri.\nSementara itu, Siswa B sering meminta orang lain mengerjakan tugas agar hasilnya terlihat bagus. Meskipun hasil tugasnya tampak baik, siswa B tidak mengalami proses belajar secara langsung. Dalam jangka panjang, kebiasaan ini dapat membuat siswa B kurang mandiri, kurang percaya diri, dan tidak berkembang karena bergantung pada bantuan orang lain.\nDengan demikian, dampak jangka panjang yang paling mungkin terjadi adalah Siswa A lebih berkembang karena terbiasa mandiri.\nJawaban yang benar: C. Siswa A lebih berkembang karena terbiasa mandiri\n\nAlasan pilihan lain kurang tepat:\nA. Keduanya memiliki kemampuan yang samaKurang tepat, karena proses belajar mereka berbeda. Siswa A belajar melalui usaha sendiri, sedangkan siswa B bergantung pada orang lain.\nB. Siswa B lebih berkembang karena hasilnya bagusKurang tepat, karena hasil yang bagus belum tentu menunjukkan kemampuan pribadi jika dikerjakan oleh orang lain.\nD. Tidak ada perbedaanKurang tepat, karena kebiasaan mandiri dan kebiasaan bergantung pada orang lain akan memberikan dampak yang berbeda dalam jangka panjang.\nKesimpulan:Kemandirian dalam mengerjakan tugas lebih penting daripada sekadar hasil yang terlihat bagus, karena proses belajar akan membentuk kemampuan dan karakter siswa.',
   },
   {
     id: 56,
     theme: 'mandiri',
     boxType: 'biru',
     question:
-      'Seorang siswa selalu merasa tidak mampu sehingga terus bergantung pada bantuan orang lain. Sikap yang perlu dikembangkan agar lebih mandiri adalah...',
-    options: [
-      'Rasa takut gagal',
-      'Ketergantungan',
-      'Percaya diri',
-      'Menghindari tantangan',
-    ],
+      'Seorang siswa selalu merasa tidak mampu sehingga terus bergantung pada bantuan orang lain. Sikap yang perlu dikembangkan agar lebih mandiri adalah…',
+    options: ['Rasa takut gagal', 'Ketergantungan', 'Percaya diri', 'Menghindari tantangan'],
     answer: 2,
-
-    explanation: '-',
+    explanation:
+      'Siswa yang selalu merasa tidak mampu dan terus bergantung pada bantuan orang lain menunjukkan kurangnya sikap mandiri. Agar lebih mandiri, siswa perlu mengembangkan percaya diri, yaitu keyakinan bahwa dirinya mampu menyelesaikan tugas atau menghadapi masalah dengan usaha sendiri.\nPilihan lain kurang tepat karena:\nA. Rasa takut gagal justru membuat siswa semakin ragu untuk mencoba.B. Ketergantungan membuat siswa terus mengandalkan orang lain.D. Menghindari tantangan membuat siswa tidak berkembang dan tidak berani mencoba hal baru.\nJadi, sikap yang perlu dikembangkan agar lebih mandiri adalah percaya diri.\nJawaban yang benar: C. Percaya diri',
   },
   {
     id: 57,
     theme: 'mandiri',
     boxType: 'merah',
-    question: 'Perilaku berikut yang paling menunjukkan sikap tidak mandiri adalah...',
-    options: [
-      'Bertanya kepada guru saat tidak paham',
-      'Belajar sendiri sebelum ujian',
-      'Menyalin seluruh tugas dari teman',
-      'Mencoba mengerjakan meskipun sulit',
-    ],
-    answer: 2,
-
-    explanation: '-',
+    question:
+      'Perilaku berikut yang paling menunjukkan sikap tidak mandiri adalah…',
+    options: ['Bertanya kepada guru saat tidak paham', 'Belajar sendiri sebelum ujian', 'Mencoba mengerjakan meskipun sulit', 'Menyalin seluruh tugas dari teman'],
+    answer: 3,
+    explanation:
+      'Perilaku yang paling menunjukkan sikap tidak mandiri adalah menyalin seluruh tugas dari teman.\nSikap mandiri berarti seseorang berusaha menyelesaikan tugas atau masalah dengan kemampuan sendiri terlebih dahulu, bertanggung jawab terhadap pekerjaannya, dan tidak bergantung sepenuhnya kepada orang lain.\nAnalisis pilihan jawaban:\nA. Bertanya kepada guru saat tidak pahamBukan sikap tidak mandiri. Bertanya kepada guru adalah tindakan yang baik karena menunjukkan kemauan untuk belajar dan memahami materi.\nB. Belajar sendiri sebelum ujianIni menunjukkan sikap mandiri karena siswa berusaha mempersiapkan diri dengan kemampuan sendiri.\nC. Mencoba mengerjakan meskipun sulitIni juga menunjukkan sikap mandiri karena siswa tetap berusaha menyelesaikan tugas walaupun menghadapi kesulitan.\nD. Menyalin seluruh tugas dari temanIni menunjukkan sikap tidak mandiri karena siswa tidak berusaha mengerjakan tugas sendiri dan bergantung pada hasil pekerjaan orang lain.\n\nJawaban yang tepat: D. Menyalin seluruh tugas dari teman\nKesimpulan:Menyalin tugas teman merupakan perilaku tidak mandiri karena tidak mencerminkan usaha sendiri, tidak bertanggung jawab, dan tidak jujur dalam menyelesaikan tugas.',
   },
   {
     id: 58,
     theme: 'mandiri',
     boxType: 'kuning',
     question:
-      'Dalam ujian, kamu ragu dengan jawaban sendiri. Temanmu memberikan kode jawaban yang tampak benar. Jika kamu ingin melatih kemandirian, pilihan terbaik adalah...',
-    options: [
-      'Mengikuti jawaban teman',
-      'Menggabungkan jawaban sendiri dan teman',
-      'Tetap menggunakan jawaban sendiri',
-      'Mengosongkan jawaban',
-    ],
+      'Dalam ujian, kamu ragu dengan jawaban sendiri. Temanmu memberikan kode jawaban yang tampak benar. Jika kamu ingin melatih kemandirian, pilihan terbaik adalah…',
+    options: ['Mengikuti jawaban teman', 'Menggabungkan jawaban sendiri dan teman', 'Tetap menggunakan jawaban sendiri', 'Mengosongkan jawaban'],
     answer: 2,
-
-    explanation: '-',
+    explanation:
+      'Soal tersebut menilai sikap kemandirian dalam menghadapi ujian. Kemandirian berarti mampu percaya pada kemampuan diri sendiri, bertanggung jawab atas pilihan, dan tidak bergantung pada orang lain, terutama dalam situasi yang menuntut kejujuran seperti ujian.\nPilihan yang paling tepat adalah:\nC. Tetap menggunakan jawaban sendiri\nAlasannya, ketika ujian, siswa harus mengerjakan soal berdasarkan kemampuan dan pemahamannya sendiri. Meskipun teman memberikan kode jawaban yang tampak benar, mengikuti jawaban teman termasuk perilaku tidak mandiri dan dapat mengarah pada ketidakjujuran. Dengan tetap menggunakan jawaban sendiri, siswa melatih rasa percaya diri, tanggung jawab, dan integritas.\nPembahasan Tiap Pilihan\nA. Mengikuti jawaban temanPilihan ini kurang tepat karena menunjukkan ketergantungan kepada orang lain dan tidak mencerminkan sikap jujur dalam ujian.\nB. Menggabungkan jawaban sendiri dan temanPilihan ini juga kurang tepat karena tetap menggunakan bantuan teman saat ujian. Hal tersebut tidak melatih kemandirian.\nC. Tetap menggunakan jawaban sendiriPilihan ini paling tepat karena mencerminkan sikap mandiri, jujur, dan bertanggung jawab atas hasil ujian.\nD. Mengosongkan jawabanPilihan ini kurang tepat karena siswa sebaiknya tetap berusaha menjawab berdasarkan pemahaman sendiri, bukan menyerah.\n\nJawaban: C. Tetap menggunakan jawaban sendiri\nKesimpulan:Sikap mandiri dalam ujian ditunjukkan dengan percaya pada kemampuan diri sendiri dan tidak bergantung pada jawaban teman, meskipun jawaban teman terlihat benar.',
   },
   {
     id: 59,
     theme: 'mandiri',
     boxType: 'hijau',
     question:
-      'Pepatah "ajining diri saka lathi lan tumindak" mengajarkan bahwa harga diri dilihat dari ucapan dan tindakan. Saat presentasi, Sinta memilih meminta temannya menggantikan karena tidak percaya diri. Jika dikaitkan dengan nilai mandiri, tindakan yang seharusnya dilakukan adalah...',
-    options: [
-      'Membiarkan teman menggantikan',
-      'Menunda presentasi',
-      'Mencoba presentasi sendiri dengan percaya diri',
-      'Tidak mengikuti presentasi',
-    ],
-    answer: 2,
-
-    explanation: '-',
+      'Pepatah “ajining diri saka lathi lan tumindak” mengajarkan bahwa harga diri terlihat dari ucapan dan tindakan. Saat presentasi, Sinta memilih meminta temannya menggantikan karena tidak percaya diri. Jika dikaitkan dengan nilai mandiri, tindakan yang seharusnya dilakukan adalah…',
+    options: ['Mencoba presentasi sendiri dengan percaya diri', 'Membiarkan teman menggantikan', 'Menunda presentasi', 'Tidak mengikuti presentasi'],
+    answer: 0,
+    explanation:
+      'Pepatah Jawa “ajining diri saka lathi lan tumindak” berarti bahwa harga diri atau kehormatan seseorang terlihat dari ucapan dan tindakannya. Dalam konteks soal, Sinta merasa tidak percaya diri saat harus presentasi, lalu memilih meminta temannya menggantikan.\nJika dikaitkan dengan nilai mandiri, maka sikap yang tepat adalah berusaha melakukan tugasnya sendiri. Mandiri berarti mampu bertanggung jawab atas tugas yang diberikan, tidak selalu bergantung pada orang lain, serta berani mencoba meskipun merasa kurang percaya diri.\n\nJawaban yang benar adalah A. Mencoba presentasi sendiri dengan percaya diri.\nPilihan A menunjukkan sikap mandiri karena Sinta berusaha menyelesaikan tanggung jawabnya sendiri. Sementara itu, pilihan B, C, dan D menunjukkan sikap menghindar dari tanggung jawab dan bergantung pada orang lain.\nKesimpulan:Tindakan Sinta yang sesuai dengan nilai mandiri adalah tetap mencoba presentasi sendiri dengan percaya diri.',
   },
   {
     id: 60,
     theme: 'mandiri',
     boxType: 'ungu',
     question:
-      'Seorang siswa dihadapkan pada dua pilihan: (1) Nilai tinggi dengan bantuan orang lain, (2) Nilai cukup dengan usaha sendiri. Jika dilihat dari nilai mandiri, pilihan yang lebih tepat adalah...',
-    options: [
-      'Nilai tinggi lebih penting',
-      'Usaha sendiri lebih penting',
-      'Keduanya sama saja',
-      'Tergantung situasi',
-    ],
+      'Seorang siswa dihadapkan pada dua pilihan: Nilai tinggi dengan bantuan orang lain Nilai cukup dengan usaha sendiri Jika dilihat dari nilai mandiri, pilihan yang lebih tepat adalah…',
+    options: ['Nilai tinggi lebih penting', 'Usaha sendiri lebih penting', 'Keduanya sama saja', 'Tergantung situasi'],
     answer: 1,
-
-    explanation: '-',
+    explanation:
+      'Soal tersebut menguji pemahaman siswa tentang nilai mandiri dalam pendidikan antikorupsi. Nilai mandiri berarti seseorang mampu menyelesaikan tugas, mengambil keputusan, dan bertanggung jawab atas hasil usahanya sendiri tanpa bergantung secara tidak jujur kepada orang lain.\nDalam kasus tersebut, siswa dihadapkan pada dua pilihan: memperoleh nilai tinggi dengan bantuan orang lain atau memperoleh nilai cukup dengan usaha sendiri. Jika dilihat dari nilai mandiri, pilihan yang paling tepat adalah memperoleh nilai cukup dengan usaha sendiri. Hal ini menunjukkan bahwa siswa lebih menghargai proses belajar, kejujuran, dan tanggung jawab dibandingkan hanya mengejar hasil yang tinggi.\n\nJawaban yang benar: B. Usaha sendiri lebih penting\nAlasan:\nPilihan B mencerminkan sikap mandiri karena siswa berusaha mengerjakan tugas atau ujian berdasarkan kemampuan sendiri. Meskipun hasilnya tidak terlalu tinggi, nilai tersebut diperoleh melalui proses yang jujur dan bertanggung jawab.\n\nPembahasan pilihan jawaban:\nA. Nilai tinggi lebih pentingKurang tepat, karena nilai tinggi yang diperoleh dengan bantuan orang lain tidak mencerminkan kemandirian dan kejujuran.\nB. Usaha sendiri lebih pentingTepat, karena menunjukkan sikap mandiri, jujur, dan bertanggung jawab terhadap proses belajar.\nC. Keduanya sama sajaKurang tepat, karena nilai tinggi dengan bantuan orang lain berbeda dengan nilai yang diperoleh dari usaha sendiri.\nD. Tergantung situasiKurang tepat, karena dalam konteks nilai mandiri, usaha sendiri tetap menjadi pilihan yang lebih baik.\n\nKesimpulan:Nilai mandiri mengajarkan bahwa proses dan usaha sendiri lebih penting daripada hasil tinggi yang diperoleh dengan cara tidak jujur atau bergantung pada orang lain.',
   },
-
-  // ===================== ADIL (ID 61–70) =====================
   {
     id: 61,
     theme: 'adil',
     boxType: 'biru',
     question:
-      'Dalam lomba kelas, juri memberikan nilai lebih tinggi kepada siswa yang dikenal dekat dengannya. Keputusan juri tersebut menunjukkan bahwa ia...',
-    options: [
-      'Bersikap objektif',
-      'Bersikap adil',
-      'Tidak memihak',
-      'Bersikap pilih kasih',
-    ],
+      'Dalam lomba kelas, juri memberikan nilai lebih tinggi kepada siswa yang dikenal dekat dengannya. Keputusan juri tersebut menunjukkan bahwa ia…',
+    options: ['Bersikap objektif', 'Bersikap adil', 'Tidak memihak', 'Bersikap pilih kasih'],
     answer: 3,
-
-    explanation: '-',
+    explanation:
+      'Dalam lomba kelas, seorang juri seharusnya memberikan penilaian berdasarkan kemampuan, hasil kerja, atau penampilan peserta, bukan berdasarkan hubungan pribadi dengan peserta.\nPada soal tersebut, juri memberikan nilai lebih tinggi kepada siswa yang dikenal dekat dengannya. Hal ini menunjukkan bahwa juri tidak menilai secara adil dan objektif. Ia lebih mengutamakan siswa tertentu karena kedekatan pribadi.\nSikap seperti ini disebut pilih kasih, yaitu memperlakukan seseorang secara lebih istimewa dibandingkan orang lain tanpa alasan yang adil.\nJawaban yang tepat: D. Bersikap pilih kasih\n\nAlasan pilihan lain kurang tepat:\nA. Bersikap objektif → salah, karena objektif berarti menilai berdasarkan fakta atau kemampuan, bukan kedekatan pribadi.B. Bersikap adil → salah, karena adil berarti memberikan penilaian sesuai hak dan kemampuan masing-masing peserta.C. Tidak memihak → salah, karena juri justru memihak siswa yang dekat dengannya.D. Bersikap pilih kasih → benar, karena juri memberi nilai lebih tinggi karena kedekatan pribadi, bukan karena prestasi.',
   },
   {
     id: 62,
     theme: 'adil',
     boxType: 'merah',
-    question: 'Perilaku berikut yang paling mencerminkan sikap objektif adalah...',
-    options: [
-      'Memberi nilai berdasarkan kedekatan',
-      'Menilai berdasarkan perasaan',
-      'Menilai berdasarkan kriteria yang jelas',
-      'Mengikuti pendapat mayoritas',
-    ],
-    answer: 2,
-
-    explanation: '-',
+    question:
+      'Seorang ketua kelas membagi tugas kelompok sebagai berikut: Siswa yang aktif mendapat tugas lebih banyak Siswa yang kurang aktif mendapat tugas lebih sedikit Keputusan ini dapat dinilai…',
+    options: ['Tidak adil karena tugas tidak sama', 'Adil karena sesuai kemampuan masing-masing', 'Tidak tepat karena semua harus sama', 'Kurang tepat karena membebani siswa aktif'],
+    answer: 1,
+    explanation:
+      'Keputusan ketua kelas tersebut dapat dinilai adil karena pembagian tugas tidak selalu harus sama jumlahnya, tetapi harus disesuaikan dengan kemampuan, keaktifan, dan tanggung jawab masing-masing siswa.\nSiswa yang aktif biasanya lebih siap, lebih mampu, dan lebih terbiasa menjalankan tugas. Sementara itu, siswa yang kurang aktif tetap diberi tugas, tetapi porsinya lebih sedikit agar tetap terlibat dalam kelompok tanpa merasa terlalu terbebani.\nDalam konteks ini, adil bukan berarti semua mendapatkan tugas yang sama, melainkan setiap siswa mendapatkan tugas sesuai dengan kemampuan dan perannya.\nJawaban yang tepat adalah: B. \n\nAdil karena sesuai kemampuan masing-masing.\nPilihan lain kurang tepat karena:\nA. Tidak adil karena tugas tidak samaKurang tepat, karena keadilan tidak selalu berarti jumlah tugas harus sama.\nC. Tidak tepat karena semua harus samaKurang tepat, sebab dalam kerja kelompok pembagian tugas boleh berbeda sesuai kemampuan anggota.\nD. Kurang tepat karena membebani siswa aktifKurang tepat, karena siswa aktif mendapat tugas lebih banyak bukan untuk membebani, tetapi karena dianggap lebih mampu menjalankan tanggung jawab tersebut.',
   },
   {
     id: 63,
     theme: 'adil',
     boxType: 'kuning',
     question:
-      'Seorang ketua kelas membagi tugas kelompok sebagai berikut: Siswa yang aktif mendapat tugas lebih banyak, sedangkan siswa yang kurang aktif mendapat tugas lebih sedikit. Keputusan ini dapat dinilai...',
-    options: [
-      'Tidak adil karena tugas tidak sama',
-      'Adil karena sesuai kemampuan masing-masing',
-      'Tidak tepat karena semua harus sama',
-      'Kurang tepat karena membebani siswa aktif',
-    ],
-    answer: 1,
-
-    explanation: '-',
+      'Seorang guru mengetahui bahwa salah satu siswa gagal ujian karena kondisi keluarga yang sulit. Guru tersebut mempertimbangkan untuk menaikkan nilainya agar tidak tertinggal. Keputusan yang paling mencerminkan keadilan adalah…',
+    options: ['Menaikkan nilai karena rasa kasihan', 'Membiarkan nilai apa adanya tanpa solusi', 'Memberi nilai sesuai hasil, tetapi memberikan kesempatan remedial', 'Menyamakan nilai dengan siswa lain'],
+    answer: 2,
+    explanation:
+      'Kasus tersebut menggambarkan dilema seorang guru ketika menghadapi siswa yang gagal ujian karena kondisi keluarga yang sulit. Guru perlu menunjukkan sikap peduli, tetapi tetap harus menjaga prinsip keadilan dalam penilaian.\nJawaban yang tepat adalah C. Memberi nilai sesuai hasil, tetapi memberikan kesempatan remedial.\nKeputusan ini paling mencerminkan keadilan karena guru tetap menilai siswa berdasarkan kemampuan dan hasil ujian yang sebenarnya. Namun, guru juga tidak mengabaikan kondisi siswa. Dengan memberikan kesempatan remedial, siswa tetap memperoleh peluang untuk memperbaiki nilai melalui usaha dan proses belajar yang adil.\n\nAlasan pilihan lain kurang tepat:\nA. Menaikkan nilai karena rasa kasihanKurang tepat karena nilai tidak diberikan berdasarkan hasil belajar yang sebenarnya. Hal ini dapat merugikan siswa lain dan melanggar prinsip kejujuran dalam penilaian.\nB. Membiarkan nilai apa adanya tanpa solusiKurang tepat karena guru tidak menunjukkan kepedulian terhadap kesulitan siswa. Keadilan bukan berarti membiarkan siswa tertinggal, tetapi memberi kesempatan yang sesuai aturan.\nD. Menyamakan nilai dengan siswa lainKurang tepat karena setiap siswa memiliki hasil belajar yang berbeda. Menyamakan nilai tanpa dasar penilaian yang jelas justru tidak adil.\nKesimpulan:Keadilan dalam pendidikan berarti memberikan penilaian secara objektif sesuai hasil belajar, sekaligus memberi kesempatan yang wajar kepada siswa untuk memperbaiki diri. Karena itu, pilihan C adalah jawaban yang paling tepat.',
   },
   {
     id: 64,
     theme: 'adil',
     boxType: 'hijau',
     question:
-      'Seorang guru memberi nilai lebih tinggi kepada siswa yang mengalami kesulitan, meskipun hasilnya tidak sesuai kriteria. Keputusan ini dapat dianalisis sebagai...',
-    options: [
-      'Adil karena penuh kasih sayang',
-      'Tidak adil karena tidak objektif',
-      'Tepat karena membantu siswa',
-      'Wajar karena kondisi tertentu',
-    ],
-    answer: 1,
-
-    explanation: '-',
+      'Nilai “ojo dumeh” mengajarkan agar tidak menyalahgunakan kekuasaan.Seorang panitia lomba memberikan keuntungan kepada temannya. Perilaku ini menunjukkan…',
+    options: ['Penyalahgunaan wewenang', 'Sikap membantu', 'Empati', 'Kerja sama'],
+    answer: 0,
+    explanation:
+      'Nilai “ojo dumeh” dalam kearifan lokal Jawa mengajarkan seseorang agar tidak merasa paling berkuasa, tidak sombong, dan tidak menggunakan kedudukan untuk kepentingan pribadi atau kelompok tertentu.\nPada soal tersebut, seorang panitia lomba memberikan keuntungan kepada temannya. Sebagai panitia, ia seharusnya bersikap adil, jujur, dan tidak memihak kepada siapa pun. Ketika ia memberikan perlakuan khusus kepada temannya, berarti ia telah menggunakan posisinya untuk menguntungkan orang tertentu.\nPerilaku tersebut termasuk penyalahgunaan wewenang, karena panitia memanfaatkan kekuasaan atau tugas yang dimilikinya secara tidak adil.\nJawaban yang benar: A. Penyalahgunaan wewenang\n\nAlasan pilihan lain salah:\nB. Sikap membantu kurang tepat, karena bantuan yang diberikan dilakukan secara tidak adil dan merugikan peserta lain.C. Empati tidak tepat, karena empati berarti memahami perasaan orang lain, bukan memberi keuntungan khusus.D. Kerja sama tidak tepat, karena kerja sama seharusnya dilakukan secara jujur dan tidak melanggar aturan.\nKesimpulan:Perilaku panitia tersebut bertentangan dengan nilai ojo dumeh dan nilai antikorupsi, terutama nilai adil, jujur, dan tanggung jawab.',
   },
   {
     id: 65,
     theme: 'adil',
     boxType: 'ungu',
     question:
-      'Seorang guru mengetahui bahwa salah satu siswa gagal ujian karena kondisi keluarga yang sulit. Guru tersebut mempertimbangkan untuk menaikkan nilainya agar tidak tertinggal. Keputusan yang paling mencerminkan keadilan adalah...',
-    options: [
-      'Menaikkan nilai karena rasa kasihan',
-      'Membiarkan nilai apa adanya tanpa solusi',
-      'Memberi nilai sesuai hasil, tetapi memberikan kesempatan remedial',
-      'Menyamakan nilai dengan siswa lain',
-    ],
-    answer: 2,
-
-    explanation: '-',
+      'Dalam pembagian bantuan, seorang ketua mempertimbangkan: kondisi ekonomi jumlah anggota keluarga kebutuhan masing-masing Keputusan ini menunjukkan bahwa ia…',
+    options: ['Tidak adil karena tidak sama', 'Bersikap objektif dan penuh pertimbanga', 'Memihak kelompok tertentu', 'Tidak konsisten'],
+    answer: 1,
+    explanation:
+      'Dalam pembagian bantuan, seorang ketua tidak hanya membagi bantuan secara sama rata, tetapi mempertimbangkan kondisi ekonomi, jumlah anggota keluarga, dan kebutuhan masing-masing penerima.\nHal ini menunjukkan bahwa ketua tersebut berusaha mengambil keputusan secara objektif, yaitu berdasarkan data dan keadaan nyata setiap orang, bukan karena suka atau tidak suka. Pembagian yang adil tidak selalu berarti semua orang mendapat jumlah yang sama, tetapi disesuaikan dengan kebutuhan dan kondisi masing-masing.\nJawaban yang tepat: B. Bersikap objektif dan penuh pertimbangan\n\nAlasan pilihan lain kurang tepat:\nA. Tidak adil karena tidak sama → kurang tepat, karena keadilan tidak selalu berarti sama rata.C. Memihak kelompok tertentu → tidak tepat, karena ketua mempertimbangkan kondisi secara rasional, bukan keberpihakan.D. Tidak konsisten → tidak tepat, karena keputusan tersebut justru menunjukkan adanya pertimbangan yang jelas.\nJadi, keputusan ketua tersebut mencerminkan sikap adil, objektif, dan bijaksana dalam membagi bantuan.',
   },
   {
     id: 66,
     theme: 'adil',
     boxType: 'biru',
     question:
-      'Dalam pembagian bantuan kelas, semua siswa ingin mendapatkan bagian yang sama. Namun, ada beberapa siswa yang lebih membutuhkan. Apa keputusan yang paling adil?',
-    options: [
-      'Membagi sama rata agar semua puas',
-      'Memberikan lebih kepada yang lebih membutuhkan',
-      'Memberikan hanya kepada yang aktif',
-      'Tidak membagikan sama sekali',
-    ],
-    answer: 1,
-
-    explanation: '-',
+      'Perilaku berikut yang paling mencerminkan sikap objektif adalah…',
+    options: ['Memberi nilai berdasarkan kedekatan', 'Menilai berdasarkan perasaan', 'Menilai berdasarkan kriteria yang jelas', 'Mengikuti pendapat mayoritas'],
+    answer: 2,
+    explanation:
+      'Sikap objektif adalah sikap menilai sesuatu berdasarkan fakta, data, aturan, atau kriteria yang jelas, bukan berdasarkan perasaan pribadi, kedekatan, atau tekanan dari orang lain.\nPada soal tersebut, perilaku yang paling mencerminkan sikap objektif adalah:\nC. Menilai berdasarkan kriteria yang jelas\nJawaban ini benar karena penilaian dilakukan secara adil dan dapat dipertanggungjawabkan. Misalnya, seorang guru memberi nilai kepada siswa berdasarkan rubrik penilaian, bukan karena siswa tersebut dekat dengan guru atau disukai secara pribadi.\n\nPilihan lain kurang tepat karena:\nA. Memberi nilai berdasarkan kedekatan menunjukkan sikap subjektif dan tidak adil.B. Menilai berdasarkan perasaan juga bersifat subjektif karena dipengaruhi emosi pribadi.D. Mengikuti pendapat mayoritas belum tentu objektif, karena pendapat mayoritas tidak selalu berdasarkan fakta atau kriteria yang benar.\nJadi, jawaban yang tepat adalah C. Menilai berdasarkan kriteria yang jelas.',
   },
   {
     id: 67,
     theme: 'adil',
     boxType: 'merah',
     question:
-      'Nilai "ojo dumeh" mengajarkan agar tidak menyalahgunakan kekuasaan. Seorang panitia lomba memberikan keuntungan kepada temannya. Perilaku ini menunjukkan...',
-    options: [
-      'Sikap membantu',
-      'Empati',
-      'Penyalahgunaan wewenang',
-      'Kerja sama',
-    ],
-    answer: 2,
-
-    explanation: '-',
+      'Seorang guru memberi nilai lebih tinggi kepada siswa yang mengalami kesulitan, meskipun hasilnya tidak sesuai kriteria. Keputusan ini dapat dianalisis sebagai…',
+    options: ['Adil karena penuh kasih sayang', 'Tidak adil karena tidak objektif', 'Tepat karena membantu siswa', 'Wajar karena kondisi tertentu'],
+    answer: 1,
+    explanation:
+      'Keputusan guru memberi nilai lebih tinggi kepada siswa yang mengalami kesulitan, padahal hasil pekerjaannya tidak sesuai kriteria penilaian, termasuk tindakan tidak adil karena penilaian seharusnya dilakukan secara objektif berdasarkan capaian belajar, rubrik, atau kriteria yang telah ditetapkan.\nDalam konteks pendidikan, membantu siswa yang mengalami kesulitan memang penting. \n\nNamun, bantuan tersebut sebaiknya diberikan melalui bimbingan tambahan, remedial, pendampingan belajar, atau kesempatan memperbaiki tugas, bukan dengan menaikkan nilai tanpa dasar yang jelas.\nJika guru memberi nilai lebih tinggi hanya karena rasa kasihan, maka siswa lain yang telah memenuhi kriteria dapat merasa dirugikan. Hal ini juga dapat melemahkan nilai kejujuran, keadilan, dan tanggung jawab dalam proses pembelajaran.\nJawaban yang benar: B. Tidak adil karena tidak objektif\n\nPilihan ini tepat karena keputusan guru tidak didasarkan pada hasil belajar yang sebenarnya, melainkan pada pertimbangan subjektif. Guru boleh berempati, tetapi penilaian tetap harus adil, transparan, dan sesuai kriteria.',
   },
   {
     id: 68,
     theme: 'adil',
     boxType: 'kuning',
     question:
-      'Tepa selira merupakan perasaan yang sama dengan orang lain. Seorang anggota kelompok tidak bekerja karena alasan pribadi. Anggota lain meminta agar nilainya dibedakan. Jika mempertimbangkan tepa selira (tenggang rasa) dan keadilan, keputusan terbaik adalah...',
-    options: [
-      'Memberi nilai sama karena kasihan',
-      'Memberi nilai berbeda sesuai kontribusi',
-      'Mengabaikan masalah',
-      'Mengikuti keputusan mayoritas',
-    ],
+      'Dalam pembagian bantuan kelas, semua siswa ingin mendapatkan bagian yang sam a. Namun, ada beberapa siswa yang lebih membutuhkan. Apa keputusan yang paling adil?',
+    options: ['Membagi sama rata agar semua puas', 'Memberikan lebih kepada yang membutuhkan', 'Memberikan hanya kepada yang aktif', 'Tidak membagikan sama sekali'],
     answer: 1,
-
-    explanation: '-',
+    explanation:
+      'Soal tersebut berkaitan dengan nilai keadilan dalam pembagian bantuan. Keadilan tidak selalu berarti semua orang mendapatkan jumlah yang sama, tetapi memberikan sesuai dengan kebutuhan dan kondisi masing-masing.\nDalam kasus ini, semua siswa memang ingin mendapatkan bagian yang sama. Namun, ada beberapa siswa yang lebih membutuhkan bantuan. Maka keputusan yang paling adil adalah memberikan bantuan lebih kepada siswa yang benar-benar membutuhkan, agar bantuan tersebut tepat sasaran dan bermanfaat.\nJawaban yang tepat: B. Memberikan lebih kepada yang membutuhkan\nAlasan:\nPilihan B mencerminkan sikap adil karena mempertimbangkan kebutuhan setiap siswa. Siswa yang lebih membutuhkan sebaiknya mendapat perhatian lebih, bukan karena pilih kasih, tetapi karena kondisi mereka memang memerlukan bantuan yang lebih besar.\nPembahasan pilihan lain:\nA. Membagi sama rata agar semua puasKurang tepat, karena sama rata belum tentu adil. Ada siswa yang mungkin tidak terlalu membutuhkan, sementara siswa lain sangat membutuhkan.\nC. Memberikan hanya kepada yang aktifTidak tepat, karena bantuan seharusnya diberikan berdasarkan kebutuhan, bukan hanya keaktifan siswa.\nD. Tidak membagikan sama sekaliTidak tepat, karena bantuan seharusnya tetap disalurkan kepada siswa yang membutuhkan.\n\nKesimpulan:Keputusan yang paling adil adalah memberikan lebih kepada siswa yang lebih membutuhkan, karena adil berarti menempatkan sesuatu sesuai dengan kebutuhan dan keadaan.',
   },
   {
     id: 69,
     theme: 'adil',
     boxType: 'hijau',
     question:
-      'Dalam pembagian bantuan, seorang ketua mempertimbangkan kondisi ekonomi, jumlah anggota keluarga, dan kebutuhan masing-masing. Keputusan ini menunjukkan bahwa ia...',
-    options: [
-      'Tidak adil karena tidak sama',
-      'Bersikap objektif dan penuh pertimbangan',
-      'Memihak kelompok tertentu',
-      'Tidak konsisten',
-    ],
+      'Tepa selira merupakan perasaan yang sama dengan orang lain. Seorang anggota kelompok tidak bekerja karena alasan pribadi. Anggota lain meminta agar nilainya dibedakan. Jika mempertimbangkan tepa selira (tenggang rasa) dan keadilan, keputusan terbaik adalah…',
+    options: ['Memberi nilai sama karena kasihan', 'Memberi nilai berbeda sesuai kontribusi', 'Mengabaikan masalah', 'Mengikuti keputusan mayoritas'],
     answer: 1,
-
-    explanation: '-',
+    explanation:
+      'Tepa selira berarti sikap tenggang rasa, yaitu mampu memahami keadaan orang lain. Namun, tepa selira tidak berarti membenarkan sikap tidak bertanggung jawab atau menyamakan hasil orang yang bekerja dan tidak bekerja.\nDalam kasus tersebut, ada anggota kelompok yang tidak bekerja karena alasan pribadi. Anggota lain meminta agar nilainya dibedakan. Keputusan terbaik adalah memberi nilai sesuai kontribusi masing-masing anggota. Hal ini menunjukkan sikap adil, karena penghargaan diberikan berdasarkan usaha dan tanggung jawab yang dilakukan.\nJawaban yang benar: B. Memberi nilai berbeda sesuai kontribusi\nAlasan:\nPilihan B paling tepat karena tetap mempertimbangkan tepa selira dengan memahami kondisi anggota yang tidak bekerja, tetapi juga menjaga keadilan bagi anggota lain yang sudah berkontribusi. Nilai yang berbeda bukan bentuk hukuman, melainkan bentuk penilaian yang objektif sesuai tanggung jawab masing-masing.\n\nAnalisis pilihan jawaban:\nA. Memberi nilai sama karena kasihanKurang tepat, karena rasa kasihan tidak boleh mengabaikan keadilan bagi anggota yang sudah bekerja.\nB. Memberi nilai berbeda sesuai kontribusiTepat, karena keputusan ini adil dan menghargai usaha setiap anggota kelompok.\nC. Mengabaikan masalahTidak tepat, karena masalah dalam kerja kelompok perlu diselesaikan agar tidak menimbulkan ketidakadilan.\nD. Mengikuti keputusan mayoritasKurang tepat, karena keputusan mayoritas belum tentu adil. Keputusan sebaiknya berdasarkan kontribusi dan tanggung jawab.\n\nKesimpulan:Sikap tepa selira harus tetap berjalan bersama dengan keadilan. Tenggang rasa tidak berarti menyamakan nilai tanpa melihat kontribusi, tetapi memberi penilaian secara bijak, objektif, dan bertanggung jawab.',
   },
   {
     id: 70,
     theme: 'adil',
     boxType: 'ungu',
     question:
-      'Seorang pemimpin harus memilih: Keputusan yang menyenangkan semua orang atau keputusan yang adil tetapi tidak disukai sebagian orang. Jika dilihat dari nilai keadilan, pilihan yang paling tepat adalah…',
-    options: [
-      'Mengutamakan perasaan semua orang',
-      'Menghindari konflik',
-      'Mengambil keputusan yang adil',
-      'Menunda keputusan',
-    ],
+      'Seorang pemimpin harus memilih: Keputusan yang menyenangkan semua orang Keputusan yang adil tetapi tidak disukai sebagian orang Jika dilihat dari nilai keadilan, pilihan yang paling tepat adalah…',
+    options: ['Mengutamakan perasaan semua orang', 'Menghindari konflik', 'Mengambil keputusan yang adil', 'Menunda keputusan'],
     answer: 2,
-
-    explanation: '-',
+    explanation:
+      'Soal tersebut menekankan pada nilai keadilan dalam kepemimpinan. Seorang pemimpin tidak selalu dapat membuat keputusan yang menyenangkan semua orang. Namun, keputusan yang baik harus didasarkan pada prinsip adil, objektif, dan tidak memihak.\nDalam situasi tersebut, keputusan yang adil mungkin tidak disukai oleh sebagian orang, tetapi tetap menjadi pilihan yang paling tepat karena mempertimbangkan kebenaran, aturan, dan kepentingan bersama.\nJawaban yang benar adalah C. Mengambil keputusan yang adil.\nAlasan:\nA. Mengutamakan perasaan semua orang kurang tepat karena pemimpin tidak boleh hanya mengikuti perasaan, tetapi harus mempertimbangkan keadilan.\nB. Menghindari konflik kurang tepat karena menghindari konflik belum tentu menyelesaikan masalah secara adil.\nC. Mengambil keputusan yang adil tepat karena mencerminkan sikap pemimpin yang bertanggung jawab dan menjunjung nilai keadilan.\nD. Menunda keputusan kurang tepat karena dapat membuat masalah semakin berlarut-larut.\n\nKesimpulan:\nDari nilai keadilan, pemimpin harus berani mengambil keputusan yang adil, meskipun tidak selalu disukai oleh semua pihak. Keputusan yang adil lebih penting daripada sekadar menyenangkan banyak orang.',
   },
-
-  // ===================== BERANI (ID 71–80) =====================
   {
     id: 71,
     theme: 'berani',
     boxType: 'biru',
-    question: 'Perilaku berikut yang paling menunjukkan keberanian adalah...',
-    options: [
-      'Mengikuti keputusan mayoritas tanpa berpikir',
-      'Menyampaikan pendapat dengan yakin meskipun berbeda',
-      'Diam agar tidak salah',
-      'Menunggu orang lain bertindak',
-    ],
+    question:
+      'Perilaku berikut yang paling menunjukkan keberanian adalah…',
+    options: ['Mengikuti keputusan mayoritas tanpa berpikir', 'Menyampaikan pendapat dengan yakin meskipun berbeda', 'Diam agar tidak salah', 'Menunggu orang lain bertindak'],
     answer: 1,
-
-    explanation: '-',
+    explanation:
+      'Perilaku yang paling menunjukkan keberanian adalah menyampaikan pendapat dengan yakin meskipun berbeda. Keberanian bukan berarti melawan orang lain, tetapi berani bersikap benar, menyampaikan gagasan, dan mempertahankan pendapat secara sopan meskipun tidak sama dengan mayoritas.\n\nAnalisis pilihan jawaban:\nA. Mengikuti keputusan mayoritas tanpa berpikirKurang tepat, karena sikap ini menunjukkan kurangnya keberanian untuk berpikir kritis dan mengambil sikap sendiri.\nB. Menyampaikan pendapat dengan yakin meskipun berbedaTepat. Sikap ini menunjukkan keberanian karena seseorang berani mengungkapkan pendapatnya secara percaya diri, walaupun pendapat tersebut berbeda dari orang lain.\nC. Diam agar tidak salahKurang tepat, karena diam hanya karena takut salah menunjukkan kurang percaya diri dan belum mencerminkan keberanian.\nD. Menunggu orang lain bertindakKurang tepat, karena sikap ini menunjukkan ketergantungan pada orang lain dan tidak berani mengambil inisiatif.\nJawaban yang benar: B. Menyampaikan pendapat dengan yakin meskipun berbeda.',
   },
   {
     id: 72,
     theme: 'berani',
-    boxType: 'biru',
+    boxType: 'merah',
     question:
-      'Seorang siswa ragu untuk menolak ajakan menyontek karena takut dijauhi teman. Jika dilihat dari nilai berani, keputusan menolak ajakan tersebut menunjukkan bahwa ia...',
-    options: [
-      'Menghindari masalah',
-      'Tidak menghargai teman',
-      'Tidak gentar dalam mempertahankan kebenaran',
-      'Tidak peduli dengan lingkungan',
-    ],
+      'Siswa yang tidak berani biasanya lebih mudah…',
+    options: ['Memimpin kelompok', 'Mengambil keputusan sendiri', 'Terpengaruh ajakan negatif', 'Menjadi percaya diri'],
     answer: 2,
-
-    explanation: '-',
+    explanation:
+      'Siswa yang tidak berani biasanya lebih mudah terpengaruh ajakan negatif karena kurang memiliki keberanian untuk menolak sesuatu yang salah. Sikap berani diperlukan agar siswa mampu mengatakan “tidak” terhadap ajakan yang tidak baik, seperti menyontek, membolos, berbohong, atau melakukan tindakan yang merugikan orang lain.\nPilihan A, B, dan D kurang tepat karena memimpin kelompok, mengambil keputusan sendiri, dan menjadi percaya diri justru membutuhkan keberanian.\nJawaban yang benar: C. Terpengaruh ajakan negatif\nNilai karakter yang ditekankan:Berani, yaitu keberanian untuk menolak ajakan buruk dan mempertahankan sikap yang benar.',
   },
   {
     id: 73,
     theme: 'berani',
-    boxType: 'merah',
-    question: 'Siswa yang tidak berani biasanya lebih mudah...',
-    options: [
-      'Memimpin kelompok',
-      'Mengambil keputusan sendiri',
-      'Terpengaruh ajakan negatif',
-      'Menjadi percaya diri',
-    ],
-    answer: 2,
-
-    explanation: '-',
+    boxType: 'kuning',
+    question:
+      'Seorang ketua kelompok mengetahui ada anggota yang tidak jujur dalam laporan. Jika ia menegur, suasana kelompok bisa menjadi tidak nyaman. Pilihan yang paling mencerminkan keberanian adalah…',
+    options: ['Membiarkan agar suasana tetap tenang', 'Menegur secara bijak meskipun berisiko konflik', 'Mengabaikan masalah', 'Menyerahkan kepada orang lain'],
+    answer: 1,
+    explanation:
+      'Soal tersebut mengukur nilai keberanian dalam konteks integritas kelompok. Seorang ketua kelompok mengetahui adanya anggota yang tidak jujur dalam laporan. Situasi ini menuntut ketua untuk berani mengambil sikap yang benar, meskipun tindakannya dapat menimbulkan suasana tidak nyaman atau berisiko menimbulkan konflik.\n\nPilihan A, membiarkan agar suasana tetap tenang, tidak mencerminkan keberanian karena ketua menghindari masalah dan membiarkan ketidakjujuran terjadi.Pilihan C, mengabaikan masalah, juga tidak tepat karena menunjukkan sikap pasif dan tidak bertanggung jawab.Pilihan D, menyerahkan kepada orang lain, kurang mencerminkan keberanian karena ketua tidak berani menghadapi persoalan secara langsung.\nPilihan B, yaitu menegur secara bijak meskipun berisiko konflik, merupakan jawaban yang paling tepat. \n\nKeberanian bukan berarti bersikap kasar, tetapi berani menyampaikan kebenaran dengan cara yang sopan, bijaksana, dan bertanggung jawab. Ketua kelompok perlu menjaga kejujuran laporan sekaligus tetap memperhatikan hubungan baik antaranggota.\n\nJawaban yang benar: B. Menegur secara bijak meskipun berisiko konflik.',
   },
   {
     id: 74,
     theme: 'berani',
-    boxType: 'merah',
-    question: 'Keberanian dalam menolak kecurangan penting karena...',
-    options: [
-      'Membuat siswa terlihat berbeda',
-      'Menghindari konflik',
-      'Mencegah berkembangnya perilaku koruptif',
-      'Mempercepat pekerjaan',
-    ],
+    boxType: 'hijau',
+    question:
+      'Dalam pepatah Jawa “wani amarga bener” (berani karena benar), seorang siswa mengetahui adanya kecurangan saat ujian. Jika ia ingin menerapkan nilai tersebut, sikap yang paling tepat adalah…',
+    options: ['Diam agar tidak dimusuhi teman', 'Mengikuti kecurangan agar aman', 'Melaporkan atau menolak kecurangan karena itu salah', 'Menghindari situasi'],
     answer: 2,
-
-    explanation: '-',
+    explanation:
+      'Pepatah Jawa “wani amarga bener” berarti berani karena berada di pihak yang benar. Nilai ini mengajarkan bahwa seseorang harus memiliki keberanian untuk menolak atau melawan perbuatan yang tidak jujur, meskipun ada risiko tidak disukai teman.\nDalam kasus tersebut, siswa mengetahui adanya kecurangan saat ujian. Kecurangan merupakan tindakan yang bertentangan dengan nilai kejujuran, tanggung jawab, dan integritas. Jika siswa ingin menerapkan nilai wani amarga bener, maka ia harus berani bersikap benar, yaitu menolak kecurangan atau melaporkannya kepada guru.\nPilihan A tidak tepat karena diam berarti membiarkan kesalahan terjadi.Pilihan B salah karena mengikuti kecurangan berarti ikut melakukan tindakan tidak jujur.Pilihan D kurang tepat karena menghindar tidak menyelesaikan masalah.\n\nJadi, sikap yang paling tepat adalah:\nC. Melaporkan atau menolak kecurangan karena itu salah\nJawaban: C',
   },
   {
     id: 75,
     theme: 'berani',
-    boxType: 'kuning',
+    boxType: 'ungu',
     question:
-      'Seorang ketua kelompok mengetahui ada anggota yang tidak jujur dalam laporan. Jika ia menegur, suasana kelompok bisa menjadi tidak nyaman. Pilihan yang paling mencerminkan keberanian adalah...',
-    options: [
-      'Membiarkan agar suasana tetap tenang',
-      'Menegur secara bijak meskipun berisiko konflik',
-      'Mengabaikan masalah',
-      'Menyerahkan kepada orang lain',
-    ],
-    answer: 1,
-
-    explanation: '-',
+      'Seorang siswa sudah memulai proyek dengan jujur, tetapi melihat kelompok lain menggunakan cara curang dan mendapatkan hasil lebih cepat. Jika ia tetap melanjutkan dengan cara jujur, sikap tersebut menunjukkan…',
+    options: ['Ketidakefisienan', 'Kelemahan', 'Sikap pantang mundur dari prinsip', 'Kurang kerja sama'],
+    answer: 2,
+    explanation:
+      'Soal tersebut menggambarkan seorang siswa yang tetap memilih menyelesaikan proyek dengan cara jujur, meskipun melihat kelompok lain menggunakan cara curang dan memperoleh hasil lebih cepat.\nSikap siswa tersebut menunjukkan bahwa ia memiliki keteguhan dalam memegang prinsip kejujuran. Ia tidak mudah terpengaruh oleh cara yang salah, meskipun cara tersebut tampak lebih cepat atau menguntungkan.\n\nJawaban yang benar: C. Sikap pantang mundur dari prinsip\nPilihan C tepat karena siswa tersebut tetap bertahan pada nilai integritas, yaitu jujur dan tidak curang. Ia menunjukkan sikap pantang mundur dari prinsip kebenaran, meskipun ada tekanan dari lingkungan sekitarnya.\n\nAlasan pilihan lain kurang tepat:\nA. KetidakefisienanKurang tepat, karena jujur bukan berarti tidak efisien. Kejujuran adalah cara yang benar dalam mencapai hasil.\nB. KelemahanKurang tepat, karena tetap jujur justru menunjukkan kekuatan moral, bukan kelemahan.\nD. Kurang kerja samaKurang tepat, karena soal tidak menunjukkan bahwa siswa menolak bekerja sama. Yang ditekankan adalah sikapnya dalam mempertahankan prinsip kejujuran.\nKesimpulan:Siswa yang tetap jujur meskipun melihat orang lain curang menunjukkan sikap teguh pendirian, berintegritas, dan pantang mundur dari prinsip yang benar.',
   },
   {
     id: 76,
     theme: 'berani',
-    boxType: 'kuning',
+    boxType: 'biru',
     question:
-      'Seorang siswa tetap mempertahankan kejujuran meskipun sering diejek oleh teman. Sikap ini menunjukkan bahwa ia...',
-    options: [
-      'Tidak peduli lingkungan',
-      'Tegar dalam menghadapi tekanan',
-      'Tidak memiliki teman',
-      'Bersikap keras',
-    ],
-    answer: 1,
-
-    explanation: '-',
+      'Seorang siswa ragu untuk menolak ajakan menyontek karena takut dijauhi teman. Jika dilihat dari nilai berani, keputusan menolak ajakan tersebut menunjukkan bahwa ia…',
+    options: ['Menghindari masalah', 'Tidak menghargai teman', 'Tidak gentar dalam mempertahankan kebenaran', 'Tidak peduli dengan lingkungan'],
+    answer: 2,
+    explanation:
+      'Soal tersebut menilai pemahaman siswa terhadap nilai berani dalam pendidikan antikorupsi. Nilai berani bukan berarti melawan teman secara kasar, tetapi memiliki keberanian untuk menolak ajakan yang salah dan tetap mempertahankan sikap jujur meskipun ada risiko dijauhi atau tidak disukai teman.\nDalam kasus tersebut, siswa ragu menolak ajakan menyontek karena takut dijauhi. Namun, ketika ia tetap menolak ajakan menyontek, berarti ia menunjukkan keberanian moral. Ia berani mempertahankan kebenaran, kejujuran, dan integritas walaupun menghadapi tekanan dari teman.\nJawaban yang tepat adalah: C. Tidak gentar dalam mempertahankan kebenaran\n\nAlasan:\nPilihan C tepat karena menolak ajakan menyontek menunjukkan sikap berani dalam membela kebenaran dan kejujuran.\nPilihan A kurang tepat karena menolak menyontek bukan berarti menghindari masalah, melainkan menghadapi tekanan dengan sikap benar.\nPilihan B tidak tepat karena menolak ajakan buruk bukan berarti tidak menghargai teman. Justru sikap tersebut dapat mengingatkan teman agar tidak melakukan kecurangan.\nPilihan D tidak tepat karena menolak menyontek bukan sikap tidak peduli, tetapi bentuk kepedulian terhadap kejujuran dan aturan.\nJadi, keputusan menolak ajakan menyontek menunjukkan bahwa siswa tersebut tidak gentar dalam mempertahankan kebenaran.',
   },
   {
     id: 77,
     theme: 'berani',
-    boxType: 'hijau',
+    boxType: 'merah',
     question:
-      'Dalam pepatah Jawa "wani amarga bener" (berani karena benar), seorang siswa mengetahui adanya kecurangan saat ujian. Jika ia ingin menerapkan nilai tersebut, sikap yang paling tepat adalah...',
-    options: [
-      'Diam agar tidak dimusuhi teman',
-      'Mengikuti kecurangan agar aman',
-      'Melaporkan atau menolak kecurangan karena itu salah',
-      'Menghindari situasi',
-    ],
+      'Keberanian dalam menolak kecurangan penting karena…',
+    options: ['Membuat siswa terlihat berbeda', 'Menghindari konflik', 'Mencegah berkembangnya perilaku koruptif', 'Mempercepat pekerjaan'],
     answer: 2,
-
-    explanation: '-',
+    explanation:
+      'Keberanian dalam menolak kecurangan penting karena sikap berani membantu seseorang untuk tidak ikut melakukan tindakan yang salah, meskipun ada tekanan dari teman atau lingkungan. Jika kecurangan dibiarkan, kebiasaan tersebut dapat berkembang menjadi perilaku tidak jujur yang lebih besar, termasuk perilaku koruptif.\nJawaban yang tepat: C. Mencegah berkembangnya perilaku koruptif\n\nAlasan:\nPilihan C benar karena menolak kecurangan merupakan bentuk sikap antikorupsi. Kecurangan kecil, seperti mencontek, memalsukan tugas, atau mengambil hak orang lain, jika terus dibiarkan dapat membentuk kebiasaan buruk. Kebiasaan tersebut bisa berkembang menjadi perilaku koruptif di masa depan.\n\nPilihan lain kurang tepat karena:\nA. Membuat siswa terlihat berbedaTidak tepat, karena tujuan menolak kecurangan bukan untuk terlihat berbeda, tetapi untuk menjaga kejujuran dan integritas.\nB. Menghindari konflikKurang tepat, karena menolak kecurangan kadang justru membutuhkan keberanian menghadapi risiko atau tekanan sosial.\nD. Mempercepat pekerjaanTidak tepat, karena kecurangan mungkin terlihat mempercepat pekerjaan, tetapi merusak nilai kejujuran dan tanggung jawab.\n\nKesimpulan:Keberanian menolak kecurangan penting karena dapat mencegah siswa terbiasa melakukan tindakan tidak jujur yang berpotensi menjadi perilaku koruptif.',
   },
   {
     id: 78,
     theme: 'berani',
-    boxType: 'hijau',
+    boxType: 'kuning',
     question:
-      'Pepatah "ajining diri saka tumindak" menunjukkan bahwa tindakan mencerminkan harga diri. Seorang siswa memilih diam ketika melihat ketidakjujuran karena takut terlibat. Sikap tersebut menunjukkan bahwa ia...',
-    options: [
-      'Menjaga hubungan sosial',
-      'Menghindari konflik',
-      'Belum menunjukkan keberanian dalam menjaga harga diri',
-      'Bersikap bijaksana',
-    ],
-    answer: 2,
-
-    explanation: '-',
+      'Seorang siswa tetap mempertahankan kejujuran meskipun sering diejek oleh teman. Sikap ini menunjukkan bahwa ia…',
+    options: ['Tidak peduli lingkungan', 'Tidak memiliki teman', 'Bersikap keras', 'Tegar dalam menghadapi tekanan'],
+    answer: 3,
+    explanation:
+      'Sikap siswa yang tetap mempertahankan kejujuran meskipun sering diejek teman menunjukkan bahwa ia memiliki keteguhan hati. Ia tidak mudah terpengaruh oleh tekanan sosial dari lingkungan sekitarnya. Walaupun mendapatkan ejekan, ia tetap memilih untuk bersikap jujur karena memahami bahwa kejujuran adalah nilai yang benar dan penting untuk dipertahankan.\nSikap tersebut mencerminkan keberanian dan ketegaran dalam menghadapi tekanan dari teman sebaya.\n\nAnalisis pilihan jawaban:\nA. Tidak peduli lingkunganKurang tepat, karena siswa tersebut bukan tidak peduli, melainkan tetap menjaga nilai kejujuran.\nB. Tidak memiliki temanKurang tepat, karena soal tidak membahas jumlah teman yang dimiliki siswa.\nC. Bersikap kerasKurang tepat, karena mempertahankan kejujuran bukan berarti keras, tetapi menunjukkan prinsip yang kuat.\nD. Tegar dalam menghadapi tekananTepat, karena siswa tetap jujur meskipun mendapat ejekan dari teman.\n\nJawaban yang benar: D. Tegar dalam menghadapi tekanan.',
   },
   {
     id: 79,
     theme: 'berani',
-    boxType: 'ungu',
+    boxType: 'hijau',
     question:
-      'Seorang siswa sudah memulai proyek dengan jujur, tetapi melihat kelompok lain menggunakan cara curang dan mendapatkan hasil lebih cepat. Jika ia tetap melanjutkan dengan cara jujur, sikap tersebut menunjukkan...',
-    options: [
-      'Ketidakefisienan',
-      'Kelemahan',
-      'Sikap pantang mundur dari prinsip',
-      'Kurang kerja sama',
-    ],
-    answer: 2,
-
-    explanation: '-',
+      'Pepatah “ajining diri saka tumindak” menunjukkan bahwa tindakan mencerminkan harga diri.Seorang siswa memilih diam ketika melihat ketidakjujuran karena takut terlibat. Sikap tersebut menunjukkan bahwa ia…',
+    options: ['Belum menunjukkan keberanian dalam menjaga harga diri', 'Menjaga hubungan sosial', 'Menghindari konflik', 'Bersikap bijaksana'],
+    answer: 0,
+    explanation:
+      'Pepatah Jawa “ajining diri saka tumindak” berarti bahwa harga diri atau kehormatan seseorang dapat dilihat dari perilaku dan tindakannya. Seseorang dinilai baik bukan hanya dari ucapan, tetapi dari keberanian melakukan hal yang benar.\nDalam soal tersebut, siswa melihat ketidakjujuran, tetapi memilih diam karena takut terlibat. Sikap diam ini menunjukkan bahwa siswa tersebut belum berani membela nilai kejujuran. Padahal, menjaga harga diri tidak hanya berarti menjaga nama baik diri sendiri, tetapi juga berani bertindak benar ketika melihat penyimpangan.\nSikap tersebut berkaitan dengan nilai antikorupsi, khususnya nilai berani dan jujur. Siswa seharusnya berani menolak atau melaporkan ketidakjujuran dengan cara yang baik dan bertanggung jawab.\nPilihan lain kurang tepat karena:\nB. Menjaga hubungan sosial kurang tepat, karena menjaga hubungan sosial tidak boleh dilakukan dengan membiarkan ketidakjujuran.\nC. Menghindari konflik kurang tepat, karena menghindari konflik dengan cara diam terhadap kesalahan justru menunjukkan kurangnya keberanian moral.\nD. Bersikap bijaksana kurang tepat, karena bijaksana berarti mampu mengambil sikap benar secara tepat, bukan membiarkan ketidakjujuran.\nJadi, sikap siswa tersebut menunjukkan bahwa ia belum menunjukkan keberanian dalam menjaga harga diri.\n\nJawaban yang tepat: A. Belum menunjukkan keberanian dalam menjaga harga diri',
   },
   {
     id: 80,
     theme: 'berani',
     boxType: 'ungu',
     question:
-      'Seorang siswa harus memilih antara mengikuti kelompok agar aman atau berdiri sendiri mempertahankan kejujuran. Pilihan yang paling mencerminkan nilai berani adalah...',
-    options: [
-      'Mengikuti kelompok',
-      'Menunda keputusan',
-      'Mempertahankan prinsip meskipun sendiri',
-      'Menghindari situasi',
-    ],
-    answer: 2,
-
-    explanation: '-',
+      'Seorang siswa harus memilih: Mengikuti kelompok agar aman Berdiri sendiri mempertahankan kejujuran Pilihan yang paling mencerminkan nilai berani adalah…',
+    options: ['Mengikuti kelompok', 'Menunda keputusan', 'Menghindari situasi', 'Mempertahankan prinsip meskipun sendiri'],
+    answer: 3,
+    explanation:
+      'Soal tersebut menggambarkan situasi ketika seorang siswa menghadapi tekanan dari kelompok. Ia harus memilih antara ikut kelompok agar merasa aman atau tetap mempertahankan kejujuran meskipun harus berdiri sendiri.\nNilai berani dalam pendidikan antikorupsi berarti memiliki keberanian untuk melakukan hal yang benar, meskipun menghadapi tekanan, risiko, atau tidak didukung oleh orang lain. Berani bukan berarti melawan tanpa alasan, tetapi berani mempertahankan prinsip yang baik, terutama prinsip kejujuran.\nPilihan D. Mempertahankan prinsip meskipun sendiri merupakan jawaban yang paling tepat karena menunjukkan sikap berani dalam membela kebenaran dan kejujuran. Siswa tidak ikut-ikutan kelompok apabila kelompok tersebut tidak sesuai dengan nilai kebaikan.\n\nAnalisis Pilihan Jawaban\nA. Mengikuti kelompokKurang tepat, karena siswa hanya mencari rasa aman dan tidak menunjukkan keberanian moral.\nB. Menunda keputusanKurang tepat, karena menunda keputusan menunjukkan keraguan dan belum mencerminkan sikap berani.\nC. Menghindari situasiKurang tepat, karena menghindar tidak menunjukkan keberanian untuk menghadapi masalah.\nD. Mempertahankan prinsip meskipun sendiriTepat, karena mencerminkan keberanian untuk jujur dan teguh pada nilai kebenaran meskipun tidak didukung kelompok.\nJawaban yang benar: D. Mempertahankan prinsip meskipun sendiri.',
   },
-
-  // ===================== PEDULI (ID 81–90) =====================
   {
     id: 81,
     theme: 'peduli',
     boxType: 'biru',
     question:
-      'Kurangnya kepedulian terhadap orang lain dapat mendorong perilaku koruptif karena...',
-    options: [
-      'Membuat pekerjaan lebih cepat',
-      'Mengabaikan dampak tindakan terhadap orang lain',
-      'Mengurangi konflik',
-      'Meningkatkan efisiensi',
-    ],
+      'Kurangnya kepedulian terhadap orang lain dapat mendorong perilaku koruptif karena…',
+    options: ['Membuat pekerjaan lebih cepat', 'Mengabaikan dampak tindakan terhadap orang lain', 'Mengurangi konflik', 'Meningkatkan efisiensi'],
     answer: 1,
-
-    explanation: '-',
+    explanation:
+      'Kurangnya kepedulian terhadap orang lain dapat mendorong perilaku koruptif karena seseorang tidak lagi memikirkan akibat dari tindakannya bagi orang lain. Orang yang tidak peduli cenderung hanya mementingkan keuntungan pribadi, meskipun tindakannya merugikan masyarakat, teman, sekolah, atau lingkungan sekitar.\nDalam pendidikan antikorupsi, sikap peduli penting karena membuat seseorang peka terhadap hak dan kepentingan orang lain. Jika rasa peduli hilang, seseorang bisa lebih mudah melakukan tindakan tidak jujur, menyalahgunakan amanah, atau mengambil sesuatu yang bukan haknya.\nJawaban yang benar: B. Mengabaikan dampak tindakan terhadap orang lain\n\nAlasan pilihan lain kurang tepat:\nA. Membuat pekerjaan lebih cepatTidak berkaitan langsung dengan perilaku koruptif. Pekerjaan cepat belum tentu menunjukkan kurangnya kepedulian.\nC. Mengurangi konflikKurangnya kepedulian justru dapat menimbulkan konflik karena orang lain merasa dirugikan.\nD. Meningkatkan efisiensiEfisiensi berarti penggunaan waktu, tenaga, atau biaya secara tepat. Ini bukan alasan perilaku koruptif.\nJadi, kurangnya kepedulian dapat menyebabkan seseorang mengabaikan kerugian yang dialami orang lain akibat tindakannya, sehingga jawaban yang paling tepat adalah B.',
   },
   {
     id: 82,
     theme: 'peduli',
-    boxType: 'biru',
+    boxType: 'merah',
     question:
-      'Perhatikan dua tindakan: (1) Membantu teman memahami pelajaran, (2) Mengerjakan tugas teman tanpa sepengetahuannya. Tindakan yang benar-benar mencerminkan empati adalah...',
-    options: ['1 saja', '2 saja', 'Keduanya', 'Tidak keduanya'],
-    answer: 0,
-
-    explanation: '-',
+      'Dalam kerja kelompok, seorang anggota tidak bekerja karena masalah pribadi.Anggota lain merasa tidak adil jika nilainya disamakan. Keputusan yang paling mencerminkan kepedulian sekaligus tetap adil adalah…',
+    options: ['Memberi nilai sama karena kasihan', 'Memberi nilai berbeda tanpa mempertimbangkan kondisi', 'Memberi kesempatan memperbaiki dengan tanggung jawab tambahan', 'Mengabaikan masalah'],
+    answer: 2,
+    explanation:
+      'Jawaban C merupakan pilihan yang paling tepat karena mencerminkan dua nilai penting, yaitu kepedulian dan keadilan. Sikap peduli ditunjukkan dengan tidak langsung menyalahkan anggota kelompok yang memiliki masalah pribadi. Namun, keadilan tetap dijaga karena anggota tersebut tidak otomatis mendapatkan nilai yang sama tanpa kontribusi. Ia diberi kesempatan untuk memperbaiki keadaan melalui tugas atau tanggung jawab tambahan.\nPilihan ini juga melatih siswa untuk memahami bahwa dalam kerja kelompok, setiap anggota memiliki tanggung jawab. Masalah pribadi perlu dipahami, tetapi tidak boleh menjadi alasan untuk mengabaikan kewajiban. Dengan memberi kesempatan memperbaiki, keputusan tersebut menjadi lebih manusiawi, bijak, dan tetap adil bagi anggota kelompok lainnya.\n\nAlasan pilihan lain kurang tepat:\nA. Memberi nilai sama karena kasihan kurang tepat karena hanya menunjukkan rasa kasihan, tetapi tidak adil bagi anggota lain yang sudah bekerja.\nB. Memberi nilai berbeda tanpa mempertimbangkan kondisi kurang tepat karena terlalu kaku dan tidak menunjukkan kepedulian terhadap masalah pribadi yang dialami anggota kelompok.\nD. Mengabaikan masalah kurang tepat karena tidak menyelesaikan persoalan dan dapat menimbulkan ketidakadilan dalam kelompok.\nJadi, keputusan terbaik adalah memberi kesempatan memperbaiki dengan tanggung jawab tambahan karena tetap menghargai kondisi pribadi seseorang sekaligus menjaga keadilan dalam kerja kelompok.\nJawaban: C. Memberi kesempatan memperbaiki dengan tanggung jawab tambahan',
   },
   {
     id: 83,
     theme: 'peduli',
-    boxType: 'merah',
+    boxType: 'kuning',
     question:
-      'Dalam kerja kelompok, seorang anggota tidak bekerja karena masalah pribadi. Anggota lain merasa tidak adil jika nilainya disamakan. Keputusan yang paling mencerminkan kepedulian sekaligus tetap adil adalah...',
-    options: [
-      'Memberi nilai sama karena kasihan',
-      'Memberi nilai berbeda tanpa mempertimbangkan kondisi',
-      'Memberi kesempatan memperbaiki dengan tanggung jawab tambahan',
-      'Mengabaikan masalah',
-    ],
-    answer: 2,
-
-    explanation: '-',
+      'Seorang siswa membantu temannya mengerjakan tugas agar cepat selesai, tetapi temannya tidak belajar apa-apa. Jika dianalisis, sikap tersebut…',
+    options: ['Murni peduli', 'Peduli tetapi kurang tepat', 'Tidak peduli sama sekali', 'Sangat membantu perkembangan'],
+    answer: 1,
+    explanation:
+      'Sikap siswa tersebut menunjukkan adanya kepedulian, karena ia ingin membantu temannya agar tugas cepat selesai. Namun, bentuk bantuan yang diberikan kurang tepat karena temannya menjadi tidak belajar dan tidak memahami materi.\nDalam pendidikan karakter, khususnya nilai peduli, membantu orang lain seharusnya tidak hanya menyelesaikan masalah secara cepat, tetapi juga mendorong orang tersebut menjadi lebih mandiri dan bertanggung jawab. Bantuan yang baik adalah membimbing, menjelaskan, atau memberi arahan, bukan langsung mengerjakan tugas temannya.\nJawaban yang benar: B. Peduli tetapi kurang tepat\nAlasan pilihan lain kurang tepat:\nA. Murni peduliKurang tepat, karena meskipun ada niat membantu, caranya tidak mendidik.\nC. Tidak peduli sama sekaliSalah, karena siswa tersebut tetap menunjukkan keinginan membantu temannya.\nD. Sangat membantu perkembanganSalah, karena temannya justru tidak belajar apa-apa sehingga perkembangan belajarnya tidak terbantu.\n\nKesimpulan:Sikap tersebut termasuk peduli, tetapi perlu dilakukan dengan cara yang lebih tepat, yaitu membantu teman memahami tugas, bukan mengerjakan tugasnya.',
   },
   {
     id: 84,
     theme: 'peduli',
-    boxType: 'merah',
+    boxType: 'hijau',
     question:
-      'Sikap kurang peduli terhadap orang lain dalam jangka panjang dapat menyebabkan...',
-    options: [
-      'Hubungan sosial semakin kuat',
-      'Lingkungan menjadi lebih harmonis',
-      'Menurunnya rasa saling percaya',
-      'Meningkatnya kerja sama',
-    ],
+      'Nilai “gotong royong” mengajarkan saling membantu dalam kesulitan.Dalam kelompok, ada anggota yang kesulitan memahami materi. Sikap yang paling tepat adalah…',
+    options: ['Mengabaikan agar tugas cepat selesai', 'Menggantikan semua pekerjaannya', 'Membantu memahami agar bisa mengerjakan sendiri', 'Melaporkan ke guru'],
     answer: 2,
-
-    explanation: '-',
+    explanation:
+      'Nilai gotong royong mengajarkan sikap saling membantu, bekerja sama, dan peduli terhadap kesulitan orang lain. Dalam kerja kelompok, apabila ada anggota yang belum memahami materi, sikap yang tepat bukan mengabaikan atau mengambil alih seluruh tugasnya, tetapi membantu teman tersebut agar memahami materi dan mampu mengerjakan tugasnya sendiri.\nPilihan C. Membantu memahami agar bisa mengerjakan sendiri adalah jawaban yang paling tepat karena menunjukkan sikap gotong royong sekaligus melatih kemandirian teman dalam belajar.\nJawaban: C. Membantu memahami agar bisa mengerjakan sendiri',
   },
   {
     id: 85,
     theme: 'peduli',
-    boxType: 'kuning',
+    boxType: 'ungu',
     question:
-      'Seorang siswa membantu temannya mengerjakan tugas agar cepat selesai, tetapi temannya menjadi tidak belajar apa-apa. Jika dianalisis, sikap tersebut...',
-    options: [
-      'Murni peduli',
-      'Peduli tetapi kurang tepat',
-      'Tidak peduli sama sekali',
-      'Sangat membantu perkembangan',
-    ],
+      'Perhatikan dua sikap berikut: Siswa A merasa kasihan melihat temannya kesulitan Siswa B tidak hanya merasa kasihan, tetapi juga membantu mencari solusi Sikap yang menunjukkan tingkat kepedulian lebih tinggi adalah…',
+    options: ['Siswa A', 'Siswa B', 'Keduanya sama', 'Tidak keduanya'],
     answer: 1,
-
-    explanation: '-',
+    explanation:
+      'Sikap peduli tidak hanya ditunjukkan melalui perasaan kasihan, tetapi juga melalui tindakan nyata untuk membantu orang lain.\nPada soal tersebut, Siswa A sudah menunjukkan rasa empati karena merasa kasihan melihat temannya kesulitan. Namun, sikap tersebut masih sebatas perasaan.\nSementara itu, Siswa B menunjukkan kepedulian yang lebih tinggi karena tidak hanya merasa kasihan, tetapi juga berusaha membantu mencari solusi. Artinya, Siswa B menunjukkan kepedulian dalam bentuk tindakan nyata.\nJawaban yang tepat adalah B. Siswa B.\nAlasan:Siswa B memiliki tingkat kepedulian lebih tinggi karena mampu mengubah rasa empati menjadi tindakan membantu. Sikap ini mencerminkan nilai peduli, tanggung jawab, dan solidaritas sosial.',
   },
   {
     id: 86,
     theme: 'peduli',
-    boxType: 'kuning',
+    boxType: 'biru',
     question:
-      'Seorang siswa harus memilih antara membantu temannya yang kesulitan meskipun membutuhkan waktu tambahan, atau fokus pada dirinya sendiri agar tugas cepat selesai. Jika dilihat dari nilai peduli, pilihan yang paling tepat adalah...',
-    options: [
-      'Mengutamakan diri sendiri',
-      'Menghindari keterlibatan',
-      'Membantu dengan tetap mengatur tanggung jawab pribadi',
-      'Menunda semua pekerjaan',
-    ],
-    answer: 2,
-
-    explanation: '-',
+      'Perhatikan dua tindakan: Membantu teman memahami pelajaran Mengerjakan tugas teman tanpa sepengetahuannya Tindakan yang benar-benar mencerminkan empati adalah…',
+    options: ['1 saja', '2 saja', 'Keduanya', 'Tidak keduanya'],
+    answer: 0,
+    explanation:
+      'Empati adalah kemampuan memahami perasaan, kesulitan, atau kebutuhan orang lain, lalu memberikan bantuan dengan cara yang tepat dan bertanggung jawab.\nTindakan membantu teman memahami pelajaran mencerminkan empati karena kita peduli terhadap kesulitan teman dan membantunya agar mampu belajar secara mandiri. Bantuan ini bersifat positif karena tidak mengambil alih tanggung jawab teman.\nSementara itu, mengerjakan tugas teman tanpa sepengetahuannya tidak mencerminkan empati yang benar. Meskipun terlihat seperti membantu, tindakan tersebut justru tidak mendidik, tidak jujur, dan dapat membuat teman tidak belajar dari tugasnya sendiri.\n\nJadi, tindakan yang benar-benar mencerminkan empati adalah membantu teman memahami pelajaran saja.\nJawaban: A. 1 saja',
   },
   {
     id: 87,
     theme: 'peduli',
-    boxType: 'hijau',
+    boxType: 'merah',
     question:
-      'Nilai "gotong royong" mengajarkan saling membantu dalam kesulitan. Sikap yang paling tepat adalah...',
-    options: [
-      'Mengabaikan agar tugas cepat selesai',
-      'Menggantikan semua pekerjaannya',
-      'Membantu memahami agar bisa mengerjakan sendiri',
-      'Melaporkan ke guru',
-    ],
-    answer: 2,
-
-    explanation: '-',
+      'Sikap kurang peduli terhadap orang lain dalam jangka panjang dapat menyebabkan…',
+    options: ['Hubungan sosial semakin kuat', 'Lingkungan menjadi lebih harmonis', 'Meningkatnya kerja sama', 'Menurunnya rasa saling percaya'],
+    answer: 3,
+    explanation:
+      'Sikap kurang peduli terhadap orang lain menunjukkan rendahnya kepedulian sosial. Jika sikap ini terus dibiarkan dalam jangka panjang, hubungan antarmanusia dapat menjadi renggang. Orang-orang akan merasa tidak diperhatikan, tidak dibantu, atau tidak dihargai.\nAkibatnya, rasa saling percaya dalam kehidupan sosial dapat menurun. Masyarakat menjadi lebih individualis dan kurang mau bekerja sama.\n\nAnalisis Pilihan Jawaban\nA. Hubungan sosial semakin kuatSalah, karena sikap kurang peduli justru membuat hubungan sosial melemah.\nB. Lingkungan menjadi lebih harmonisSalah, karena lingkungan yang harmonis terbentuk dari sikap saling peduli, menghargai, dan membantu.\nC. Meningkatnya kerja samaSalah, karena kerja sama membutuhkan kepedulian dan kepercayaan antaranggota masyarakat.\nD. Menurunnya rasa saling percayaBenar, karena kurangnya kepedulian dapat membuat orang merasa diabaikan sehingga kepercayaan sosial menurun.\nJawaban yang tepat: D. Menurunnya rasa saling percaya',
   },
   {
     id: 88,
     theme: 'peduli',
-    boxType: 'hijau',
+    boxType: 'kuning',
     question:
-      'Nilai "welas asih" berarti kasih sayang terhadap sesama. Seorang siswa melihat temannya kesulitan membawa banyak buku. Sikap yang paling tepat adalah...',
-    options: [
-      'Membiarkan karena bukan tanggung jawab',
-      'Menertawakan',
-      'Membantu dengan tulus',
-      'Mengabaikan',
-    ],
+      'Seorang siswa harus memilih: Membantu temannya yang kesulitan meskipun membutuhkan waktu tambahan Fokus pada dirinya sendiri agar tugas cepat selesai Jika dilihat dari nilai peduli, pilihan yang paling tepat adalah…',
+    options: ['Mengutamakan diri sendiri', 'Menghindari keterlibatan', 'Membantu dengan tetap mengatur tanggung jawab pribadi', 'Menunda semua pekerjaan'],
     answer: 2,
-
-    explanation: '-',
+    explanation:
+      'Nilai peduli berarti memiliki perhatian terhadap kesulitan orang lain dan bersedia membantu sesuai kemampuan. Dalam situasi tersebut, siswa dihadapkan pada pilihan antara membantu teman yang mengalami kesulitan atau hanya fokus pada tugasnya sendiri.\nPilihan yang paling tepat adalah membantu teman, tetapi tetap mengatur tanggung jawab pribadi. Artinya, siswa tidak mengabaikan tugasnya sendiri, tetapi juga tidak membiarkan temannya mengalami kesulitan tanpa bantuan. Sikap ini menunjukkan kepedulian yang seimbang, karena siswa mampu membantu orang lain sekaligus bertanggung jawab terhadap kewajibannya.\nPilihan A kurang tepat karena hanya mementingkan diri sendiri.Pilihan B tidak tepat karena menghindari keterlibatan menunjukkan kurangnya kepedulian.Pilihan D juga tidak tepat karena menunda semua pekerjaan dapat membuat tanggung jawab pribadi terbengkalai.\nJadi, pilihan C mencerminkan nilai peduli sekaligus tanggung jawab.\n\nJawaban yang tepat: C. Membantu dengan tetap mengatur tanggung jawab pribadi',
   },
   {
     id: 89,
     theme: 'peduli',
-    boxType: 'ungu',
+    boxType: 'hijau',
     question:
-      'Perhatikan dua sikap berikut: Siswa A merasa kasihan melihat temannya kesulitan memahami materi. Siswa B tidak hanya merasa kasihan, tetapi juga membantu mencari solusi. Sikap yang menunjukkan tingkat kepedulian lebih tinggi adalah...',
-    options: ['Siswa A', 'Siswa B', 'Keduanya sama', 'Tidak keduanya'],
-    answer: 1,
-
-    explanation: '-',
+      'Nilai “welas asih” berarti kasih sayang terhadap sesama.Seorang siswa melihat temannya kesulitan membawa banyak buku. Sikap yang paling tepat adalah…',
+    options: ['Membantu dengan tulus', 'Membiarkan karena bukan tanggung jawab', 'Menertawakan', 'Mengabaikan'],
+    answer: 0,
+    explanation:
+      'Nilai “welas asih” berarti memiliki rasa kasih sayang, kepedulian, dan empati terhadap sesama. Sikap welas asih ditunjukkan dengan membantu orang lain yang sedang mengalami kesulitan tanpa mengharapkan imbalan.\nPada soal tersebut, seorang siswa melihat temannya kesulitan membawa banyak buku. Sikap yang paling tepat adalah membantu dengan tulus, karena tindakan tersebut menunjukkan kepedulian, rasa kasih sayang, dan kemauan untuk meringankan beban orang lain.\nJawaban yang benar: A. Membantu dengan tulus\n\nAlasan pilihan lain kurang tepat:\nB. Membiarkan karena bukan tanggung jawab kurang tepat karena menunjukkan sikap tidak peduli.C. Menertawakan tidak tepat karena dapat menyakiti perasaan teman.D. Mengabaikan juga tidak sesuai dengan nilai welas asih karena tidak menunjukkan empati.\nJadi, sikap yang mencerminkan nilai welas asih adalah membantu teman dengan tulus.',
   },
   {
     id: 90,
     theme: 'peduli',
     boxType: 'ungu',
     question:
-      'Di kelas, beberapa siswa sering mengejek teman yang kurang mampu. Satu siswa memilih untuk membela temannya tersebut. Dampak dari sikap tersebut adalah...',
-    options: [
-      'Menimbulkan konflik tanpa manfaat',
-      'Mengganggu suasana kelas',
-      'Membangun solidaritas dan rasa aman',
-      'Membuat dirinya dijauhi tanpa alasan',
-    ],
-    answer: 2,
-
-    explanation: '-',
+      'Di kelas, beberapa siswa sering mengejek teman yang kurang mampu.Satu siswa memilih untuk membela temannya tersebut. Dampak dari sikap tersebut adalah…',
+    options: ['Menimbulkan konflik tanpa manfaat', 'Mengganggu suasana kelas', 'Membuat dirinya dijauhi tanpa alasan', 'Membangun solidaritas dan rasa aman'],
+    answer: 3,
+    explanation:
+      'Soal tersebut menggambarkan situasi di kelas ketika beberapa siswa mengejek teman yang kurang mampu. Tindakan mengejek termasuk perilaku tidak terpuji karena dapat menyakiti perasaan, merendahkan martabat teman, dan menciptakan suasana kelas yang tidak nyaman.\nKetika ada satu siswa yang berani membela temannya, sikap tersebut menunjukkan nilai peduli, berani, adil, dan tanggung jawab sosial. Membela teman yang direndahkan bukan berarti mencari masalah, tetapi menunjukkan keberanian untuk menghentikan perlakuan yang tidak adil.\nSikap tersebut dapat memberikan dampak positif, yaitu teman yang dibela merasa lebih aman, dihargai, dan tidak sendirian. Selain itu, siswa lain juga dapat belajar bahwa mengejek teman bukanlah perilaku yang benar. Dengan demikian, tindakan membela teman dapat membangun solidaritas, empati, dan rasa aman di lingkungan kelas.\nJawaban yang benar: D. Membangun solidaritas dan rasa aman\n\nAlasan pilihan lain kurang tepat:\nA. Menimbulkan konflik tanpa manfaat kurang tepat, karena membela teman memiliki manfaat positif, yaitu mencegah perundungan dan ketidakadilan.\nB. Mengganggu suasana kelas kurang tepat, karena yang mengganggu suasana kelas adalah perilaku mengejek, bukan sikap membela teman.\nC. Membuat dirinya dijauhi tanpa alasan kurang tepat, karena membela teman adalah tindakan baik dan memiliki alasan moral yang benar.\nJadi, dampak utama dari sikap membela teman yang diejek adalah membangun solidaritas dan rasa aman.',
   },
 ];
