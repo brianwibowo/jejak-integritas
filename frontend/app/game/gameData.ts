@@ -72,18 +72,18 @@ export const BOARD_SIZE = 50;
 
 // Snakes: head → tail (player goes DOWN if answer is wrong)
 export const snakes: Record<number, number> = {
-  44: 21,
-  48: 34,
-  35: 12,
-  24: 7,
+  48: 27,
+  44: 20,
+  40: 16,
+  36: 10,
 };
 
 // Ladders: bottom → top (player goes UP if answer is correct)
 export const ladders: Record<number, number> = {
-  19: 38,
   15: 26,
-  11: 30,
-  36: 46,
+  19: 38,
+  23: 45,
+  33: 49,
 };
 
 /**

@@ -19,7 +19,7 @@ export default function DevBypass({ socket, lobbyId }: DevBypassProps) {
     <button
       onClick={handleAddFakePlayer}
       className="w-6 h-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-sm flex items-center justify-center transition-all shadow-md active:scale-90 cursor-pointer border-0 outline-none"
-      title="Dev: Tambah Pemain Simulasi"
+      title="Tambah Bot (Pemain Simulasi)"
     >
       +
     </button>

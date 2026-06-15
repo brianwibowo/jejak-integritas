@@ -28,8 +28,8 @@ const io = new Server(server, {
 });
 
 // Snakes & Ladders Config
-const snakes = { 44: 21, 48: 34, 35: 12, 24: 7 };
-const ladders = { 19: 38, 15: 26, 11: 30, 36: 46 };
+const snakes = { 48: 27, 44: 20, 40: 16, 36: 10 };
+const ladders = { 15: 26, 19: 38, 23: 45, 33: 49 };
 const PLAYER_COLORS = ['#E74C3C', '#3498DB', '#2ECC71', '#111111'];
 
 // Initialize 5 lobbies

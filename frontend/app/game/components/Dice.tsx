@@ -10,19 +10,19 @@ const diceFaces = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
 
 export default function Dice({ value, onRoll, disabled }: DiceProps) {
   return (
-    <div className="flex flex-col items-center gap-3">
-      <div className="text-5xl sm:text-6xl select-none">
+    <div className="flex flex-col items-center gap-2 w-full">
+      <div className="text-5xl select-none filter drop-shadow-[0_2px_4px_rgba(255,255,255,0.1)] text-white">
         {value !== null ? diceFaces[value - 1] : '🎲'}
       </div>
       {value !== null && (
-        <div className="text-sm font-semibold text-gray-600">
-          Hasil: {value}
+        <div className="text-[10px] font-bold text-yellow-200 tracking-wider">
+          HASIL: {value}
         </div>
       )}
       <button
         onClick={onRoll}
         disabled={disabled}
-        className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-bold text-sm hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors shadow-md"
+        className="w-full py-2 bg-amber-600 hover:bg-amber-500 active:scale-95 text-white rounded-xl font-black text-xs transition-all shadow-md border border-amber-800 disabled:bg-slate-800 disabled:text-slate-500 disabled:border-slate-900 disabled:cursor-not-allowed cursor-pointer tracking-wider uppercase"
       >
         🎲 Lempar Dadu
       </button>

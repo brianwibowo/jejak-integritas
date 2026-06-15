@@ -245,6 +245,37 @@ export default function GamePage() {
     };
   }, [connectSocket, disconnectSocket]);
 
+  // === INTERCEPT BROWSER NAVIGATION / BACK BUTTON ===
+  useEffect(() => {
+    const isGameActive = onlineGameState && onlineGameState.phase !== 'setup' && onlineGameState.phase !== 'finished';
+    
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isGameActive) {
+        e.preventDefault();
+        e.returnValue = 'Apakah Anda yakin ingin keluar dari permainan?';
+        return e.returnValue;
+      }
+    };
+
+    const handlePopState = (e: PopStateEvent) => {
+      if (isGameActive) {
+        window.history.pushState(null, '', window.location.href);
+        setIsPaused(true);
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    if (isGameActive) {
+      window.history.pushState(null, '', window.location.href);
+      window.addEventListener('popstate', handlePopState);
+    }
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [onlineGameState?.phase]);
 
   // === LOADING SCREEN TIMER CONTROL ===
   useEffect(() => {
@@ -438,8 +469,10 @@ export default function GamePage() {
     socketRef.current?.emit('rename-lobby', { lobbyId: currentLobbyId, name: trimmed });
   };
 
-  const handleKickPlayer = (targetSocketId: string) => {
-    socketRef.current?.emit('kick-player', { lobbyId: currentLobbyId, targetSocketId });
+  const handleKickPlayer = (targetSocketId: string, playerName: string) => {
+    if (typeof window !== 'undefined' && window.confirm(`Apakah Anda yakin ingin mengeluarkan ${playerName} dari lobby?`)) {
+      socketRef.current?.emit('kick-player', { lobbyId: currentLobbyId, targetSocketId });
+    }
   };
 
   // ==========================================
@@ -538,7 +571,7 @@ export default function GamePage() {
                         {lobby.name}
                       </div>
                       <div className="text-[10px] text-slate-500 font-bold uppercase mt-1 flex items-center gap-2">
-                        <span>👥 {lobby.playerCount}/4 Pemain</span>
+                        <span>{lobby.playerCount}/4 Pemain</span>
                         <span>•</span>
                         <span className={isPlaying ? 'text-indigo-600 font-extrabold' : 'text-emerald-600 font-extrabold'}>
                           {isPlaying ? 'Sedang bermain 🎮' : 'Menunggu ⏳'}
@@ -644,7 +677,7 @@ export default function GamePage() {
                     )}
                     {showKickButton && (
                       <button
-                        onClick={() => handleKickPlayer(player.socketId)}
+                        onClick={() => handleKickPlayer(player.socketId, player.name)}
                         className="text-[10px] text-rose-500 hover:text-white hover:bg-rose-600/10 border border-rose-200 hover:border-rose-500 px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer flex items-center justify-center"
                         title={`Kick ${player.name}`}
                       >
@@ -824,21 +857,39 @@ export default function GamePage() {
   // 7. MAIN GAME BOARD SCREEN
   return (
     <div className="h-screen w-screen overflow-hidden relative select-none">
-      {/* Fullscreen Main Game Board Screen */}
+      {/* === LAYER 0: Background fullscreen === */}
       <div
         className="w-full h-full relative"
         style={{
-          backgroundImage: 'url(/game_board_utama.png)',
-          backgroundSize: '100% 100%',
+          backgroundImage: 'url(/BG_jejak_integritas.png)',
+          backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
         }}
       >
-        {/* Board Component (for player pawns) */}
-        <Board board={activeState.board} players={activeState.players} />
+        {/* === LAYER 1: Board Area (77% kiri) === */}
+        {/* Container ini membungkus papan + pion. Semua koordinat pion RELATIF terhadap container ini. */}
+        <div className="absolute left-0 top-0 w-[77%] h-full flex items-center justify-center">
+          {/* Sub-container papan — mempertahankan aspect ratio papan asli */}
+          <div
+            className="relative w-full h-full"
+            style={{ maxWidth: '100%', maxHeight: '100%' }}
+          >
+            {/* Gambar papan transparan */}
+            <img
+              src="/papan_ular_jejak_integritas.png"
+              alt="Papan Ular Tangga"
+              className="w-full h-full object-contain pointer-events-none select-none"
+              draggable={false}
+            />
 
-        {/* Chalkboard Scoreboard & Controls Overlay */}
-        <div className="absolute left-[73.5%] top-[5.5%] w-[22.5%] h-[89.0%] overflow-y-auto flex flex-col justify-between select-none">
+            {/* Pion pemain — koordinat relatif terhadap container papan ini */}
+            <Board board={activeState.board} players={activeState.players} />
+          </div>
+        </div>
+
+        {/* === LAYER 2: Scoreboard (23% kanan) === */}
+        <div className="absolute right-0 top-0 w-[23%] h-full p-3 flex flex-col justify-center select-none">
           <PlayerPanel
             players={activeState.players}
             currentPlayerIndex={activeState.currentPlayerIndex}
