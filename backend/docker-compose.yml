@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  backend:
+    build: .
+    container_name: jejak-integritas-backend
+    restart: always
+    ports:
+      - "5001:5001"
+    environment:
+      - PORT=5001
