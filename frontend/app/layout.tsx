@@ -9,7 +9,7 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Jejak Integritas — Ular Tangga Anti Korupsi",
+  title: "Jejak Integritas",
   description: "Media pembelajaran digital berbasis permainan ular tangga dengan nilai-nilai integritas, dilema moral, dan kearifan lokal untuk pendidikan anti korupsi.",
 };
 

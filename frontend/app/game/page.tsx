@@ -168,6 +168,7 @@ export default function GamePage() {
   // === POPUP, CORRECT/WRONG ANSWER, AND WALK SOUND TRIGGERS ===
   const prevPhaseRef = useRef<string | null>(null);
   const prevQuestionTextRef = useRef<string | null>(null);
+  const prevPlayersPositionsRef = useRef<Record<string, number>>({});
 
   useEffect(() => {
     if (!activeState) return;
@@ -175,24 +176,38 @@ export default function GamePage() {
     const currentPhase = activeState.phase;
     const prevPhase = prevPhaseRef.current;
 
-    // 1. Pop Up Pertanyaan SFX + dim background music
+    // 0. Stop walking SFX immediately when leaving walking phase
+    if (prevPhase === 'walking' && currentPhase !== 'walking') {
+      stopMajuSound();
+      stopMundurSound();
+    }
+
+    // 1. Dim background music when entering pre_question/question/result flow
+    if (
+      (currentPhase === 'pre_question' || currentPhase === 'question' || currentPhase === 'result') &&
+      prevPhase !== 'pre_question' && prevPhase !== 'question' && prevPhase !== 'result'
+    ) {
+      setHomeLobbyMusicVolume(0.3); // Reduce to 30% during Q&A flow
+    }
+
+    // Restore background music volume when leaving Q&A flow (entering rolling/walking)
+    if (
+      (prevPhase === 'pre_question' || prevPhase === 'question' || prevPhase === 'result') &&
+      currentPhase !== 'pre_question' && currentPhase !== 'question' && currentPhase !== 'result'
+    ) {
+      setHomeLobbyMusicVolume(1.0); // Restore to 100%
+    }
+
+    // 2. Pop Up Pertanyaan SFX
     if (
       currentPhase === 'question' &&
       activeState.currentQuestion &&
       (prevPhase !== 'question' || prevQuestionTextRef.current !== activeState.currentQuestion.question)
     ) {
-      stopMajuSound();
-      stopMundurSound();
       playPopUpSound();
-      setHomeLobbyMusicVolume(0.7); // Reduce to 70% during question
     }
 
-    // Restore background music volume when leaving question phase
-    if (prevPhase === 'question' && currentPhase !== 'question') {
-      setHomeLobbyMusicVolume(1.0); // Restore to 100%
-    }
-
-    // 2 & 3. Jawaban Benar / Salah SFX
+    // 3. Jawaban Benar / Salah SFX
     if (currentPhase === 'result' && prevPhase !== 'result') {
       if (activeState.answerCorrect === true) {
         playCorrectSound();
@@ -201,12 +216,7 @@ export default function GamePage() {
       }
     }
 
-    // 4. Walking SFX - play ONCE when walking phase starts, not per step
-    if (currentPhase === 'walking' && prevPhase !== 'walking') {
-      playMajuSound();
-    }
-
-    // 5. Mundur/Maju SFX for snake/ladder consequence
+    // 4. Mundur/Maju SFX for snake/ladder consequence
     if (currentPhase === 'result' && prevPhase !== 'result' && activeState.consequence) {
       if (activeState.consequence.includes('🐍')) {
         playMundurSound();
@@ -223,6 +233,25 @@ export default function GamePage() {
       prevQuestionTextRef.current = null;
     }
   }, [activeState?.phase, activeState?.currentQuestion, activeState?.answerCorrect]);
+
+  // === PER-STEP WALKING SFX (plays once per box, no overlap) ===
+  useEffect(() => {
+    if (!activeState || !activeState.players) return;
+
+    const phase = activeState.phase;
+
+    activeState.players.forEach((player: any) => {
+      const prevPos = prevPlayersPositionsRef.current[player.socketId];
+      if (prevPos !== undefined && phase === 'walking') {
+        if (player.position > prevPos) {
+          playMajuSound();
+        } else if (player.position < prevPos) {
+          playMundurSound();
+        }
+      }
+      prevPlayersPositionsRef.current[player.socketId] = player.position;
+    });
+  }, [activeState?.players, activeState?.phase]);
 
   // === SOCKET CONNECTION AND LISTENERS ===
   const connectSocket = useCallback(() => {
@@ -934,7 +963,7 @@ export default function GamePage() {
       >
         {/* === LAYER 1: Board Area (77% kiri) === */}
         {/* Container ini membungkus papan + pion. Semua koordinat pion RELATIF terhadap container ini. */}
-        <div className="absolute left-0 top-0 w-[77%] h-full flex items-center justify-center">
+        <div className="absolute top-0 h-full flex items-center justify-center" style={{ left: '2%', width: '76%' }}>
           {/* Sub-container papan — mempertahankan aspect ratio papan asli */}
           <div
             className="relative w-full h-full"

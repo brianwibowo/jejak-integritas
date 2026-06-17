@@ -158,10 +158,10 @@ function getPawnCoordinates(
 
   // Offsets within the cell to prevent overlapping (2x2 layout inside cell)
   const offsets = [
-    { dx: -0.015, dy: -0.025 },
-    { dx:  0.015, dy: -0.025 },
-    { dx: -0.015, dy:  0.025 },
-    { dx:  0.015, dy:  0.025 },
+    { dx: -0.008, dy: -0.025 },
+    { dx:  0.008, dy: -0.025 },
+    { dx: -0.008, dy:  0.025 },
+    { dx:  0.008, dy:  0.025 },
   ];
   const offset = offsets[playerIndex % 4];
 
