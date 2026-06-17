@@ -58,6 +58,14 @@ export function setHomeLobbyMusicMute(muted: boolean) {
   }
 }
 
+const DEFAULT_LOBBY_VOLUME = 0.12;
+
+export function setHomeLobbyMusicVolume(volumeMultiplier: number) {
+  if (homeLobbyAudio) {
+    homeLobbyAudio.volume = DEFAULT_LOBBY_VOLUME * Math.max(0, Math.min(1, volumeMultiplier));
+  }
+}
+
 // Helper for playing preloaded SFX with cloning to support rapid overlap
 function playPreloadedSFX(audioElement: HTMLAudioElement | null, defaultVolume: number) {
   if (!audioElement || isGlobalMuted) return;
@@ -89,34 +97,15 @@ export function playWrongSound() {
   playPreloadedSFX(wrongAudio, 0.5);
 }
 
-let activeMajuClones: HTMLAudioElement[] = [];
-let activeMundurClones: HTMLAudioElement[] = [];
-
+// Maju/Mundur: play once per walking phase, no cloning/overlap
 export function playMajuSound() {
   if (!majuAudio || isGlobalMuted) return;
-  try {
-    const clone = majuAudio.cloneNode(true) as HTMLAudioElement;
-    clone.volume = 0.5;
-    clone.play().catch(() => {});
-    activeMajuClones.push(clone);
-    clone.onended = () => {
-      activeMajuClones = activeMajuClones.filter((c) => c !== clone);
-    };
-  } catch (err) {
-    majuAudio.volume = 0.5;
-    majuAudio.currentTime = 0;
-    majuAudio.play().catch(() => {});
-  }
+  majuAudio.volume = 0.5;
+  majuAudio.currentTime = 0;
+  majuAudio.play().catch(() => {});
 }
 
 export function stopMajuSound() {
-  activeMajuClones.forEach((clone) => {
-    try {
-      clone.pause();
-      clone.currentTime = 0;
-    } catch (e) {}
-  });
-  activeMajuClones = [];
   if (majuAudio) {
     try {
       majuAudio.pause();
@@ -127,29 +116,12 @@ export function stopMajuSound() {
 
 export function playMundurSound() {
   if (!mundurAudio || isGlobalMuted) return;
-  try {
-    const clone = mundurAudio.cloneNode(true) as HTMLAudioElement;
-    clone.volume = 0.5;
-    clone.play().catch(() => {});
-    activeMundurClones.push(clone);
-    clone.onended = () => {
-      activeMundurClones = activeMundurClones.filter((c) => c !== clone);
-    };
-  } catch (err) {
-    mundurAudio.volume = 0.5;
-    mundurAudio.currentTime = 0;
-    mundurAudio.play().catch(() => {});
-  }
+  mundurAudio.volume = 0.5;
+  mundurAudio.currentTime = 0;
+  mundurAudio.play().catch(() => {});
 }
 
 export function stopMundurSound() {
-  activeMundurClones.forEach((clone) => {
-    try {
-      clone.pause();
-      clone.currentTime = 0;
-    } catch (e) {}
-  });
-  activeMundurClones = [];
   if (mundurAudio) {
     try {
       mundurAudio.pause();

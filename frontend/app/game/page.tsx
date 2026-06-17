@@ -9,7 +9,7 @@ import PlayerPanel from './components/PlayerPanel';
 import QuestionModal from './components/QuestionModal';
 import DevBypass from './components/DevBypass';
 import { generateBoard, getRandomQuestion } from './gameData';
-import { playHomeLobbyMusic, stopHomeLobbyMusic, setHomeLobbyMusicMute, playClickSound, setGlobalMuteState, playPopUpSound, playCorrectSound, playWrongSound, playMajuSound, playMundurSound, playWinSound, stopMajuSound, stopMundurSound } from './audioHelper';
+import { playHomeLobbyMusic, stopHomeLobbyMusic, setHomeLobbyMusicMute, setHomeLobbyMusicVolume, playClickSound, setGlobalMuteState, playPopUpSound, playCorrectSound, playWrongSound, playMajuSound, playMundurSound, playWinSound, stopMajuSound, stopMundurSound } from './audioHelper';
 
 const PLAYER_PIONS = [
   '/red.png',
@@ -168,24 +168,32 @@ export default function GamePage() {
   // === POPUP, CORRECT/WRONG ANSWER, AND WALK SOUND TRIGGERS ===
   const prevPhaseRef = useRef<string | null>(null);
   const prevQuestionTextRef = useRef<string | null>(null);
-  const prevPlayersPositionsRef = useRef<Record<string, number>>({});
 
   useEffect(() => {
     if (!activeState) return;
 
-    // 1. Pop Up Pertanyaan SFX
+    const currentPhase = activeState.phase;
+    const prevPhase = prevPhaseRef.current;
+
+    // 1. Pop Up Pertanyaan SFX + dim background music
     if (
-      activeState.phase === 'question' &&
+      currentPhase === 'question' &&
       activeState.currentQuestion &&
-      (prevPhaseRef.current !== 'question' || prevQuestionTextRef.current !== activeState.currentQuestion.question)
+      (prevPhase !== 'question' || prevQuestionTextRef.current !== activeState.currentQuestion.question)
     ) {
       stopMajuSound();
       stopMundurSound();
       playPopUpSound();
+      setHomeLobbyMusicVolume(0.7); // Reduce to 70% during question
+    }
+
+    // Restore background music volume when leaving question phase
+    if (prevPhase === 'question' && currentPhase !== 'question') {
+      setHomeLobbyMusicVolume(1.0); // Restore to 100%
     }
 
     // 2 & 3. Jawaban Benar / Salah SFX
-    if (activeState.phase === 'result' && prevPhaseRef.current !== 'result') {
+    if (currentPhase === 'result' && prevPhase !== 'result') {
       if (activeState.answerCorrect === true) {
         playCorrectSound();
       } else if (activeState.answerCorrect === false) {
@@ -193,35 +201,28 @@ export default function GamePage() {
       }
     }
 
+    // 4. Walking SFX - play ONCE when walking phase starts, not per step
+    if (currentPhase === 'walking' && prevPhase !== 'walking') {
+      playMajuSound();
+    }
+
+    // 5. Mundur/Maju SFX for snake/ladder consequence
+    if (currentPhase === 'result' && prevPhase !== 'result' && activeState.consequence) {
+      if (activeState.consequence.includes('🐍')) {
+        playMundurSound();
+      } else if (activeState.consequence.includes('🪜')) {
+        playMajuSound();
+      }
+    }
+
     // Update refs for phase and question
-    prevPhaseRef.current = activeState.phase;
+    prevPhaseRef.current = currentPhase;
     if (activeState.currentQuestion) {
       prevQuestionTextRef.current = activeState.currentQuestion.question;
     } else {
       prevQuestionTextRef.current = null;
     }
   }, [activeState?.phase, activeState?.currentQuestion, activeState?.answerCorrect]);
-
-  useEffect(() => {
-    if (!activeState || !activeState.players) return;
-
-    const phase = activeState.phase;
-    // Only play Maju/Mundur sounds during active motion phases
-    const isMotionPhase = phase === 'walking' || phase === 'result';
-
-    activeState.players.forEach((player: any) => {
-      const prevPos = prevPlayersPositionsRef.current[player.socketId];
-      if (prevPos !== undefined && isMotionPhase) {
-        if (player.position > prevPos) {
-          playMajuSound();
-        } else if (player.position < prevPos) {
-          playMundurSound();
-        }
-      }
-      // Update ref
-      prevPlayersPositionsRef.current[player.socketId] = player.position;
-    });
-  }, [activeState?.players, activeState?.phase]);
 
   // === SOCKET CONNECTION AND LISTENERS ===
   const connectSocket = useCallback(() => {
