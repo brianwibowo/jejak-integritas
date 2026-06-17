@@ -1,3 +1,5 @@
+let isGlobalMuted = false;
+
 let homeLobbyAudio: HTMLAudioElement | null = typeof window !== 'undefined' ? new Audio('/backsound_home_sampai_lobby.mp3') : null;
 if (homeLobbyAudio) {
   homeLobbyAudio.loop = true;
@@ -10,6 +12,30 @@ if (clickAudio) {
   clickAudio.volume = 0.4;
   clickAudio.preload = 'auto';
   clickAudio.load();
+}
+
+// === NEW SFX AUDIO ELEMENTS ===
+let popUpAudio: HTMLAudioElement | null = typeof window !== 'undefined' ? new Audio('/sound/SFX_Pop Up Pertanyaan.mp3') : null;
+let correctAudio: HTMLAudioElement | null = typeof window !== 'undefined' ? new Audio('/sound/SFX_JawabanBenar.mp3') : null;
+let wrongAudio: HTMLAudioElement | null = typeof window !== 'undefined' ? new Audio('/sound/SFX_JawabanSalah.mp3') : null;
+let majuAudio: HTMLAudioElement | null = typeof window !== 'undefined' ? new Audio('/sound/SFX_Maju.mp3') : null;
+let mundurAudio: HTMLAudioElement | null = typeof window !== 'undefined' ? new Audio('/sound/SFX_Mundur.mp3') : null;
+let winAudio: HTMLAudioElement | null = typeof window !== 'undefined' ? new Audio('/sound/SFX_Win.mp3') : null;
+
+// Preload SFX
+const sfxList = [popUpAudio, correctAudio, wrongAudio, majuAudio, mundurAudio, winAudio];
+sfxList.forEach(audio => {
+  if (audio) {
+    audio.preload = 'auto';
+    audio.load();
+  }
+});
+
+export function setGlobalMuteState(muted: boolean) {
+  isGlobalMuted = muted;
+  if (homeLobbyAudio) {
+    homeLobbyAudio.muted = muted;
+  }
 }
 
 export function playHomeLobbyMusic() {
@@ -32,15 +58,107 @@ export function setHomeLobbyMusicMute(muted: boolean) {
   }
 }
 
-export function playClickSound() {
-  if (!clickAudio) return;
+// Helper for playing preloaded SFX with cloning to support rapid overlap
+function playPreloadedSFX(audioElement: HTMLAudioElement | null, defaultVolume: number) {
+  if (!audioElement || isGlobalMuted) return;
   try {
-    const clickClone = clickAudio.cloneNode(true) as HTMLAudioElement;
-    clickClone.volume = 0.4;
-    clickClone.play().catch(() => {});
+    const clone = audioElement.cloneNode(true) as HTMLAudioElement;
+    clone.volume = defaultVolume;
+    clone.play().catch((err) => console.log("SFX play failed:", err));
   } catch (err) {
-    // Fallback if clone fails or isn't supported properly
-    clickAudio.currentTime = 0;
-    clickAudio.play().catch(() => {});
+    // Fallback if cloning fails
+    audioElement.volume = defaultVolume;
+    audioElement.currentTime = 0;
+    audioElement.play().catch(() => {});
   }
 }
+
+export function playClickSound() {
+  playPreloadedSFX(clickAudio, 0.4);
+}
+
+export function playPopUpSound() {
+  playPreloadedSFX(popUpAudio, 0.5);
+}
+
+export function playCorrectSound() {
+  playPreloadedSFX(correctAudio, 0.5);
+}
+
+export function playWrongSound() {
+  playPreloadedSFX(wrongAudio, 0.5);
+}
+
+let activeMajuClones: HTMLAudioElement[] = [];
+let activeMundurClones: HTMLAudioElement[] = [];
+
+export function playMajuSound() {
+  if (!majuAudio || isGlobalMuted) return;
+  try {
+    const clone = majuAudio.cloneNode(true) as HTMLAudioElement;
+    clone.volume = 0.5;
+    clone.play().catch(() => {});
+    activeMajuClones.push(clone);
+    clone.onended = () => {
+      activeMajuClones = activeMajuClones.filter((c) => c !== clone);
+    };
+  } catch (err) {
+    majuAudio.volume = 0.5;
+    majuAudio.currentTime = 0;
+    majuAudio.play().catch(() => {});
+  }
+}
+
+export function stopMajuSound() {
+  activeMajuClones.forEach((clone) => {
+    try {
+      clone.pause();
+      clone.currentTime = 0;
+    } catch (e) {}
+  });
+  activeMajuClones = [];
+  if (majuAudio) {
+    try {
+      majuAudio.pause();
+      majuAudio.currentTime = 0;
+    } catch (e) {}
+  }
+}
+
+export function playMundurSound() {
+  if (!mundurAudio || isGlobalMuted) return;
+  try {
+    const clone = mundurAudio.cloneNode(true) as HTMLAudioElement;
+    clone.volume = 0.5;
+    clone.play().catch(() => {});
+    activeMundurClones.push(clone);
+    clone.onended = () => {
+      activeMundurClones = activeMundurClones.filter((c) => c !== clone);
+    };
+  } catch (err) {
+    mundurAudio.volume = 0.5;
+    mundurAudio.currentTime = 0;
+    mundurAudio.play().catch(() => {});
+  }
+}
+
+export function stopMundurSound() {
+  activeMundurClones.forEach((clone) => {
+    try {
+      clone.pause();
+      clone.currentTime = 0;
+    } catch (e) {}
+  });
+  activeMundurClones = [];
+  if (mundurAudio) {
+    try {
+      mundurAudio.pause();
+      mundurAudio.currentTime = 0;
+    } catch (e) {}
+  }
+}
+
+export function playWinSound() {
+  playPreloadedSFX(winAudio, 0.7);
+}
+

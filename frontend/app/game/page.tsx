@@ -9,7 +9,7 @@ import PlayerPanel from './components/PlayerPanel';
 import QuestionModal from './components/QuestionModal';
 import DevBypass from './components/DevBypass';
 import { generateBoard, getRandomQuestion } from './gameData';
-import { playHomeLobbyMusic, stopHomeLobbyMusic, setHomeLobbyMusicMute, playClickSound } from './audioHelper';
+import { playHomeLobbyMusic, stopHomeLobbyMusic, setHomeLobbyMusicMute, playClickSound, setGlobalMuteState, playPopUpSound, playCorrectSound, playWrongSound, playMajuSound, playMundurSound, playWinSound, stopMajuSound, stopMundurSound } from './audioHelper';
 
 const PLAYER_PIONS = [
   '/red.png',
@@ -98,6 +98,7 @@ export default function GamePage() {
       bgMusicRef.current.muted = isMuted;
     }
     setHomeLobbyMusicMute(isMuted);
+    setGlobalMuteState(isMuted);
   }, [isMuted]);
 
   // === LOBBY BGM SYNC ===
@@ -140,24 +141,87 @@ export default function GamePage() {
     };
   }, []);
 
+  // === SYNC BGM VOLUME WITH GAME STATUS ===
+  useEffect(() => {
+    const audio = bgMusicRef.current;
+    if (!audio) return;
+
+    if (isPaused) {
+      audio.volume = 0.08;
+    } else if (activeState && activeState.phase === 'finished') {
+      audio.volume = 0.08; // Win screen volume
+    } else if (activeState && activeState.phase === 'question') {
+      audio.volume = 0.075; // Question screen volume (dikecilkan 70%)
+    } else {
+      audio.volume = 0.25; // Normal gameplay volume
+    }
+  }, [isPaused, activeState?.phase]);
+
   // === WINNING & SOUND EFFECT TRIGGERS ===
   useEffect(() => {
     if (!activeState) return;
     if (activeState.phase === 'finished' && activeState.winner) {
-      if (bgMusicRef.current) {
-        bgMusicRef.current.volume = 0.08;
-      }
-      if (!isMuted) {
-        const winAudio = new Audio('/winning.wav');
-        winAudio.volume = 0.7;
-        winAudio.play().catch(() => { });
-      }
-    } else {
-      if (bgMusicRef.current) {
-        bgMusicRef.current.volume = 0.25;
+      playWinSound();
+    }
+  }, [activeState?.phase, activeState?.winner]);
+
+  // === POPUP, CORRECT/WRONG ANSWER, AND WALK SOUND TRIGGERS ===
+  const prevPhaseRef = useRef<string | null>(null);
+  const prevQuestionTextRef = useRef<string | null>(null);
+  const prevPlayersPositionsRef = useRef<Record<string, number>>({});
+
+  useEffect(() => {
+    if (!activeState) return;
+
+    // 1. Pop Up Pertanyaan SFX
+    if (
+      activeState.phase === 'question' &&
+      activeState.currentQuestion &&
+      (prevPhaseRef.current !== 'question' || prevQuestionTextRef.current !== activeState.currentQuestion.question)
+    ) {
+      stopMajuSound();
+      stopMundurSound();
+      playPopUpSound();
+    }
+
+    // 2 & 3. Jawaban Benar / Salah SFX
+    if (activeState.phase === 'result' && prevPhaseRef.current !== 'result') {
+      if (activeState.answerCorrect === true) {
+        playCorrectSound();
+      } else if (activeState.answerCorrect === false) {
+        playWrongSound();
       }
     }
-  }, [activeState?.phase, activeState?.winner, isMuted]);
+
+    // Update refs for phase and question
+    prevPhaseRef.current = activeState.phase;
+    if (activeState.currentQuestion) {
+      prevQuestionTextRef.current = activeState.currentQuestion.question;
+    } else {
+      prevQuestionTextRef.current = null;
+    }
+  }, [activeState?.phase, activeState?.currentQuestion, activeState?.answerCorrect]);
+
+  useEffect(() => {
+    if (!activeState || !activeState.players) return;
+
+    const phase = activeState.phase;
+    // Only play Maju/Mundur sounds during active motion phases
+    const isMotionPhase = phase === 'walking' || phase === 'result';
+
+    activeState.players.forEach((player: any) => {
+      const prevPos = prevPlayersPositionsRef.current[player.socketId];
+      if (prevPos !== undefined && isMotionPhase) {
+        if (player.position > prevPos) {
+          playMajuSound();
+        } else if (player.position < prevPos) {
+          playMundurSound();
+        }
+      }
+      // Update ref
+      prevPlayersPositionsRef.current[player.socketId] = player.position;
+    });
+  }, [activeState?.players, activeState?.phase]);
 
   // === SOCKET CONNECTION AND LISTENERS ===
   const connectSocket = useCallback(() => {

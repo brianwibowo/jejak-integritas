@@ -142,8 +142,8 @@ export default function Home() {
             muted
             loop
             playsInline
-            className="w-full h-full object-cover object-bottom"
-            style={{ objectPosition: 'center bottom' }}
+            className="w-full h-full object-cover"
+            style={{ objectPosition: 'center 62%' }}
           />
           {/* Semi-transparent Overlay backdrop for screen readability */}
           <div className="absolute inset-0 bg-white/5 pointer-events-none" />
@@ -161,16 +161,16 @@ export default function Home() {
           />
         </div>
 
-        {/* Top Right: Info / Tutorial Button */}
+        {/* Bottom Right: Info / Tutorial Button */}
         <button
           onClick={() => setIsTutorialOpen(true)}
           className="absolute z-20 hover:scale-105 active:scale-95 transition-all cursor-pointer bg-transparent border-0 p-0 outline-none focus:outline-none"
-          style={{ top: '3.2rem', right: '2.5rem' }}
+          style={{ bottom: '4.5rem', right: '6.2rem', width: '5.4rem', height: '5.4rem' }}
         >
           <img
             src="/tombol_info.png"
             alt="Panduan Bermain"
-            className="w-12 h-12 sm:w-14 sm:h-14 object-contain"
+            className="w-full h-full object-contain"
           />
         </button>
 
@@ -188,8 +188,8 @@ export default function Home() {
             bottom: '3.4rem',
             left: '50%',
             transform: 'translateX(-50%)',
-            width: '13.6rem',
-            height: '4.37rem',
+            width: '15.6rem',
+            height: '5.0rem',
           }}
         >
           <img
@@ -203,8 +203,14 @@ export default function Home() {
 
         {/* TUTORIAL MODAL POPUP */}
         {isTutorialOpen && (
-          <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all duration-300">
-            <div className="bg-white/95 backdrop-blur-md border border-slate-200/80 rounded-3xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-6 sm:p-8 animate-slide-up text-left text-slate-700 font-sans">
+          <div
+            onClick={() => setIsTutorialOpen(false)}
+            className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all duration-300 cursor-pointer"
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white/95 backdrop-blur-md border border-slate-200/80 rounded-3xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-6 sm:p-8 animate-slide-up text-left text-slate-700 font-sans cursor-default"
+            >
               {/* Header */}
               <div className="flex justify-between items-center border-b border-slate-200/80 pb-4 mb-6">
                 <h2 className="text-xl sm:text-2xl font-black text-indigo-905 flex items-center gap-2">
