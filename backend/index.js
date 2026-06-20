@@ -566,63 +566,147 @@ io.on('connection', (socket) => {
 
   // 13. Leave Lobby / Connection Lost
   socket.on('leave-lobby', ({ lobbyId }) => {
-    handleUserLeave(socket, lobbyId);
+    handleUserLeave(socket, lobbyId, true);
   });
 
   socket.on('disconnect', () => {
     console.log(`User disconnected: ${socket.id}`);
     Object.keys(lobbies).forEach(lobbyId => {
-      handleUserLeave(socket, lobbyId);
+      handleUserLeave(socket, lobbyId, false);
     });
+  });
+
+  // 14. Re-associate socket ID on reconnection
+  socket.on('reassociate-socket', ({ lobbyId, playerName }) => {
+    const lobby = lobbies[lobbyId];
+    if (!lobby) return;
+
+    const player = lobby.players.find(p => p.name === playerName);
+    if (!player) return;
+
+    const oldSocketId = player.socketId;
+    player.socketId = socket.id;
+    if (lobby.hostId === oldSocketId) {
+      lobby.hostId = socket.id;
+    }
+
+    // Join room
+    socket.join(`room-${lobbyId}`);
+
+    // Cancel scheduled timeout
+    const key = `${lobbyId}_${playerName}`;
+    if (disconnectTimeouts[key]) {
+      clearTimeout(disconnectTimeouts[key]);
+      delete disconnectTimeouts[key];
+    }
+
+    // Mark player as online in game state
+    if (lobby.gameState) {
+      lobby.gameState.players = lobby.gameState.players.map(p => 
+        p.name === playerName ? { ...p, isOffline: false, socketId: socket.id } : p
+      );
+      // Send current state specifically to the reconnected socket
+      socket.emit('game-state-update', lobby.gameState);
+      // Broadcast update to others
+      io.to(`room-${lobbyId}`).emit('game-state-update', lobby.gameState);
+    }
+
+    // Re-send lobby updates
+    io.to(`room-${lobbyId}`).emit('lobby-update', {
+      players: lobby.players,
+      hostId: lobby.hostId,
+      status: lobby.status,
+      name: lobby.name
+    });
+
+    // Send join success to update the client's local myPlayer state
+    socket.emit('join-success', { lobbyId, myPlayer: player });
   });
 });
 
-function handleUserLeave(socket, lobbyId) {
+const disconnectTimeouts = {}; // { lobbyId_playerName: timeoutId }
+
+function handleUserLeave(socket, lobbyId, isExplicit = false) {
   const lobby = lobbies[lobbyId];
   if (!lobby) return;
 
-  const playerIndex = lobby.players.findIndex(p => p.socketId === socket.id);
-  if (playerIndex !== -1) {
-    lobby.players.splice(playerIndex, 1);
-    socket.leave(`room-${lobbyId}`);
+  const player = lobby.players.find(p => p.socketId === socket.id);
+  if (!player) return;
 
-    // Dev Bypass clean up: If no real players remain in the lobby, clear it completely
-    const realPlayers = lobby.players.filter(p => !p.socketId.startsWith('fake-'));
-    if (realPlayers.length === 0) {
-      lobby.players = [];
+  const performActualLeave = () => {
+    // Cancel disconnect timeout if any
+    const key = `${lobbyId}_${player.name}`;
+    if (disconnectTimeouts[key]) {
+      clearTimeout(disconnectTimeouts[key]);
+      delete disconnectTimeouts[key];
     }
 
-    // If lobby becomes empty
-    if (lobby.players.length === 0) {
-      lobby.status = 'waiting';
-      lobby.hostId = null;
-      lobby.gameState = null;
-    } else {
-      // Reassign host if leaving player was host
-      if (lobby.hostId === socket.id) {
-        lobby.hostId = lobby.players[0].socketId;
-      }
+    const playerIndex = lobby.players.findIndex(p => p.name === player.name);
+    if (playerIndex !== -1) {
+      lobby.players.splice(playerIndex, 1);
       
-      // If currently playing, reset game since a player left
-      if (lobby.status === 'playing') {
-        lobby.status = 'waiting';
-        lobby.gameState = null;
-        lobby.players = lobby.players.map((p, idx) => ({ ...p, id: idx, position: 0, correctAnswers: 0, wrongAnswers: 0 }));
-        io.to(`room-${lobbyId}`).emit('game-terminated');
+      // Dev Bypass clean up: If no real players remain in the lobby, clear it completely
+      const realPlayers = lobby.players.filter(p => p.socketId && !p.socketId.startsWith('fake-'));
+      if (realPlayers.length === 0) {
+        lobby.players = [];
       }
 
-      // Re-assign IDs (0 to players.length - 1) for turn tracking consistency
-      lobby.players = lobby.players.map((p, idx) => ({ ...p, id: idx }));
+      // If lobby becomes empty
+      if (lobby.players.length === 0) {
+        lobby.status = 'waiting';
+        lobby.hostId = null;
+        lobby.gameState = null;
+      } else {
+        // Reassign host if leaving player was host
+        if (lobby.hostId === player.socketId) {
+          lobby.hostId = lobby.players[0].socketId;
+        }
+        
+        // If currently playing, reset game since a player left
+        if (lobby.status === 'playing') {
+          lobby.status = 'waiting';
+          lobby.gameState = null;
+          lobby.players = lobby.players.map((p, idx) => ({ ...p, id: idx, position: 0, correctAnswers: 0, wrongAnswers: 0 }));
+          io.to(`room-${lobbyId}`).emit('game-terminated');
+        }
 
-      io.to(`room-${lobbyId}`).emit('lobby-update', {
-        players: lobby.players,
-        hostId: lobby.hostId,
-        status: lobby.status,
-        name: lobby.name
-      });
+        // Re-assign IDs (0 to players.length - 1) for turn tracking consistency
+        lobby.players = lobby.players.map((p, idx) => ({ ...p, id: idx }));
+
+        io.to(`room-${lobbyId}`).emit('lobby-update', {
+          players: lobby.players,
+          hostId: lobby.hostId,
+          status: lobby.status,
+          name: lobby.name
+        });
+      }
+
+      io.emit('lobbies-list', getLobbiesStatus());
+    }
+  };
+
+  if (isExplicit) {
+    // If explicit leave, execute immediately
+    performActualLeave();
+  } else {
+    // If accidental disconnect, set 30s grace period timeout
+    const key = `${lobbyId}_${player.name}`;
+    if (disconnectTimeouts[key]) {
+      clearTimeout(disconnectTimeouts[key]);
     }
 
-    io.emit('lobbies-list', getLobbiesStatus());
+    // Mark player as offline in game state
+    if (lobby.status === 'playing' && lobby.gameState) {
+      lobby.gameState.players = lobby.gameState.players.map(p => 
+        p.name === player.name ? { ...p, isOffline: true } : p
+      );
+      io.to(`room-${lobbyId}`).emit('game-state-update', lobby.gameState);
+    }
+
+    disconnectTimeouts[key] = setTimeout(() => {
+      delete disconnectTimeouts[key];
+      performActualLeave();
+    }, 30000); // 30 seconds grace period
   }
 }
 

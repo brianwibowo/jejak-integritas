@@ -48,7 +48,7 @@ export default function Home() {
       infoHeight: '2.8rem',
       infoTop: '1.31rem',
       infoBottom: 'auto',
-      infoRight: '2.0rem',
+      infoRight: '3.5rem',
       logoWidth: '9.0rem',
     },
   }[tier] || {
@@ -206,7 +206,7 @@ export default function Home() {
           style={{ top: '1.31rem', left: '1.23rem' }}
         >
           <img
-            src="/logo_jejak integritas-no-bg.png"
+            src="/logo_jejak integritas-no-bg.webp"
             alt="Jejak Integritas Logo"
             style={{ width: layoutConfig.logoWidth }}
             className="h-auto object-contain"
@@ -226,7 +226,7 @@ export default function Home() {
           }}
         >
           <img
-            src="/tombol_info.png"
+            src="/tombol_info.webp"
             alt="Panduan Bermain"
             className="w-full h-full object-contain"
           />

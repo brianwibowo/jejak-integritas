@@ -279,10 +279,6 @@ export default function GamePage() {
 
     socket.on('disconnect', () => {
       setSocketConnected(false);
-      // Reset state if disconnected
-      setCurrentLobbyId(null);
-      setMyPlayer(null);
-      setOnlineGameState(null);
     });
 
     socket.on('lobbies-list', (list: any[]) => {
@@ -349,6 +345,16 @@ export default function GamePage() {
       disconnectSocket();
     };
   }, [connectSocket, disconnectSocket]);
+
+  // Re-associate socket on reconnection
+  useEffect(() => {
+    if (socketConnected && socketRef.current && currentLobbyId && myPlayer && myPlayer.socketId !== socketRef.current.id) {
+      socketRef.current.emit('reassociate-socket', {
+        lobbyId: currentLobbyId,
+        playerName: myPlayer.name
+      });
+    }
+  }, [socketConnected, currentLobbyId, myPlayer]);
 
   // === INTERCEPT BROWSER NAVIGATION / BACK BUTTON ===
   useEffect(() => {
@@ -645,7 +651,7 @@ export default function GamePage() {
         <div
           className="flex flex-col items-center justify-center min-h-screen p-6 font-sans relative overflow-hidden bg-slate-100"
           style={{
-            backgroundImage: "url('/belajar.png')",
+            backgroundImage: "url('/belajar.webp')",
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat',
@@ -751,7 +757,7 @@ export default function GamePage() {
       <div
         className="flex flex-col items-center justify-center min-h-screen p-6 font-sans relative overflow-hidden bg-slate-100"
         style={{
-          backgroundImage: "url('/menanam tanaman.png')",
+          backgroundImage: "url('/menanam tanaman.webp')",
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
@@ -915,10 +921,10 @@ export default function GamePage() {
 
   // Setup loading resources for preloading overlay
   const loadingImages = [
-    { src: '/background_home_resmi.png', label: 'Jejak Integritas' },
-    { src: '/belajar.png', label: 'Edukasi Karakter' },
-    { src: '/menanam tanaman.png', label: 'Aksi Nyata' },
-    { src: '/background_orang.png', label: 'Sosial & Moral' }
+    { src: '/background_home_resmi.webp', label: 'Jejak Integritas' },
+    { src: '/belajar.webp', label: 'Edukasi Karakter' },
+    { src: '/menanam tanaman.webp', label: 'Aksi Nyata' },
+    { src: '/background_orang.webp', label: 'Sosial & Moral' }
   ];
 
   const activeImageIndex = loadingProgress !== null ? Math.min(
@@ -956,11 +962,19 @@ export default function GamePage() {
   // 7. MAIN GAME BOARD SCREEN
   return (
     <div className="h-screen w-screen overflow-hidden relative select-none">
+      {!socketConnected && (
+        <div className="absolute top-4 right-4 z-[110] bg-rose-600/90 backdrop-blur-md border border-rose-500/30 px-4 py-2 rounded-2xl flex items-center gap-2 shadow-lg animate-pulse">
+          <span className="w-2.5 h-2.5 rounded-full bg-white animate-ping" />
+          <span className="text-xs font-black text-white uppercase tracking-wider font-sans">
+            Menghubungkan Ulang...
+          </span>
+        </div>
+      )}
       {/* === LAYER 0: Background fullscreen === */}
       <div
         className="w-full h-full relative"
         style={{
-          backgroundImage: 'url(/BG_jejak_integritas.png)',
+          backgroundImage: 'url(/BG_jejak_integritas.webp)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
@@ -981,7 +995,7 @@ export default function GamePage() {
           >
             {/* Gambar papan transparan */}
             <img
-              src="/papan_ular_jejak_integritas.png"
+              src="/papan_ular_jejak_integritas.webp"
               alt="Papan Ular Tangga"
               className="w-full h-full object-contain pointer-events-none select-none"
               draggable={false}

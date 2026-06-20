@@ -163,7 +163,14 @@ export default function PlayerPanel({
                     alt={player.name}
                     className={`${leaderPionSize} object-contain flex-shrink-0`}
                   />
-                  <span className={`font-extrabold ${leaderNameSize} text-white truncate flex-1`}>{player.name}</span>
+                  <span className={`font-extrabold ${leaderNameSize} text-white truncate flex-1 flex items-center gap-1`}>
+                    <span>{player.name}</span>
+                    {player.isOffline && (
+                      <span className="text-[8px] bg-rose-950/60 border border-rose-800 text-rose-300 px-1.5 py-0.5 rounded-md font-extrabold uppercase animate-pulse">
+                        Offline
+                      </span>
+                    )}
+                  </span>
                   {isCurrent && (
                     <span className="w-2 h-2 rounded-full bg-yellow-300 animate-ping flex-shrink-0" />
                   )}

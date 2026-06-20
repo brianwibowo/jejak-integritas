@@ -39,6 +39,7 @@ export interface Player {
   isFinished?: boolean;
   finishRank?: number;
   finishBonus?: number;
+  isOffline?: boolean;
   socketId?: string; // Optional for online socket mapping
 }
 
