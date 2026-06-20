@@ -14,6 +14,7 @@ interface QuestionModalProps {
   showResult: boolean;
   isReadOnly?: boolean;
   tier?: DeviceTier;
+  timeRemaining?: number | null;
 }
 
 const optionLabels = ['A', 'B', 'C', 'D'];
@@ -29,6 +30,7 @@ export default function QuestionModal({
   showResult,
   isReadOnly = false,
   tier = 'desktop',
+  timeRemaining = null,
 }: QuestionModalProps) {
   const info = boxTypeInfo[question.boxType as ColoredBoxType];
   const themeName = themeLabels[question.theme];
@@ -52,12 +54,36 @@ export default function QuestionModal({
           <div className={`${isMobile ? 'text-xs' : 'text-sm'} opacity-90`}>Tema: {themeName}</div>
         </div>
 
+        {/* Time Remaining Progress Bar */}
+        {timeRemaining !== undefined && timeRemaining !== null && !showResult && (
+          <div className="w-full bg-slate-100 h-1.5 overflow-hidden relative flex-shrink-0">
+            <div
+              className={`h-full transition-all duration-1000 ease-linear ${
+                timeRemaining <= 5 ? 'bg-red-500 animate-pulse' : 'bg-blue-500'
+              }`}
+              style={{ width: `${(timeRemaining / 15) * 100}%` }}
+            />
+          </div>
+        )}
+
         {/* Content Area */}
         <div className={`overflow-y-auto flex-1 ${isMobile ? 'p-3' : 'p-5'} ${showResult ? (isMobile ? 'flex flex-col gap-4' : 'grid grid-cols-1 md:grid-cols-2 gap-6') : 'flex flex-col'}`}>
           
           {/* Column 1: Question and Options */}
           <div className="flex flex-col justify-between h-full">
             <div>
+              {/* Question Timer Badge */}
+              {timeRemaining !== undefined && timeRemaining !== null && !showResult && (
+                <div className="flex items-center justify-between bg-amber-50 border border-amber-200/60 rounded-xl px-3 py-1.5 mb-3">
+                  <span className="text-[10px] font-bold text-amber-800 flex items-center gap-1 font-sans">
+                    ⏱️ Waktu Menjawab
+                  </span>
+                  <span className="text-xs font-black text-amber-950 tabular-nums font-sans">
+                    {timeRemaining} detik tersisa
+                  </span>
+                </div>
+              )}
+
               {/* Question */}
               <p className={`text-gray-800 ${isMobile ? 'text-xs' : 'text-sm sm:text-base'} mb-3 sm:mb-5 leading-relaxed font-semibold`}>
                 {question.question}

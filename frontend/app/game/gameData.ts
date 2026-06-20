@@ -38,6 +38,7 @@ export interface Player {
   score: number;
   isFinished?: boolean;
   finishRank?: number;
+  finishBonus?: number;
   socketId?: string; // Optional for online socket mapping
 }
 

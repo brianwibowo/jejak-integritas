@@ -35,11 +35,18 @@ const getBackendUrl = () => {
   return 'http://localhost:5001';
 };
 
+const formatTime = (seconds: number) => {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+};
+
 export default function GamePage() {
   const gameMode = 'online';
   const router = useRouter();
   const { tier, isPortrait, isMobile, isDesktop } = useDeviceTier();
   const [showScoreboard, setShowScoreboard] = useState(false);
+  const [selectedDuration, setSelectedDuration] = useState(1800); // default 30 mins
 
   // === ONLINE / SOCKET STATE ===
   const [socketConnected, setSocketConnected] = useState(false);
@@ -432,9 +439,9 @@ export default function GamePage() {
     const currentPlayer = onlineGameState.players[onlineGameState.currentPlayerIndex];
     if (!currentPlayer) return;
 
-    const isMyTurn = myPlayer && currentPlayer.socketId === socketRef.current?.id;
-    const isFakePlayer = currentPlayer.socketId.startsWith('fake-');
-    const isHost = myPlayer && roomHostId === socketRef.current?.id;
+    const isMyTurn = !!(myPlayer && currentPlayer.socketId && currentPlayer.socketId === myPlayer.socketId);
+    const isFakePlayer = !!(currentPlayer.socketId && currentPlayer.socketId.startsWith('fake-'));
+    const isHost = !!(myPlayer && roomHostId && myPlayer.socketId && roomHostId === myPlayer.socketId);
     const isDriver = isMyTurn || (isFakePlayer && isHost);
     if (!isDriver) return;
 
@@ -459,9 +466,9 @@ export default function GamePage() {
     const currentPlayer = onlineGameState.players[onlineGameState.currentPlayerIndex];
     if (!currentPlayer) return;
 
-    const isMyTurn = myPlayer && currentPlayer.socketId === socketRef.current?.id;
-    const isFakePlayer = currentPlayer.socketId.startsWith('fake-');
-    const isHost = myPlayer && roomHostId === socketRef.current?.id;
+    const isMyTurn = !!(myPlayer && currentPlayer.socketId && currentPlayer.socketId === myPlayer.socketId);
+    const isFakePlayer = !!(currentPlayer.socketId && currentPlayer.socketId.startsWith('fake-'));
+    const isHost = !!(myPlayer && roomHostId && myPlayer.socketId && roomHostId === myPlayer.socketId);
     const isDriver = isMyTurn || (isFakePlayer && isHost);
     if (!isDriver) return;
 
@@ -570,7 +577,11 @@ export default function GamePage() {
     // Generate deterministic board colors
     const colorsList = generateBoard();
     setLoadingProgress(0);
-    socketRef.current?.emit('start-game', { lobbyId: currentLobbyId, boardColors: colorsList });
+    socketRef.current?.emit('start-game', { 
+      lobbyId: currentLobbyId, 
+      boardColors: colorsList,
+      duration: selectedDuration 
+    });
   };
 
   const handleSelectColor = (color: string) => {
@@ -578,10 +589,10 @@ export default function GamePage() {
   };
 
   const isColorTaken = (color: string) => {
-    return roomPlayers.some(p => p.socketId !== socketRef.current?.id && p.color === color);
+    return roomPlayers.some(p => p.socketId !== myPlayer?.socketId && p.color === color);
   };
 
-  const myCurrentColor = roomPlayers.find(p => p.socketId === socketRef.current?.id)?.color;
+  const myCurrentColor = roomPlayers.find(p => p.socketId === myPlayer?.socketId)?.color;
 
   const handleRenameLobby = () => {
     const trimmed = lobbyNameInput.trim();
@@ -734,7 +745,7 @@ export default function GamePage() {
 
   // 3. ONLINE LOBBY ROOM WAITING UI
   if (gameMode === 'online' && currentLobbyId !== null && onlineGameState === null) {
-    const isHost = myPlayer && roomHostId === socketRef.current?.id;
+    const isHost = !!(myPlayer && roomHostId && myPlayer.socketId && roomHostId === myPlayer.socketId);
 
     return (
       <div
@@ -774,7 +785,7 @@ export default function GamePage() {
             {Array.from({ length: 4 }).map((_, i) => {
               const player = roomPlayers[i];
               if (player) {
-                const isMe = player.socketId === socketRef.current?.id;
+                const isMe = !!(myPlayer && player.socketId === myPlayer.socketId);
                 const isPlayerHost = player.socketId === roomHostId;
                 const showKickButton = isHost && !isMe;
 
@@ -857,13 +868,32 @@ export default function GamePage() {
           {/* Action buttons */}
           <div className="space-y-4 border-t border-slate-200 pt-6">
             {isHost ? (
-              <button
-                onClick={handleStartOnlineGame}
-                disabled={roomPlayers.length < 2}
-                className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-100 disabled:text-slate-400 text-white rounded-xl font-bold text-sm transition-all shadow-md active:scale-95 cursor-pointer shadow-indigo-600/10"
-              >
-                Mulai Permainan 🎮
-              </button>
+              <>
+                <div className="mb-4 text-left">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+                    ⏱️ Durasi Waktu Permainan
+                  </label>
+                  <select
+                    value={selectedDuration}
+                    onChange={(e) => setSelectedDuration(parseInt(e.target.value))}
+                    className="w-full px-4 py-3 bg-white/70 border border-slate-200 focus:border-indigo-500 rounded-xl text-sm text-slate-800 focus:outline-none transition-colors font-semibold shadow-sm cursor-pointer"
+                  >
+                    <option value={600}>10 Menit</option>
+                    <option value={1200}>20 Menit</option>
+                    <option value={1800}>30 Menit (Bawaan)</option>
+                    <option value={2400}>40 Menit</option>
+                    <option value={3000}>50 Menit</option>
+                    <option value={3600}>60 Menit</option>
+                  </select>
+                </div>
+                <button
+                  onClick={handleStartOnlineGame}
+                  disabled={roomPlayers.length < 2}
+                  className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-100 disabled:text-slate-400 text-white rounded-xl font-bold text-sm transition-all shadow-md active:scale-95 cursor-pointer shadow-indigo-600/10"
+                >
+                  Mulai Permainan 🎮
+                </button>
+              </>
             ) : (
               <div className="w-full py-3 bg-slate-50 border border-slate-200 text-slate-500 rounded-xl font-bold text-xs text-center animate-pulse">
                 ⏳ Menunggu Host memulai permainan...
@@ -883,22 +913,22 @@ export default function GamePage() {
   }
 
 
-  // 5. RENDER LOADING SCREEN OVERLAY (both online & offline)
+  // Setup loading resources for preloading overlay
+  const loadingImages = [
+    { src: '/background_home_resmi.png', label: 'Jejak Integritas' },
+    { src: '/belajar.png', label: 'Edukasi Karakter' },
+    { src: '/menanam tanaman.png', label: 'Aksi Nyata' },
+    { src: '/background_orang.png', label: 'Sosial & Moral' }
+  ];
+
+  const activeImageIndex = loadingProgress !== null ? Math.min(
+    Math.floor((loadingProgress / 100) * loadingImages.length),
+    loadingImages.length - 1
+  ) : 0;
+  const currentImg = loadingImages[activeImageIndex];
+
+  let loadingText = 'Mempersiapkan papan permainan...';
   if (loadingProgress !== null) {
-    const loadingImages = [
-      { src: '/background_home_resmi.png', label: 'Jejak Integritas' },
-      { src: '/belajar.png', label: 'Edukasi Karakter' },
-      { src: '/menanam tanaman.png', label: 'Aksi Nyata' },
-      { src: '/background_orang.png', label: 'Sosial & Moral' }
-    ];
-
-    const activeImageIndex = Math.min(
-      Math.floor((loadingProgress / 100) * loadingImages.length),
-      loadingImages.length - 1
-    );
-    const currentImg = loadingImages[activeImageIndex];
-
-    let loadingText = 'Mempersiapkan papan permainan...';
     if (loadingProgress > 75) {
       loadingText = 'Menyiapkan kartu pertanyaan & dadu...';
     } else if (loadingProgress > 50) {
@@ -906,57 +936,6 @@ export default function GamePage() {
     } else if (loadingProgress > 25) {
       loadingText = 'Memuat model dan aset permainan...';
     }
-
-    return (
-      <div className="fixed inset-0 bg-neutral-950 text-white font-sans z-50 select-none overflow-hidden animate-fade-in">
-        {/* Full-screen Loading Artwork */}
-        <div className="absolute inset-0 w-full h-full">
-          <img
-            src={currentImg.src}
-            alt={currentImg.label}
-            className="w-full h-full object-cover transition-all duration-700 ease-in-out"
-            key={currentImg.src} // forces re-render/fade transition on source change
-          />
-          {/* Subtle bottom dark gradient to ensure text readability */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
-        </div>
-
-        {/* Bottom-Left Corner: Image / Concept Art Info */}
-        <div className="absolute bottom-8 left-8 z-10 flex flex-col gap-1 bg-black/60 backdrop-blur-md border border-white/10 px-5 py-3 rounded-2xl animate-fade-in">
-          <span className="text-[10px] font-black text-emerald-450 uppercase tracking-widest">
-            ASET PERMAINAN
-          </span>
-          <span className="text-base font-black text-white uppercase tracking-wider">
-            {currentImg.label}
-          </span>
-        </div>
-
-        {/* Bottom-Right Corner: Loading progress info & bar */}
-        <div className="absolute bottom-8 right-8 z-10 flex flex-col items-end gap-2 max-w-xs w-full animate-fade-in">
-          {/* Status text and percentage count */}
-          <div className="flex flex-col items-end text-right gap-1 bg-black/60 backdrop-blur-md border border-white/10 px-4 py-2.5 rounded-2xl w-full">
-            <div className="flex justify-between items-center w-full">
-              <span className="text-[10px] font-black text-neutral-400 uppercase tracking-wider animate-pulse text-left pr-2 truncate">
-                {loadingText}
-              </span>
-              <span className="text-sm font-black text-emerald-400 tabular-nums ml-auto">
-                {loadingProgress}%
-              </span>
-            </div>
-            {/* Progress bar container */}
-            <div className="w-full bg-neutral-950 border border-white/5 rounded-full h-2.5 p-0.5 overflow-hidden shadow-inner relative mt-1">
-              <div
-                className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 h-full rounded-full transition-all duration-150 ease-out shadow-lg relative"
-                style={{ width: `${loadingProgress}%` }}
-              >
-                {/* Glowing tip */}
-                <div className="absolute right-0 top-0 bottom-0 w-2 bg-white rounded-full filter blur-sm animate-pulse" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
   }
 
   // Check state consistency for game rendering
@@ -966,9 +945,9 @@ export default function GamePage() {
 
   const rankedPlayers = [...activeState.players].sort((a, b) => (b.score || 0) - (a.score || 0));
   const activePlayer = activeState.players[activeState.currentPlayerIndex];
-  const isMyTurn = !!(myPlayer && activePlayer && activePlayer.socketId === socketRef.current?.id);
-  const isHost = !!(myPlayer && roomHostId === socketRef.current?.id);
-  const isFakePlayer = !!(activePlayer && activePlayer.socketId.startsWith('fake-'));
+  const isMyTurn = !!(myPlayer && activePlayer && activePlayer.socketId && activePlayer.socketId === myPlayer.socketId);
+  const isHost = !!(myPlayer && roomHostId && myPlayer.socketId && roomHostId === myPlayer.socketId);
+  const isFakePlayer = !!(activePlayer && activePlayer.socketId && activePlayer.socketId.startsWith('fake-'));
   const isMyTurnOrDevDrive = isMyTurn || (isFakePlayer && isHost);
 
   // 6. FINISHED GAME SCREEN (Now handled via overlay VictoryModal)
@@ -1072,6 +1051,15 @@ export default function GamePage() {
           </div>
         )}
       </div>
+      {/* Floating Game Timer */}
+      {activeState.timeRemaining !== undefined && activeState.timeRemaining !== null && (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-30 bg-black/60 backdrop-blur-md border border-white/20 px-4 py-2 rounded-full flex items-center gap-2 shadow-lg select-none">
+          <span className="text-base">⏱️</span>
+          <span className="text-sm font-black text-white tabular-nums tracking-wide">
+            SISA WAKTU: {formatTime(activeState.timeRemaining)}
+          </span>
+        </div>
+      )}
 
       {/* Question Modal — shown when there's a question in 'question' or 'result' phase */}
       {activeState.currentQuestion &&
@@ -1088,6 +1076,7 @@ export default function GamePage() {
             showResult={activeState.phase === 'result'}
             isReadOnly={!isMyTurnOrDevDrive}
             tier={tier}
+            timeRemaining={activeState.questionTimeRemaining}
           />
         )}
 
@@ -1184,8 +1173,13 @@ export default function GamePage() {
                       <span className="text-xs sm:text-sm font-black text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-full font-sans">
                         ⭐ {player.score || 0} Pts
                       </span>
+                      {player.isFinished && (
+                        <span className="text-[10px] sm:text-[11px] text-amber-600 font-extrabold font-sans mt-0.5">
+                          🏁 Finish Ke-{player.finishRank} (+{player.finishBonus || 0} Pts)
+                        </span>
+                      )}
                       <span className="text-[10px] sm:text-[11px] text-slate-500 mt-0.5 font-medium font-sans">
-                        {player.position === 0 ? 'Belum Mulai' : `Kotak ${player.position}`}
+                        {player.position === 50 ? 'Selesai (FINISH)' : player.position === 0 ? 'Belum Mulai' : `Kotak ${player.position}`}
                       </span>
                       <span className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 font-medium font-sans">
                         Benar: <span className="text-emerald-600 font-bold">{player.correctAnswers || 0}</span> • Salah: <span className="text-rose-500 font-bold">{player.wrongAnswers || 0}</span>
@@ -1212,9 +1206,62 @@ export default function GamePage() {
         </div>
       )}
 
+      {/* 5. LOADING SCREEN OVERLAY (rendered as layered overlay) */}
+      {loadingProgress !== null && (
+        <div className="fixed inset-0 bg-neutral-950 text-white font-sans z-[100] select-none overflow-hidden animate-fade-in">
+          {/* Full-screen Loading Artwork */}
+          <div className="absolute inset-0 w-full h-full">
+            <img
+              src={currentImg.src}
+              alt={currentImg.label}
+              className="w-full h-full object-cover transition-all duration-700 ease-in-out"
+              key={currentImg.src}
+            />
+            {/* Subtle bottom dark gradient to ensure text readability */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
+          </div>
+
+          {/* Bottom-Left Corner: Image / Concept Art Info */}
+          <div className="absolute bottom-8 left-8 z-[101] flex flex-col gap-1 bg-black/60 backdrop-blur-md border border-white/10 px-5 py-3 rounded-2xl">
+            <span className="text-[10px] font-black text-emerald-450 uppercase tracking-widest">
+              ASET PERMAINAN
+            </span>
+            <span className="text-base font-black text-white uppercase tracking-wider">
+              {currentImg.label}
+            </span>
+          </div>
+
+          {/* Bottom-Right Corner: Loading progress info & bar */}
+          <div className="absolute bottom-8 right-8 z-[101] flex flex-col items-end gap-2 max-w-xs w-full animate-fade-in">
+            {/* Status text and percentage count */}
+            <div className="flex flex-col items-end text-right gap-1 bg-black/60 backdrop-blur-md border border-white/10 px-4 py-2.5 rounded-2xl w-full">
+              <div className="flex justify-between items-center w-full">
+                <span className="text-[10px] font-black text-neutral-400 uppercase tracking-wider animate-pulse text-left pr-2 truncate">
+                  {loadingText}
+                </span>
+                <span className="text-sm font-black text-emerald-400 tabular-nums ml-auto">
+                  {loadingProgress}%
+                </span>
+              </div>
+              {/* Progress bar container */}
+              <div className="w-full bg-neutral-950 border border-white/5 rounded-full h-2.5 p-0.5 overflow-hidden shadow-inner relative mt-1">
+                <div
+                  className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 h-full rounded-full transition-all duration-150 ease-out shadow-lg relative"
+                  style={{ width: `${loadingProgress}%` }}
+                >
+                  {/* Glowing tip */}
+                  <div className="absolute right-0 top-0 bottom-0 w-2 bg-white rounded-full filter blur-sm animate-pulse" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* === PORTRAIT BLOCKER === */}
       <PortraitBlocker isPortrait={isPortrait} isDesktop={isDesktop} />
     </div>
   );
 }
+
 

@@ -59,7 +59,7 @@ export default function PlayerPanel({
   const isTablet = tier === 'tablet';
   const panelGap = isMobile ? 'gap-1.5' : 'gap-3';
   const panelPad = isMobile ? 'p-2' : isTablet ? 'p-3' : 'p-4';
-  const panelHeight = isMobile ? 'h-full' : 'h-[88%]';
+  const panelHeight = isMobile ? 'flex-1 min-h-0' : 'h-[88%]';
   const turnTitleSize = isMobile ? 'text-[8px]' : 'text-[10px]';
   const nameSize = isMobile ? 'text-xs' : 'text-sm';
   const pionSize = isMobile ? 'w-6 h-6' : 'w-8 h-8';
@@ -176,7 +176,7 @@ export default function PlayerPanel({
                   </span>
                   <span className={`${statSize} text-slate-300 font-bold`}>
                     {player.isFinished 
-                      ? `🏁 Ke-${player.finishRank}` 
+                      ? `🏁 Ke-${player.finishRank} (+${player.finishBonus || 0} Pts)` 
                       : player.position === 0 
                       ? 'Belum Mulai' 
                       : `Kotak ${player.position}`}
