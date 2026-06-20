@@ -41,8 +41,8 @@ export default function QuestionModal({
       <div 
         className={`bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 flex flex-col ${
           showResult 
-            ? (isMobile ? 'max-w-full w-full max-h-[95vh]' : 'max-w-4xl w-full max-h-[90vh]')
-            : (isMobile ? 'max-w-sm w-full max-h-[95vh]' : 'max-w-lg w-full max-h-[90vh]')
+            ? (isMobile ? 'max-w-[95vw] w-full max-h-[95vh]' : 'max-w-7xl w-[94vw] max-h-[92vh]')
+            : (isMobile ? 'max-w-md w-[95vw] max-h-[95vh]' : 'max-w-4xl w-[92vw] max-h-[92vh]')
         }`}
       >
         {/* Header */}
@@ -85,7 +85,7 @@ export default function QuestionModal({
               )}
 
               {/* Question */}
-              <p className={`text-gray-800 ${isMobile ? 'text-xs' : 'text-sm sm:text-base'} mb-3 sm:mb-5 leading-relaxed font-semibold`}>
+              <p className={`text-gray-800 ${isMobile ? 'text-xs' : 'text-sm sm:text-base'} mb-3 sm:mb-5 leading-relaxed font-semibold whitespace-pre-line`}>
                 {question.question}
               </p>
 

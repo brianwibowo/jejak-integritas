@@ -1,8 +1,9 @@
 'use client';
 
 import { Player, GamePhase } from '../gameData';
-import Dice from './Dice';
 import { DeviceTier } from '../hooks/useDeviceTier';
+
+const DICE_FACES = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
 
 interface PlayerPanelProps {
   players: Player[];
@@ -45,10 +46,11 @@ export default function PlayerPanel({
 }: PlayerPanelProps) {
   const currentPlayer = players[currentPlayerIndex];
 
-  // Sort players for leaderboard (rank by score descending, then by position descending)
+  // Sort players for leaderboard (rank by score descending, then correctAnswers descending, then by position descending)
   const rankedPlayers = [...players].sort((a, b) => {
-    if (b.score !== a.score) return (b.score || 0) - (a.score || 0);
-    return b.position - a.position;
+    if ((b.score || 0) !== (a.score || 0)) return (b.score || 0) - (a.score || 0);
+    if ((b.correctAnswers || 0) !== (a.correctAnswers || 0)) return (b.correctAnswers || 0) - (a.correctAnswers || 0);
+    return (b.position || 0) - (a.position || 0);
   });
 
   const currentOriginalIndex = players.findIndex(pl => pl.id === currentPlayer?.id);
@@ -69,35 +71,54 @@ export default function PlayerPanel({
   const sectionPad = isMobile ? 'p-2' : 'p-3';
 
   return (
-    <div className={`flex flex-col ${panelGap} w-full ${panelHeight} bg-[#122c06] border-[6px] border-[#5c3208] rounded-3xl shadow-[inset_0_4px_12px_rgba(0,0,0,0.6),0_10px_30px_rgba(0,0,0,0.5)] ${panelPad} font-sans text-slate-100 select-none overflow-hidden`}>
+    <div className={`relative flex flex-col ${panelGap} w-full ${panelHeight} bg-[#122c06] border-[6px] border-[#5c3208] rounded-3xl shadow-[inset_0_4px_12px_rgba(0,0,0,0.6),0_10px_30px_rgba(0,0,0,0.5)] ${panelPad} font-sans text-slate-100 select-none overflow-hidden`}>
+      
+      {/* Settings/Pause Gear Icon (Top Right) */}
+      <button
+        onClick={onPause}
+        className={`absolute ${isMobile ? 'top-2 right-2' : 'top-3.5 right-3.5'} hover:scale-110 active:scale-95 transition-all cursor-pointer z-20 bg-black/45 hover:bg-black/60 p-1.5 rounded-full border border-white/10 shadow-md`}
+        title="Jeda Permainan"
+      >
+        <img
+          src="/gear_pause.png"
+          alt="Pause"
+          className={`${isMobile ? 'w-5 h-5' : 'w-7.5 h-7.5'} object-contain hover:rotate-90 transition-transform duration-500`}
+        />
+      </button>
 
-      {/* 1. CURRENT TURN & DICE ROLL */}
-      <div className={`text-center ${sectionPad} bg-black/25 border border-white/10 rounded-2xl flex flex-col gap-2`}>
-        <h3 className={`${turnTitleSize} font-black text-emerald-200/95 uppercase tracking-widest`}>
-          🎯 Giliran Saat Ini
-        </h3>
+      {/* 1. COMPACT CURRENT TURN & DICE ROLL */}
+      <div className={`flex items-center justify-between ${sectionPad} bg-black/30 border border-white/10 rounded-2xl gap-3 ${isMobile ? 'pr-9' : 'pr-14'}`}>
         
-        <div className="flex items-center justify-center gap-2">
+        {/* Left Side: Current Player Info */}
+        <div className="flex items-center gap-1.5 min-w-0 flex-1">
           {currentPlayer && (
             <img
               src={PLAYER_PIONS[currentPionIndex % PLAYER_PIONS.length]}
               alt={currentPlayer.name}
-              className={`${pionSize} object-contain animate-bounce`}
+              className={`${isMobile ? 'w-5 h-5' : 'w-7.5 h-7.5'} object-contain flex-shrink-0`}
             />
           )}
-          <div className={`font-extrabold ${nameSize} text-white truncate max-w-[155px]`}>
-            {currentPlayer?.name}
+          <div className="flex flex-col min-w-0">
+            <span className={`${turnTitleSize} font-bold text-emerald-300 uppercase tracking-wider pl-0.5`}>Giliran</span>
+            <span className={`font-black ${nameSize} text-white truncate`}>
+              {currentPlayer?.name}
+            </span>
           </div>
         </div>
 
-        {/* Dice & Roll Button */}
-        <div className={`bg-black/15 rounded-xl ${isMobile ? 'p-1.5' : 'p-2.5'} border border-white/5 flex justify-center shadow-inner`}>
-          <Dice
-            value={diceValue}
-            onRoll={onRollDice}
+        {/* Right Side: Compact Dice & Roll Button */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <div className={`${isMobile ? 'text-2xl' : 'text-3.5xl'} select-none text-white flex items-center justify-center`} title={diceValue !== null ? `Hasil: ${diceValue}` : 'Dadu'}>
+            {diceValue !== null ? DICE_FACES[diceValue - 1] : '🎲'}
+          </div>
+
+          <button
+            onClick={onRollDice}
             disabled={phase !== 'rolling' || !isMyTurn}
-            tier={tier}
-          />
+            className={`px-3.5 ${isMobile ? 'py-1 text-[9px]' : 'py-1.5 text-xs'} bg-amber-600 hover:bg-amber-500 active:scale-95 text-white font-black rounded-lg transition-all shadow border border-amber-800 disabled:bg-slate-800 disabled:text-slate-500 disabled:border-slate-900 disabled:cursor-not-allowed cursor-pointer uppercase tracking-wider`}
+          >
+            {phase === 'rolling' && isMyTurn ? 'Kocok' : diceValue !== null ? `Dadu: ${diceValue}` : 'Dadu'}
+          </button>
         </div>
       </div>
 
@@ -145,12 +166,12 @@ export default function PlayerPanel({
             return (
               <div
                 key={player.id}
-                className={`flex flex-col gap-1 ${isMobile ? 'p-1.5' : 'p-2'} rounded-2xl transition-all border shadow-sm`}
+                className={`flex flex-col gap-1.5 ${isMobile ? 'p-2' : 'p-2.5'} rounded-2xl transition-all border shadow-sm`}
                 style={{
                   borderLeft: `5px solid ${borderCol}`,
-                  backgroundColor: isCurrent ? 'rgba(254, 240, 138, 0.07)' : 'rgba(255, 255, 255, 0.03)',
-                  borderColor: isCurrent ? 'rgba(254, 240, 138, 0.25)' : 'rgba(255, 255, 255, 0.08)',
-                  boxShadow: isCurrent ? '0 0 10px rgba(254, 240, 138, 0.08)' : 'none',
+                  backgroundColor: isCurrent ? 'rgba(254, 240, 138, 0.08)' : 'rgba(255, 255, 255, 0.03)',
+                  borderColor: isCurrent ? 'rgba(254, 240, 138, 0.3)' : 'rgba(255, 255, 255, 0.08)',
+                  boxShadow: isCurrent ? '0 0 12px rgba(254, 240, 138, 0.1)' : 'none',
                 }}
               >
                 {/* Top row: rank + pion + name + active indicator */}
@@ -177,37 +198,36 @@ export default function PlayerPanel({
                 </div>
 
                 {/* Bottom row: score + position + stats */}
-                <div className="flex items-center justify-between gap-1 pl-1">
-                  <span className={`text-yellow-200 font-black ${statSize} bg-yellow-950/40 px-2.5 py-0.5 rounded-full border border-yellow-800/35`}>
+                <div className="flex items-center justify-between gap-1 pl-1 flex-wrap">
+                  {/* Poin */}
+                  <span className={`text-amber-200 font-black ${statSize} bg-amber-950/40 px-2 py-0.5 rounded-full border border-amber-800/35 flex items-center gap-0.5 shadow-sm`}>
                     ⭐ {player.score || 0} Pts
                   </span>
-                  <span className={`${statSize} text-slate-300 font-bold`}>
+                  
+                  {/* Posisi Papan */}
+                  <span className={`${statSize} font-extrabold px-2 py-0.5 bg-sky-950/30 text-sky-200 border border-sky-800/25 rounded-full`}>
                     {player.isFinished 
-                      ? `🏁 Ke-${player.finishRank} (+${player.finishBonus || 0} Pts)` 
+                      ? `🏁 Finis #${player.finishRank}` 
                       : player.position === 0 
-                      ? 'Belum Mulai' 
-                      : `Kotak ${player.position}`}
+                      ? '📍 Mulai' 
+                      : `📍 Kotak ${player.position}`}
                   </span>
-                  <span className={`${statSize} text-slate-400 font-bold flex gap-1.5`}>
-                    <span>B: <span className="text-emerald-300 font-black">{player.correctAnswers || 0}</span></span>
-                    <span>•</span>
-                    <span>S: <span className="text-rose-300 font-black">{player.wrongAnswers || 0}</span></span>
-                  </span>
+                  
+                  {/* Akurasi Kuis */}
+                  <div className={`flex items-center ${isMobile ? 'gap-0.5' : 'gap-1'} ${statSize} font-bold`}>
+                    <span className="bg-emerald-950/30 text-emerald-300 border border-emerald-800/25 px-1.5 py-0.5 rounded-md" title="Benar">
+                      ✓ {player.correctAnswers || 0}
+                    </span>
+                    <span className="bg-rose-950/30 text-rose-300 border border-rose-800/25 px-1.5 py-0.5 rounded-md" title="Salah">
+                      ✗ {player.wrongAnswers || 0}
+                    </span>
+                  </div>
                 </div>
               </div>
             );
           })}
         </div>
       </div>
-
-      {/* Pause Button — below leaderboard */}
-      <button
-        onClick={onPause}
-        className={`w-full px-3 ${isMobile ? 'py-1' : 'py-2'} rounded-xl ${turnTitleSize} font-black text-slate-300 bg-white/5 hover:bg-white/10 active:scale-95 transition-all flex items-center justify-center gap-1.5 border border-white/10 cursor-pointer uppercase tracking-wider`}
-        title="Pause Game"
-      >
-        ⏸ Pause
-      </button>
     </div>
   );
 }

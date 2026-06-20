@@ -76,6 +76,7 @@ export default function GamePage() {
 
   // === TRANSITION CURTAIN STATE ===
   const [curtainActive, setCurtainActive] = useState(true);
+  const [isDevQuickStarting, setIsDevQuickStarting] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -180,6 +181,7 @@ export default function GamePage() {
   const prevPhaseRef = useRef<string | null>(null);
   const prevQuestionTextRef = useRef<string | null>(null);
   const prevPlayersPositionsRef = useRef<Record<string, number>>({});
+  const consequenceTimeoutRef = useRef<any>(null);
 
   useEffect(() => {
     if (!activeState) return;
@@ -187,8 +189,16 @@ export default function GamePage() {
     const currentPhase = activeState.phase;
     const prevPhase = prevPhaseRef.current;
 
-    // 0. Stop walking SFX immediately when leaving walking phase
-    if (prevPhase === 'walking' && currentPhase !== 'walking') {
+    // 0. Stop walking/climbing/sliding SFX immediately when leaving walking or result phase, or entering rolling phase
+    if (
+      (prevPhase === 'walking' && currentPhase !== 'walking') ||
+      (prevPhase === 'result' && currentPhase !== 'result') ||
+      currentPhase === 'rolling'
+    ) {
+      if (consequenceTimeoutRef.current) {
+        clearTimeout(consequenceTimeoutRef.current);
+        consequenceTimeoutRef.current = null;
+      }
       stopMajuSound();
       stopMundurSound();
     }
@@ -227,12 +237,21 @@ export default function GamePage() {
       }
     }
 
-    // 4. Mundur/Maju SFX for snake/ladder consequence
+    // 4. Mundur/Maju SFX for snake/ladder consequence (stop after 1.5 seconds so it doesn't loop/play to end)
     if (currentPhase === 'result' && prevPhase !== 'result' && activeState.consequence) {
+      if (consequenceTimeoutRef.current) {
+        clearTimeout(consequenceTimeoutRef.current);
+      }
       if (activeState.consequence.includes('🐍')) {
         playMundurSound();
+        consequenceTimeoutRef.current = setTimeout(() => {
+          stopMundurSound();
+        }, 1500);
       } else if (activeState.consequence.includes('🪜')) {
         playMajuSound();
+        consequenceTimeoutRef.current = setTimeout(() => {
+          stopMajuSound();
+        }, 1500);
       }
     }
 
@@ -243,6 +262,12 @@ export default function GamePage() {
     } else {
       prevQuestionTextRef.current = null;
     }
+
+    return () => {
+      if (consequenceTimeoutRef.current) {
+        clearTimeout(consequenceTimeoutRef.current);
+      }
+    };
   }, [activeState?.phase, activeState?.currentQuestion, activeState?.answerCorrect]);
 
   // === PER-STEP WALKING SFX (plays once per box, no overlap) ===
@@ -505,6 +530,10 @@ export default function GamePage() {
     if (!activeState || activeState.phase !== 'rolling') return;
     if (isPaused) return;
 
+    // Cut off any previous climb/slide sound immediately
+    stopMajuSound();
+    stopMundurSound();
+
     // Play sound locally
     if (!isRollPlayingRef.current && rollSoundRef.current && !isMuted) {
       isRollPlayingRef.current = true;
@@ -548,6 +577,41 @@ export default function GamePage() {
   const handleToggleMute = useCallback(() => {
     setIsMuted((prev) => !prev);
   }, []);
+
+  // === DEV QUICK START BYPASS ===
+  const triggerDevQuickStart = useCallback(() => {
+    if (!socketConnected || !socketRef.current) {
+      setNicknameError('Gagal terhubung ke server. Pastikan backend sudah menyala.');
+      return;
+    }
+    setIsDevQuickStarting(true);
+    setNickname('Developer');
+    socketRef.current.emit('join-lobby', { lobbyId: '1', playerName: 'Developer' });
+  }, [socketConnected]);
+
+  useEffect(() => {
+    if (isDevQuickStarting && currentLobbyId === '1' && roomPlayers.length > 0) {
+      const isHost = !!(myPlayer && roomHostId && myPlayer.socketId && roomHostId === myPlayer.socketId);
+      if (isHost) {
+        const botsNeeded = 4 - roomPlayers.length;
+        if (botsNeeded > 0) {
+          const timer = setTimeout(() => {
+            socketRef.current?.emit('dev-add-fake-player', { lobbyId: '1' });
+          }, 150);
+          return () => clearTimeout(timer);
+        } else {
+          setIsDevQuickStarting(false);
+          const colorsList = generateBoard();
+          setLoadingProgress(0);
+          socketRef.current?.emit('start-game', {
+            lobbyId: '1',
+            boardColors: colorsList,
+            duration: selectedDuration
+          });
+        }
+      }
+    }
+  }, [isDevQuickStarting, currentLobbyId, roomPlayers, myPlayer, roomHostId, selectedDuration]);
 
   // === LOBBY ACTIONS ===
   const handleJoinLobby = (lobbyId: string) => {
@@ -667,6 +731,17 @@ export default function GamePage() {
             <p className="text-xs text-center text-slate-500 font-extrabold uppercase tracking-widest mb-6">
               Pilih lobby untuk bermain
             </p>
+
+            {/* Quick dev start button */}
+            <div className="mb-6">
+              <button
+                type="button"
+                onClick={triggerDevQuickStart}
+                className="w-full py-3 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white text-xs font-bold uppercase tracking-widest rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer border-none outline-none"
+              >
+                ⚡ DEV QUICK START (AUTO-BOTS & START)
+              </button>
+            </div>
 
             {/* Nickname input */}
             <div className="mb-6">
@@ -892,26 +967,36 @@ export default function GamePage() {
                     <option value={3600}>60 Menit</option>
                   </select>
                 </div>
-                <button
-                  onClick={handleStartOnlineGame}
-                  disabled={roomPlayers.length < 2}
-                  className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-100 disabled:text-slate-400 text-white rounded-xl font-bold text-sm transition-all shadow-md active:scale-95 cursor-pointer shadow-indigo-600/10"
-                >
-                  Mulai Permainan 🎮
-                </button>
+                
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleStartOnlineGame}
+                    disabled={roomPlayers.length < 2}
+                    className="flex-1 py-3.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-100 disabled:text-slate-400 text-white rounded-xl font-bold text-sm transition-all shadow-md active:scale-95 cursor-pointer shadow-indigo-600/10"
+                  >
+                    Mulai Permainan 🎮
+                  </button>
+                  <button
+                    onClick={handleLeaveLobby}
+                    className="flex-1 py-3.5 bg-white border border-slate-200 hover:bg-rose-50/50 text-rose-500 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm active:scale-95"
+                  >
+                    Keluar Lobby
+                  </button>
+                </div>
               </>
             ) : (
-              <div className="w-full py-3 bg-slate-50 border border-slate-200 text-slate-500 rounded-xl font-bold text-xs text-center animate-pulse">
-                ⏳ Menunggu Host memulai permainan...
+              <div className="flex gap-3">
+                <div className="flex-1 py-3.5 bg-slate-50 border border-slate-200 text-slate-400 rounded-xl font-bold text-xs flex items-center justify-center text-center animate-pulse">
+                  ⏳ Menunggu Host...
+                </div>
+                <button
+                  onClick={handleLeaveLobby}
+                  className="flex-1 py-3.5 bg-white border border-slate-200 hover:bg-rose-50/50 text-rose-500 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm active:scale-95"
+                >
+                  Keluar Lobby
+                </button>
               </div>
             )}
-
-            <button
-              onClick={handleLeaveLobby}
-              className="w-full py-3 bg-white border border-slate-200 hover:bg-slate-50 text-rose-500 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
-            >
-              Keluar Lobby
-            </button>
           </div>
         </div>
       </div>
@@ -949,7 +1034,11 @@ export default function GamePage() {
     return null;
   }
 
-  const rankedPlayers = [...activeState.players].sort((a, b) => (b.score || 0) - (a.score || 0));
+  const rankedPlayers = [...activeState.players].sort((a, b) => {
+    if ((b.score || 0) !== (a.score || 0)) return (b.score || 0) - (a.score || 0);
+    if ((b.correctAnswers || 0) !== (a.correctAnswers || 0)) return (b.correctAnswers || 0) - (a.correctAnswers || 0);
+    return (b.position || 0) - (a.position || 0);
+  });
   const activePlayer = activeState.players[activeState.currentPlayerIndex];
   const isMyTurn = !!(myPlayer && activePlayer && activePlayer.socketId && activePlayer.socketId === myPlayer.socketId);
   const isHost = !!(myPlayer && roomHostId && myPlayer.socketId && roomHostId === myPlayer.socketId);
@@ -1067,7 +1156,7 @@ export default function GamePage() {
       </div>
       {/* Floating Game Timer */}
       {activeState.timeRemaining !== undefined && activeState.timeRemaining !== null && (
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-30 bg-black/60 backdrop-blur-md border border-white/20 px-4 py-2 rounded-full flex items-center gap-2 shadow-lg select-none">
+        <div className="absolute top-4 left-4 z-30 bg-black/60 backdrop-blur-md border border-white/20 px-4 py-2 rounded-full flex items-center gap-2 shadow-lg select-none">
           <span className="text-base">⏱️</span>
           <span className="text-sm font-black text-white tabular-nums tracking-wide">
             SISA WAKTU: {formatTime(activeState.timeRemaining)}

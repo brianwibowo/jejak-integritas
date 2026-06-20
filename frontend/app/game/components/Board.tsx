@@ -28,11 +28,11 @@ interface ContentBox {
 
 export default function Board({ board, players, tier = 'desktop' }: BoardProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [contentBox, setContentBox] = useState<ContentBox>({ 
-    offsetX: 0, 
-    offsetY: 0, 
-    width: 1, 
-    height: 1 
+  const [contentBox, setContentBox] = useState<ContentBox>({
+    offsetX: 0,
+    offsetY: 0,
+    width: 1,
+    height: 1
   });
 
   useEffect(() => {
@@ -65,10 +65,10 @@ export default function Board({ board, players, tier = 'desktop' }: BoardProps) 
 
     calculate();
     window.addEventListener('resize', calculate);
-    
+
     // Fallback/observation timers for transition/render delays
     const timer = setTimeout(calculate, 100);
-    
+
     let observer: ResizeObserver | null = null;
     if (typeof ResizeObserver !== 'undefined' && containerRef.current) {
       observer = new ResizeObserver(calculate);
@@ -85,18 +85,34 @@ export default function Board({ board, players, tier = 'desktop' }: BoardProps) 
   }, []);
 
   // Pion sizing per device tier
-  const pionScale = tier === 'mobile' ? { w: 0.025, h: 0.06 } 
-    : tier === 'tablet' ? { w: 0.022, h: 0.055 } 
-    : { w: 0.020, h: 0.05 };
+  const pionScale = tier === 'mobile' ? { w: 0.025, h: 0.06 }
+    : tier === 'tablet' ? { w: 0.022, h: 0.055 }
+      : { w: 0.020, h: 0.05 };
 
   return (
     <div ref={containerRef} className="absolute inset-0 pointer-events-none z-10">
       {players.map((p, idx) => {
         const pionWidth = contentBox.width * pionScale.w;
         const pionHeight = contentBox.height * pionScale.h;
-        const coord = getPawnCoordinates(p.position, idx, contentBox, pionWidth, pionHeight);
+
+        // Find how many players share this box and the relative index of this player among them
+        const playersOnSameBox = p.position > 0
+          ? players.filter(other => other.position === p.position)
+          : [];
+        const localIndex = playersOnSameBox.findIndex(other => other.id === p.id);
+        const totalOnBox = playersOnSameBox.length;
+
+        const coord = getPawnCoordinates(
+          p.position,
+          localIndex >= 0 ? localIndex : 0,
+          totalOnBox || 1,
+          idx,
+          contentBox,
+          pionWidth,
+          pionHeight
+        );
         const pionSrc = PLAYER_PIONS[idx % PLAYER_PIONS.length];
-        
+
         return (
           <img
             key={p.id}
@@ -118,62 +134,134 @@ export default function Board({ board, players, tier = 'desktop' }: BoardProps) 
   );
 }
 
+// Custom coordinates for each box (1 to 50) as percentage [x, y] of board dimensions.
+// You can edit any box's x (left-to-right from 0.0 to 1.0) and y (top-to-bottom from 0.0 to 1.0) directly.
+// This is structured visually per row from bottom (Row 5) to top (Row 1) for easy customization.
+const BOX_COORDINATES: Record<number, { x: number; y: number }> = {
+  // === ROW 5 (Bottom Row: Boxes 1 to 10, Left to Right) ===
+  1: { x: 0.100, y: 0.87 },
+  2: { x: 0.205, y: 0.87 },
+  3: { x: 0.320, y: 0.87 },
+  4: { x: 0.430, y: 0.87 },
+  5: { x: 0.515, y: 0.87 },
+  6: { x: 0.605, y: 0.87 },
+  7: { x: 0.680, y: 0.87 },
+  8: { x: 0.770, y: 0.87 },
+  9: { x: 0.850, y: 0.87 },
+  10: { x: 0.915, y: 0.87 },
+
+  // === ROW 4 (Boxes 11 to 20, Right to Left zigzag) ===
+  11: { x: 0.895, y: 0.69 },
+  12: { x: 0.820, y: 0.69 },
+  13: { x: 0.750, y: 0.69 },
+  14: { x: 0.655, y: 0.69 },
+  15: { x: 0.585, y: 0.69 },
+  16: { x: 0.475, y: 0.69 },
+  17: { x: 0.370, y: 0.69 },
+  18: { x: 0.290, y: 0.69 },
+  19: { x: 0.190, y: 0.69 },
+  20: { x: 0.100, y: 0.69 },
+
+  // === ROW 3 (Boxes 21 to 30, Left to Right zigzag) ===
+  21: { x: 0.060, y: 0.505 },
+  22: { x: 0.140, y: 0.505 },
+  23: { x: 0.265, y: 0.505 },
+  24: { x: 0.370, y: 0.505 },
+  25: { x: 0.470, y: 0.505 },
+  26: { x: 0.560, y: 0.505 },
+  27: { x: 0.660, y: 0.505 },
+  28: { x: 0.760, y: 0.505 },
+  29: { x: 0.830, y: 0.505 },
+  30: { x: 0.910, y: 0.505 },
+
+  // === ROW 2 (Boxes 31 to 40, Right to Left zigzag) ===
+  31: { x: 0.900, y: 0.32 },
+  32: { x: 0.815, y: 0.32 },
+  33: { x: 0.685, y: 0.32 },
+  34: { x: 0.600, y: 0.32 },
+  35: { x: 0.525, y: 0.32 },
+  36: { x: 0.420, y: 0.32 },
+  37: { x: 0.365, y: 0.32 },
+  38: { x: 0.250, y: 0.32 },
+  39: { x: 0.160, y: 0.32 },
+  40: { x: 0.080, y: 0.32 },
+
+  // === ROW 1 (Top Row: Boxes 41 to 50, Left to Right zigzag) ===
+  41: { x: 0.100, y: 0.14 },
+  42: { x: 0.180, y: 0.14 },
+  43: { x: 0.280, y: 0.14 },
+  44: { x: 0.380, y: 0.14 },
+  45: { x: 0.460, y: 0.14 },
+  46: { x: 0.580, y: 0.14 },
+  47: { x: 0.630, y: 0.14 },
+  48: { x: 0.750, y: 0.14 },
+  49: { x: 0.815, y: 0.14 },
+  50: { x: 0.920, y: 0.14 },
+};
+
 function getPawnCoordinates(
-  position: number, 
-  playerIndex: number, 
+  position: number,
+  localIndex: number, // Index of the player among those on the same box (0 if alone)
+  totalOnBox: number, // Total players sharing this box (1 if alone)
+  playerIndex: number, // Original index (used for below-board alignment)
   box: ContentBox,
   pionWidth: number,
   pionHeight: number
 ) {
-  // Exact manually calibrated column centers to fit the irregular drawn squares perfectly
-  const columnCentersX = [
-    0.14,   // Column 0 (Box 1, 20, 21, 40, 41)
-    0.225,  // Column 1 (Box 2, 19, 22, 39, 42)
-    0.315,  // Column 2 (Box 3, 18, 23, 38, 43)
-    0.41,   // Column 3 (Box 4, 17, 24, 37, 44)
-    0.50,   // Column 4 (Box 5, 16, 25, 36, 45)
-    0.59,   // Column 5 (Box 6, 15, 26, 35, 46)
-    0.675,  // Column 6 (Box 7, 14, 27, 34, 47)
-    0.765,  // Column 7 (Box 8, 13, 28, 33, 48)
-    0.855,  // Column 8 (Box 9, 12, 29, 32, 49)
-    0.935,  // Column 9 (Box 10, 11, 30, 31, 50)
-  ];
-
   if (position <= 0) {
-    // Pawns not started -> Line up neatly below the board on the wooden desk
-    const pctLeft = 0.14 + playerIndex * 0.05;
-    const pctTop = 0.935;
+    // Pawns not started -> Line up neatly below the board, centered directly under Box 1 (Start)
+    const pctLeft = 0.12 + playerIndex * 0.04;
+    const pctTop = 0.955;
     return {
       left: box.offsetX + box.width * pctLeft - pionWidth / 2,
       top: box.offsetY + box.height * pctTop - pionHeight / 2,
     };
   }
 
-  // Grid 10 columns × 5 rows, zigzag
-  const rowFromBottom = Math.floor((position - 1) / 10);
-  const r = 4 - rowFromBottom; // 0 = top (41-50), 4 = bottom (1-10)
-  const c = rowFromBottom % 2 === 0
-    ? ((position - 1) % 10)
-    : (9 - ((position - 1) % 10));
+  // Look up direct coordinate mappings for the box number
+  const coord = BOX_COORDINATES[position] || { x: 0.5, y: 0.5 };
+  const centerX = coord.x;
+  const centerY = coord.y;
 
-  // Tuned row center percentages (Y-axis) relative to board height
-  const rowCentersY = [0.14, 0.32, 0.505, 0.69, 0.87];
-  
-  const centerX = columnCentersX[c];
-  const centerY = rowCentersY[r];
+  // Offsets within the cell to prevent overlapping based on how many players share this box.
+  // When a player is alone on a box, they are perfectly centered horizontally (dx = 0)
+  // and vertically (dy = 0.00) in the middle of the cell.
+  let dx = 0;
+  let dy = 0.00;
 
-  // Offsets within the cell to prevent overlapping (2x2 layout inside cell)
-  const offsets = [
-    { dx: -0.008, dy: -0.025 },
-    { dx:  0.008, dy: -0.025 },
-    { dx: -0.008, dy:  0.025 },
-    { dx:  0.008, dy:  0.025 },
-  ];
-  const offset = offsets[playerIndex % 4];
+  if (totalOnBox === 2) {
+    dx = localIndex === 0 ? -0.012 : 0.012;
+    dy = 0.00;
+  } else if (totalOnBox === 3) {
+    if (localIndex === 0) {
+      dx = -0.012;
+      dy = -0.015;
+    } else if (localIndex === 1) {
+      dx = 0.012;
+      dy = -0.015;
+    } else {
+      dx = 0;
+      dy = 0.015;
+    }
+  } else if (totalOnBox >= 4) {
+    if (localIndex === 0) {
+      dx = -0.012;
+      dy = -0.015;
+    } else if (localIndex === 1) {
+      dx = 0.012;
+      dy = -0.015;
+    } else if (localIndex === 2) {
+      dx = -0.012;
+      dy = 0.015;
+    } else {
+      dx = 0.012;
+      dy = 0.015;
+    }
+  }
 
   // Translate to absolute pixel positions and center the pawn
-  const left = box.offsetX + box.width * (centerX + offset.dx) - pionWidth / 2;
-  const top = box.offsetY + box.height * (centerY + offset.dy) - pionHeight / 2;
+  const left = box.offsetX + box.width * (centerX + dx) - pionWidth / 2;
+  const top = box.offsetY + box.height * (centerY + dy) - pionHeight / 2;
 
   return { left, top };
 }

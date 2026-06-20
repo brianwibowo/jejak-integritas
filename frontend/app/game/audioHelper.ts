@@ -114,9 +114,40 @@ export function stopMajuSound() {
   }
 }
 
+let audioCtx: AudioContext | null = null;
+let mundurSource: MediaElementAudioSourceNode | null = null;
+let mundurGainNode: GainNode | null = null;
+
 export function playMundurSound() {
   if (!mundurAudio || isGlobalMuted) return;
-  mundurAudio.volume = 0.5;
+
+  // Try using Web Audio API to boost the gain above 1.0 (since the source file is very quiet)
+  try {
+    if (typeof window !== 'undefined') {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        if (AudioContextClass) {
+          audioCtx = new AudioContextClass();
+        }
+      }
+      
+      if (audioCtx && !mundurSource) {
+        mundurSource = audioCtx.createMediaElementSource(mundurAudio);
+        mundurGainNode = audioCtx.createGain();
+        mundurGainNode.gain.value = 2.8; // Boost volume by 2.8x
+        mundurSource.connect(mundurGainNode);
+        mundurGainNode.connect(audioCtx.destination);
+      }
+      
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+  } catch (e) {
+    console.error("Web Audio API boost failed, falling back:", e);
+  }
+
+  mundurAudio.volume = 1.0;
   mundurAudio.currentTime = 0;
   mundurAudio.play().catch(() => {});
 }

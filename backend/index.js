@@ -55,17 +55,27 @@ function getLobbiesStatus() {
   }));
 }
 
+// Helper to sort players by winning score (with tie-breakers: score desc, correctAnswers desc, position desc)
+function getSortedPlayers(players) {
+  return [...players].sort((a, b) => {
+    if (b.score !== a.score) return (b.score || 0) - (a.score || 0);
+    if (b.correctAnswers !== a.correctAnswers) return (b.correctAnswers || 0) - (a.correctAnswers || 0);
+    return (b.position || 0) - (a.position || 0);
+  });
+}
+
 // Helper to calculate row points based on position (for 50 boxes board)
 function getRowPoints(pos) {
   if (pos >= 50) return 25;
   return Math.max(0, Math.floor((pos - 1) / 10)) * 5;
 }
+
 // Helper to handle a player reaching the finish line (box 50)
 function handlePlayerFinished(lobby, playerIdx) {
   const player = lobby.gameState.players[playerIdx];
   if (player.isFinished) return;
 
-  const bonus = [200, 150, 100, 50][lobby.gameState.finishOrder.length] || 0;
+  const bonus = [40, 30, 20, 10][lobby.gameState.finishOrder.length] || 0;
   lobby.gameState.finishOrder.push(player.socketId);
 
   lobby.gameState.players = lobby.gameState.players.map((p, idx) => {
@@ -86,12 +96,11 @@ function handlePlayerFinished(lobby, playerIdx) {
     return p;
   });
 
-  const realPlayers = lobby.gameState.players.filter(p => p.socketId && !p.socketId.startsWith('fake-'));
-  const allRealFinished = realPlayers.every(p => p.isFinished);
-  if (allRealFinished) {
+  const allFinished = lobby.gameState.players.every(p => p.isFinished);
+  if (allFinished) {
     lobby.gameState.phase = 'finished';
-    // Sort players by score descending to find the overall winner
-    const sorted = [...lobby.gameState.players].sort((a, b) => b.score - a.score);
+    // Sort players by score with tie-breakers to find the overall winner
+    const sorted = getSortedPlayers(lobby.gameState.players);
     lobby.gameState.winner = sorted[0];
     lobby.gameState.message = `🎉 Permainan selesai! Juara pertama adalah ${sorted[0].name} dengan skor ${sorted[0].score}!`;
   } else {
@@ -464,7 +473,7 @@ io.on('connection', (socket) => {
     
     lobby.gameState.players = lobby.gameState.players.map((p, idx) => {
       if (idx === lobby.gameState.currentPlayerIndex) {
-        const bonus = 200;
+        const bonus = 40;
         return {
           ...p,
           position: 50,
@@ -476,7 +485,7 @@ io.on('connection', (socket) => {
         };
       } else {
         const rank = idx < lobby.gameState.currentPlayerIndex ? idx + 2 : idx + 1;
-        const bonus = [150, 100, 50][rank - 2] || 0;
+        const bonus = [30, 20, 10][rank - 2] || 0;
         return {
           ...p,
           isFinished: true,
@@ -489,8 +498,8 @@ io.on('connection', (socket) => {
 
     lobby.gameState.phase = 'finished';
 
-    // Sort players by score descending to find the overall winner
-    const sorted = [...lobby.gameState.players].sort((a, b) => b.score - a.score);
+    // Sort players by score with tie-breakers to find the overall winner
+    const sorted = getSortedPlayers(lobby.gameState.players);
     lobby.gameState.winner = sorted[0];
     lobby.gameState.message = `🎉 Permainan selesai! Juara pertama adalah ${sorted[0].name} dengan skor ${sorted[0].score}!`;
 
@@ -735,8 +744,8 @@ setInterval(() => {
           // Game time is up! Force finish.
           gs.phase = 'finished';
           gs.timeRemaining = null;
-          // Sort players by score descending
-          const sorted = [...gs.players].sort((a, b) => b.score - a.score);
+          // Sort players by score with tie-breakers to find the overall winner
+          const sorted = getSortedPlayers(gs.players);
           gs.winner = sorted[0];
           gs.message = `⏱️ Waktu habis! Permainan selesai. Juara pertama adalah ${sorted[0].name} dengan skor ${sorted[0].score}!`;
           io.to(`room-${lobby.id}`).emit('game-state-update', gs);
