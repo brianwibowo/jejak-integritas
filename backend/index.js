@@ -280,20 +280,33 @@ io.on('connection', (socket) => {
     if (!isDriver(activePlayer, lobby)) return;
 
     const diceValue = Math.floor(Math.random() * 6) + 1;
-    const newPosition = activePlayer.position + diceValue;
+    const startPosition = activePlayer.position;
+    const path = [];
 
-    if (newPosition > 50) {
-      lobby.gameState.diceValue = diceValue;
-      lobby.gameState.phase = 'result';
-      lobby.gameState.currentQuestion = null;
-      lobby.gameState.consequence = 'overshoot';
-      lobby.gameState.message = `Angka dadu (${diceValue}) melebihi sisa kotak! ${activePlayer.name} tetap di posisi ${activePlayer.position}.`;
-    } else {
-      lobby.gameState.diceValue = diceValue;
-      lobby.gameState.targetPosition = newPosition;
-      lobby.gameState.phase = 'walking';
-      lobby.gameState.message = null;
+    // Generate step-by-step path (bounces back if player overshoots 50)
+    let current = startPosition;
+    let movingForward = true;
+    for (let step = 0; step < diceValue; step++) {
+      if (movingForward) {
+        if (current === 50) {
+          movingForward = false;
+          current -= 1;
+        } else {
+          current += 1;
+        }
+      } else {
+        current -= 1;
+      }
+      path.push(current);
     }
+
+    const finalPosition = path[path.length - 1];
+
+    lobby.gameState.diceValue = diceValue;
+    lobby.gameState.walkPath = path;
+    lobby.gameState.targetPosition = finalPosition;
+    lobby.gameState.phase = 'walking';
+    lobby.gameState.message = null;
 
     io.to(`room-${lobbyId}`).emit('game-state-update', lobby.gameState);
   });
@@ -306,12 +319,18 @@ io.on('connection', (socket) => {
     const activePlayer = lobby.gameState.players[lobby.gameState.currentPlayerIndex];
     if (!isDriver(activePlayer, lobby)) return;
 
+    const walkPath = lobby.gameState.walkPath || [];
+    if (walkPath.length === 0) return;
+
+    const nextPosition = walkPath.shift();
+    lobby.gameState.walkPath = walkPath;
+
     lobby.gameState.players = lobby.gameState.players.map((p, idx) => 
       idx === lobby.gameState.currentPlayerIndex
         ? {
             ...p,
-            position: p.position + 1,
-            score: p.correctAnswers * 10 + getRowPoints(p.position + 1)
+            position: nextPosition,
+            score: p.correctAnswers * 10 + getRowPoints(nextPosition)
           }
         : p
     );
@@ -463,48 +482,6 @@ io.on('connection', (socket) => {
     io.to(`room-${lobbyId}`).emit('game-state-update', lobby.gameState);
   });
 
-  // 11. Quick Win
-  socket.on('quick-win', ({ lobbyId }) => {
-    const lobby = lobbies[lobbyId];
-    if (!lobby || !lobby.gameState || lobby.hostId !== socket.id) return;
-
-    // Finish all players immediately to trigger the finished phase and victory modal
-    lobby.gameState.finishOrder = lobby.gameState.players.map(p => p.socketId);
-    
-    lobby.gameState.players = lobby.gameState.players.map((p, idx) => {
-      if (idx === lobby.gameState.currentPlayerIndex) {
-        const bonus = 40;
-        return {
-          ...p,
-          position: 50,
-          correctAnswers: p.correctAnswers + 1,
-          score: (p.correctAnswers + 1) * 10 + 25 + bonus, // Add row points and finish bonus
-          isFinished: true,
-          finishRank: 1,
-          finishBonus: bonus
-        };
-      } else {
-        const rank = idx < lobby.gameState.currentPlayerIndex ? idx + 2 : idx + 1;
-        const bonus = [30, 20, 10][rank - 2] || 0;
-        return {
-          ...p,
-          isFinished: true,
-          finishRank: rank,
-          finishBonus: bonus,
-          score: p.correctAnswers * 10 + getRowPoints(p.position) + bonus
-        };
-      }
-    });
-
-    lobby.gameState.phase = 'finished';
-
-    // Sort players by score with tie-breakers to find the overall winner
-    const sorted = getSortedPlayers(lobby.gameState.players);
-    lobby.gameState.winner = sorted[0];
-    lobby.gameState.message = `🎉 Permainan selesai! Juara pertama adalah ${sorted[0].name} dengan skor ${sorted[0].score}!`;
-
-    io.to(`room-${lobbyId}`).emit('game-state-update', lobby.gameState);
-  });
 
   // 12. Quit / Reset Game (returns players to Lobby Waiting Screen)
   socket.on('quit-game', ({ lobbyId }) => {

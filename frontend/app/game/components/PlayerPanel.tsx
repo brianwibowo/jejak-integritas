@@ -72,7 +72,7 @@ export default function PlayerPanel({
 
   return (
     <div className={`relative flex flex-col ${panelGap} w-full ${panelHeight} bg-[#122c06] border-[6px] border-[#5c3208] rounded-3xl shadow-[inset_0_4px_12px_rgba(0,0,0,0.6),0_10px_30px_rgba(0,0,0,0.5)] ${panelPad} font-sans text-slate-100 select-none overflow-hidden`}>
-      
+
       {/* Settings/Pause Gear Icon (Top Right) */}
       <button
         onClick={onPause}
@@ -88,7 +88,7 @@ export default function PlayerPanel({
 
       {/* 1. COMPACT CURRENT TURN & DICE ROLL */}
       <div className={`flex items-center justify-between ${sectionPad} bg-black/30 border border-white/10 rounded-2xl gap-3 ${isMobile ? 'pr-9' : 'pr-14'}`}>
-        
+
         {/* Left Side: Current Player Info */}
         <div className="flex items-center gap-1.5 min-w-0 flex-1">
           {currentPlayer && (
@@ -117,7 +117,7 @@ export default function PlayerPanel({
             disabled={phase !== 'rolling' || !isMyTurn}
             className={`px-3.5 ${isMobile ? 'py-1 text-[9px]' : 'py-1.5 text-xs'} bg-amber-600 hover:bg-amber-500 active:scale-95 text-white font-black rounded-lg transition-all shadow border border-amber-800 disabled:bg-slate-800 disabled:text-slate-500 disabled:border-slate-900 disabled:cursor-not-allowed cursor-pointer uppercase tracking-wider`}
           >
-            {phase === 'rolling' && isMyTurn ? 'Kocok' : diceValue !== null ? `Dadu: ${diceValue}` : 'Dadu'}
+            {phase === 'rolling' && isMyTurn ? 'Dadu' : diceValue !== null ? `Dadu: ${diceValue}` : 'Dadu'}
           </button>
         </div>
       </div>
@@ -203,16 +203,16 @@ export default function PlayerPanel({
                   <span className={`text-amber-200 font-black ${statSize} bg-amber-950/40 px-2 py-0.5 rounded-full border border-amber-800/35 flex items-center gap-0.5 shadow-sm`}>
                     ⭐ {player.score || 0} Pts
                   </span>
-                  
+
                   {/* Posisi Papan */}
                   <span className={`${statSize} font-extrabold px-2 py-0.5 bg-sky-950/30 text-sky-200 border border-sky-800/25 rounded-full`}>
-                    {player.isFinished 
-                      ? `🏁 Finis #${player.finishRank}` 
-                      : player.position === 0 
-                      ? '📍 Mulai' 
-                      : `📍 Kotak ${player.position}`}
+                    {player.isFinished
+                      ? `🏁 Finis #${player.finishRank}`
+                      : player.position === 0
+                        ? '📍 Mulai'
+                        : `📍 Kotak ${player.position}`}
                   </span>
-                  
+
                   {/* Akurasi Kuis */}
                   <div className={`flex items-center ${isMobile ? 'gap-0.5' : 'gap-1'} ${statSize} font-bold`}>
                     <span className="bg-emerald-950/30 text-emerald-300 border border-emerald-800/25 px-1.5 py-0.5 rounded-md" title="Benar">

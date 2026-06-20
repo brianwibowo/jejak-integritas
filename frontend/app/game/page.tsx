@@ -76,7 +76,6 @@ export default function GamePage() {
 
   // === TRANSITION CURTAIN STATE ===
   const [curtainActive, setCurtainActive] = useState(true);
-  const [isDevQuickStarting, setIsDevQuickStarting] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -476,10 +475,9 @@ export default function GamePage() {
     const isDriver = isMyTurn || (isFakePlayer && isHost);
     if (!isDriver) return;
 
-    const targetPos = onlineGameState.targetPosition;
-
     const timeoutId = setTimeout(() => {
-      if (currentPlayer.position < targetPos) {
+      const walkPath = onlineGameState.walkPath || [];
+      if (walkPath.length > 0) {
         socketRef.current?.emit('walk-step', { lobbyId: currentLobbyId });
       } else {
         socketRef.current?.emit('finish-walk', { lobbyId: currentLobbyId });
@@ -487,7 +485,7 @@ export default function GamePage() {
     }, 800);
 
     return () => clearTimeout(timeoutId);
-  }, [onlineGameState?.phase, onlineGameState?.targetPosition, onlineGameState?.players, onlineGameState?.currentPlayerIndex, myPlayer, currentLobbyId, roomHostId, isPaused]);
+  }, [onlineGameState?.phase, onlineGameState?.walkPath, onlineGameState?.players, onlineGameState?.currentPlayerIndex, myPlayer, currentLobbyId, roomHostId, isPaused]);
 
   // === DELAY: ONLINE PRE-QUESTION (Active Player Selects Question) ===
   useEffect(() => {
@@ -577,41 +575,6 @@ export default function GamePage() {
   const handleToggleMute = useCallback(() => {
     setIsMuted((prev) => !prev);
   }, []);
-
-  // === DEV QUICK START BYPASS ===
-  const triggerDevQuickStart = useCallback(() => {
-    if (!socketConnected || !socketRef.current) {
-      setNicknameError('Gagal terhubung ke server. Pastikan backend sudah menyala.');
-      return;
-    }
-    setIsDevQuickStarting(true);
-    setNickname('Developer');
-    socketRef.current.emit('join-lobby', { lobbyId: '1', playerName: 'Developer' });
-  }, [socketConnected]);
-
-  useEffect(() => {
-    if (isDevQuickStarting && currentLobbyId === '1' && roomPlayers.length > 0) {
-      const isHost = !!(myPlayer && roomHostId && myPlayer.socketId && roomHostId === myPlayer.socketId);
-      if (isHost) {
-        const botsNeeded = 4 - roomPlayers.length;
-        if (botsNeeded > 0) {
-          const timer = setTimeout(() => {
-            socketRef.current?.emit('dev-add-fake-player', { lobbyId: '1' });
-          }, 150);
-          return () => clearTimeout(timer);
-        } else {
-          setIsDevQuickStarting(false);
-          const colorsList = generateBoard();
-          setLoadingProgress(0);
-          socketRef.current?.emit('start-game', {
-            lobbyId: '1',
-            boardColors: colorsList,
-            duration: selectedDuration
-          });
-        }
-      }
-    }
-  }, [isDevQuickStarting, currentLobbyId, roomPlayers, myPlayer, roomHostId, selectedDuration]);
 
   // === LOBBY ACTIONS ===
   const handleJoinLobby = (lobbyId: string) => {
@@ -731,17 +694,6 @@ export default function GamePage() {
             <p className="text-xs text-center text-slate-500 font-extrabold uppercase tracking-widest mb-6">
               Pilih lobby untuk bermain
             </p>
-
-            {/* Quick dev start button */}
-            <div className="mb-6">
-              <button
-                type="button"
-                onClick={triggerDevQuickStart}
-                className="w-full py-3 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white text-xs font-bold uppercase tracking-widest rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer border-none outline-none"
-              >
-                ⚡ DEV QUICK START (AUTO-BOTS & START)
-              </button>
-            </div>
 
             {/* Nickname input */}
             <div className="mb-6">
@@ -1197,19 +1149,7 @@ export default function GamePage() {
               {isMuted ? '🔇 Unmute Sound' : '🔊 Mute Sound'}
             </button>
 
-            {/* Quick Win Button for testing (easy to remove, host only) */}
-            {isHost && (
-              <button
-                className="pause-btn"
-                style={{ backgroundColor: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0' }}
-                onClick={() => {
-                  socketRef.current?.emit('quick-win', { lobbyId: currentLobbyId });
-                  setIsPaused(false);
-                }}
-              >
-                ⚡️ Quick Win (Test)
-              </button>
-            )}
+
 
             {isHost ? (
               <button className="pause-btn pause-btn-quit" onClick={handleQuit}>
