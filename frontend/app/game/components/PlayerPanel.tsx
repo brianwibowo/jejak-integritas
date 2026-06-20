@@ -86,7 +86,9 @@ export default function PlayerPanel({
             />
           )}
           <div className="flex flex-col min-w-0">
-            <span className={`${turnTitleSize} font-bold text-emerald-300 uppercase tracking-wider pl-0.5`}>Giliran</span>
+            {!isMobile && (
+              <span className={`${turnTitleSize} font-bold text-emerald-300 uppercase tracking-wider pl-0.5`}>Giliran</span>
+            )}
             <span className={`font-black ${nameSize} text-white truncate`}>
               {currentPlayer?.name}
             </span>
