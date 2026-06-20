@@ -109,7 +109,6 @@ export default function GamePage() {
       bgMusicRef.current.muted = isMuted;
     }
     setHomeLobbyMusicMute(isMuted);
-    setGlobalMuteState(isMuted);
   }, [isMuted]);
 
   // === LOBBY BGM SYNC ===
@@ -533,7 +532,7 @@ export default function GamePage() {
     stopMundurSound();
 
     // Play sound locally
-    if (!isRollPlayingRef.current && rollSoundRef.current && !isMuted) {
+    if (!isRollPlayingRef.current && rollSoundRef.current) {
       isRollPlayingRef.current = true;
       const audio = rollSoundRef.current;
       audio.currentTime = 0;
@@ -1146,7 +1145,7 @@ export default function GamePage() {
             </button>
 
             <button className="pause-btn pause-btn-sound" onClick={handleToggleMute}>
-              {isMuted ? '🔇 Unmute Sound' : '🔊 Mute Sound'}
+              {isMuted ? '🔇 Unmute Musik' : '🔊 Mute Musik'}
             </button>
 
 

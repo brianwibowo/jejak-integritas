@@ -73,21 +73,8 @@ export default function PlayerPanel({
   return (
     <div className={`relative flex flex-col ${panelGap} w-full ${panelHeight} bg-[#122c06] border-[6px] border-[#5c3208] rounded-3xl shadow-[inset_0_4px_12px_rgba(0,0,0,0.6),0_10px_30px_rgba(0,0,0,0.5)] ${panelPad} font-sans text-slate-100 select-none overflow-hidden`}>
 
-      {/* Settings/Pause Gear Icon (Top Right) */}
-      <button
-        onClick={onPause}
-        className={`absolute ${isMobile ? 'top-2 right-2' : 'top-3.5 right-3.5'} hover:scale-110 active:scale-95 transition-all cursor-pointer z-20 bg-black/45 hover:bg-black/60 p-1.5 rounded-full border border-white/10 shadow-md`}
-        title="Jeda Permainan"
-      >
-        <img
-          src="/gear_pause.png"
-          alt="Pause"
-          className={`${isMobile ? 'w-5 h-5' : 'w-7.5 h-7.5'} object-contain hover:rotate-90 transition-transform duration-500`}
-        />
-      </button>
-
       {/* 1. COMPACT CURRENT TURN & DICE ROLL */}
-      <div className={`flex items-center justify-between ${sectionPad} bg-black/30 border border-white/10 rounded-2xl gap-3 ${isMobile ? 'pr-9' : 'pr-14'}`}>
+      <div className={`flex items-center justify-between ${sectionPad} bg-black/30 border border-white/10 rounded-2xl gap-2`}>
 
         {/* Left Side: Current Player Info */}
         <div className="flex items-center gap-1.5 min-w-0 flex-1">
@@ -95,7 +82,7 @@ export default function PlayerPanel({
             <img
               src={PLAYER_PIONS[currentPionIndex % PLAYER_PIONS.length]}
               alt={currentPlayer.name}
-              className={`${isMobile ? 'w-5 h-5' : 'w-7.5 h-7.5'} object-contain flex-shrink-0`}
+              className={`${isMobile ? 'w-5 h-5' : 'w-7 h-7'} object-contain flex-shrink-0`}
             />
           )}
           <div className="flex flex-col min-w-0">
@@ -106,18 +93,31 @@ export default function PlayerPanel({
           </div>
         </div>
 
-        {/* Right Side: Compact Dice & Roll Button */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <div className={`${isMobile ? 'text-2xl' : 'text-3.5xl'} select-none text-white flex items-center justify-center`} title={diceValue !== null ? `Hasil: ${diceValue}` : 'Dadu'}>
+        {/* Right Side: Compact Dice, Roll Button, and Pause Icon */}
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <div className={`${isMobile ? 'text-xl' : 'text-2.5xl'} select-none text-white flex items-center justify-center`} title={diceValue !== null ? `Hasil: ${diceValue}` : 'Dadu'}>
             {diceValue !== null ? DICE_FACES[diceValue - 1] : '🎲'}
           </div>
 
           <button
             onClick={onRollDice}
             disabled={phase !== 'rolling' || !isMyTurn}
-            className={`px-3.5 ${isMobile ? 'py-1 text-[9px]' : 'py-1.5 text-xs'} bg-amber-600 hover:bg-amber-500 active:scale-95 text-white font-black rounded-lg transition-all shadow border border-amber-800 disabled:bg-slate-800 disabled:text-slate-500 disabled:border-slate-900 disabled:cursor-not-allowed cursor-pointer uppercase tracking-wider`}
+            className={`px-2.5 ${isMobile ? 'py-1 text-[9px]' : 'py-1.5 text-[10px]'} bg-amber-600 hover:bg-amber-500 active:scale-95 text-white font-black rounded-lg transition-all shadow border border-amber-800 disabled:bg-slate-800 disabled:text-slate-500 disabled:border-slate-900 disabled:cursor-not-allowed cursor-pointer uppercase tracking-wider`}
           >
             {phase === 'rolling' && isMyTurn ? 'Dadu' : diceValue !== null ? `Dadu: ${diceValue}` : 'Dadu'}
+          </button>
+
+          {/* Settings/Pause Gear Icon (Flex item, rightmost) */}
+          <button
+            onClick={onPause}
+            className="hover:scale-110 active:scale-95 transition-all cursor-pointer bg-black/45 hover:bg-black/60 p-1 rounded-full border border-white/10 shadow-md flex-shrink-0"
+            title="Jeda Permainan"
+          >
+            <img
+              src="/gear_pause.png"
+              alt="Pause"
+              className={`${isMobile ? 'w-4 h-4' : 'w-5.5 h-5.5'} object-contain hover:rotate-90 transition-transform duration-500`}
+            />
           </button>
         </div>
       </div>

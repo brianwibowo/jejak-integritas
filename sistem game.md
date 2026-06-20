@@ -1,139 +1,150 @@
-🎮 PANDUAN SISTEM JALUR & ATURAN GAME: JEJAK INTEGRITAS
-1. Peta Papan & Koordinat Presisi (Board.tsx)
-Papan permainan menggunakan model grid 50 kotak (petak 1 s.d. 50) dengan arah pergerakan zigzag (ular tangga klasik) dari bawah ke atas:
+# 🎮 PANDUAN LENGKAP SISTEM & ATURAN BERMAIN: JEJAK INTEGRITAS
 
-Kotak 1: Kotak awal mulai permainan.
-Kotak 50: Kotak Finish (dilambangkan dengan gambar piala emas).
-Pergerakan Zigzag:
-Baris 5 (Bawah, Kotak 1–10): Bergerak dari Kiri ➔ Kanan
-Baris 4 (Kotak 11–20): Bergerak dari Kanan ➔ Kiri
-Baris 3 (Kotak 21–30): Bergerak dari Kiri ➔ Kanan
-Baris 2 (Kotak 31–40): Bergerak dari Kanan ➔ Kiri
-Baris 1 (Atas, Kotak 41–50): Bergerak dari Kiri ➔ Kanan
-TIP
+Selamat datang di panduan resmi **Jejak Integritas**! Dokumen ini menjelaskan cara kerja permainan, aturan penilaian yang adil, alur kuis edukatif antikorupsi, serta berbagai fitur kenyamanan bermain yang dirancang khusus agar mudah dipahami oleh pemain, guru, dan penyelenggara kegiatan.
 
-Sistem Koordinat Per-Kotak (Terbaru): Setiap nomor kotak (1 sampai 50) memiliki pasangan koordinat [X, Y] unik yang telah dikunci secara visual. Pion berjalan mulus per langkah (+1) ke titik tengah visual masing-masing kotak. Ini menghilangkan isu pion melenceng di kotak-kotak berukuran lebar (seperti kotak 2, 3, dan 23) serta menjaga gerakan vertikal (20 ➔ 21 dan 40 ➔ 41) agar tetap tegak lurus ke atas.
+---
 
-2. Sistem Penilaian (Scoring System)
-Pemenang akhir TIDAK ditentukan oleh siapa yang mencapai garis Finish paling cepat, melainkan oleh Akumulasi Total Skor Tertinggi saat permainan berakhir.
+## 1. Jalur Papan Permainan & Pergerakan Pion
 
-$$\text{Skor Akhir} = \text{Poin Kuis} + \text{Poin Baris} + \text{Bonus Finisher}$$
+Permainan ini menggunakan papan ular tangga klasik berisi **50 kotak** (petak 1 sampai 50). Jalur pergerakan pion berjalan berbelok-belok (zigzag) dari baris paling bawah naik hingga ke baris paling atas:
 
-A. Poin Jawaban Kuis (+10 Poin / Soal)
-Setiap jawaban kuis yang dijawab dengan benar memberikan tambahan +10 Poin.
-Jawaban salah atau kehabisan waktu (timeout) memberikan 0 Poin.
-B. Poin Baris Papan (+5 Poin / Baris yang Dilewati)
-Pemain mendapatkan poin setiap kali berhasil melewati batas kelipatan 10 kotak permainan:
+*   **Petak 1**: Titik awal perjalanan seluruh pemain.
+*   **Petak 50**: Garis finis yang ditandai dengan gambar piala emas.
+*   **Arah Jalur (Zigzag)**:
+    *   **Baris 1 (Paling Bawah, Kotak 1–10)**: Pion berjalan dari arah **Kiri ke Kanan**.
+    *   **Baris 2 (Kotak 11–20)**: Pion berjalan dari arah **Kanan ke Kiri**.
+    *   **Baris 3 (Kotak 21–30)**: Pion berjalan dari arah **Kiri ke Kanan**.
+    *   **Baris 4 (Kotak 31–40)**: Pion berjalan dari arah **Kanan ke Kiri**.
+    *   **Baris 5 (Paling Atas, Kotak 41–50)**: Pion berjalan dari arah **Kiri ke Kanan**.
 
-Kotak 1–10 (Baris 5): +0 Poin
-Kotak 11–20 (Baris 4): +5 Poin
-Kotak 21–30 (Baris 3): +10 Poin
-Kotak 31–40 (Baris 2): +15 Poin
-Kotak 41–49 (Baris 1): +20 Poin
-Kotak 50 (Finish): +25 Poin
-C. Bonus Finisher (+40 s.d. +10 Poin)
-Diberikan kepada pemain yang berhasil mendarat tepat di kotak 50 (Finish) berdasarkan urutan kedatangan:
+### 💡 Pergerakan Pion yang Rapi
+Kami telah mengatur posisi tengah setiap kotak secara manual. Hal ini memastikan pion-pion pemain selalu mendarat tepat di pusat kotak dan tidak akan melenceng keluar dari garis batas, bahkan pada petak-petak berukuran lebar (seperti kotak nomor 2, 3, dan 23) maupun saat naik baris secara vertikal (seperti perpindahan dari kotak 20 ke 21, dan kotak 40 ke 41).
 
-Finish Peringkat ke-1: +40 Poin
-Finish Peringkat ke-2: +30 Poin
-Finish Peringkat ke-3: +20 Poin
-Finish Peringkat ke-4: +10 Poin
+---
 
-### 📊 Simulasi Keadilan Skor (Fairness Analysis)
-Tujuan dari penyesuaian nilai bonus finisher ini adalah agar game tidak dimenangkan hanya oleh faktor keberuntungan dadu (siapa yang sampai finish duluan), melainkan menyeimbangkan penghargaan bagi pemain yang berpengetahuan luas dan memiliki persentase jawaban benar yang tinggi.
+## 2. Sistem Perhitungan Skor (Keadilan Kompetisi)
 
-Berikut adalah simulasi dari 3 skenario permainan yang membuktikan keadilan sistem skor baru ini:
+Pemenang akhir permainan **Jejak Integritas** **TIDAK** ditentukan oleh siapa yang paling cepat sampai di kotak finis (kotak 50). Pemenang ditentukan oleh **Akumulasi Total Skor Tertinggi** saat permainan berakhir. 
 
-#### Skenario 1: Lucky Rusher vs Knowledgeable Slider
-*   **Pemain A (Rushed / Cepat & Beruntung)**: Melempar dadu tinggi, memanjat tangga, dan jarang menjawab kuis. Finis **ke-1**.
-    *   Jawaban Benar: 4 soal (+40 Pts)
-    *   Bonus Baris: +25 Pts (Finish)
-    *   Bonus Finish: +40 Pts (Ke-1)
-    *   **Skor Akhir: 105 Pts**
-*   **Pemain B (Pemain Cerdas & Teliti)**: Mengalami kemerosotan karena ular, membutuhkan waktu lebih lama, namun menjawab hampir semua kuis dengan benar. Finis **ke-3**.
-    *   Jawaban Benar: 12 soal (+120 Pts)
-    *   Bonus Baris: +25 Pts (Finish)
-    *   Bonus Finish: +20 Pts (Ke-3)
-    *   **Skor Akhir: 165 Pts**
-*   *Hasil*: **Pemain B Menang**. Ini adil karena pemain B membuktikan pengetahuan integritasnya jauh lebih baik (12 benar vs 4 benar), meskipun pemain A beruntung dengan dadu untuk finish duluan.
+Sistem ini didesain agar adil, sehingga pemain yang cerdas dan teliti menjawab kuis memiliki peluang menang yang sama besar—atau bahkan lebih besar—dibandingkan pemain yang hanya beruntung mendapatkan angka dadu tinggi.
 
-#### Skenario 2: Pemain Pintar Terjebak Waktu vs Lucky Rushed
-*   **Pemain A (Rushed / Kurang Cerdas)**: Cepat finish tapi asal-asalan menjawab kuis. Finis **ke-1**.
-    *   Jawaban Benar: 2 soal (+20 Pts)
-    *   Bonus Baris: +25 Pts (Finish)
-    *   Bonus Finish: +40 Pts (Ke-1)
-    *   **Skor Akhir: 85 Pts**
-*   **Pemain B (Pemain Pintar Kehabisan Waktu)**: Terjebak di baris atas (kotak 45) karena durasi lobi habis (waktu habis), namun akurasi jawaban sangat tinggi.
-    *   Jawaban Benar: 13 soal (+130 Pts)
-    *   Bonus Baris: +20 Pts (Row 1)
-    *   Bonus Finish: +0 Pts (Belum Finish)
-    *   **Skor Akhir: 150 Pts**
-*   *Hasil*: **Pemain B Menang**. Pengetahuan akademis pemain dihargai lebih tinggi daripada kecepatan murni tanpa pemahaman.
+$$\text{Skor Akhir} = \text{Poin Jawaban Kuis} + \text{Skor Kemajuan Baris} + \text{Bonus Finis}$$
 
-#### Skenario 3: Finis Ketat (Akurasi sebagai Penentu)
-*   **Pemain A**: Finis **ke-1**.
-    *   Jawaban Benar: 9 soal (+90 Pts)
-    *   Bonus Baris: +25 Pts
-    *   Bonus Finish: +40 Pts
-    *   **Skor Akhir: 155 Pts**
-*   **Pemain B**: Finis **ke-2**.
-    *   Jawaban Benar: 11 soal (+110 Pts)
-    *   Bonus Baris: +25 Pts
-    *   Bonus Finish: +30 Pts
-    *   **Skor Akhir: 165 Pts**
-*   *Hasil*: **Pemain B Menang**. Selisih 2 jawaban benar membalikkan keunggulan bonus peringkat finis pemain A.
+### A. Poin Jawaban Kuis (+10 Poin / Soal)
+*   Setiap kali pemain berhasil menjawab pertanyaan kuis dengan **BENAR**, pemain mendapatkan **+10 Poin**.
+*   Jika jawaban **SALAH** atau waktu menjawab habis (*timeout*), pemain mendapatkan **0 Poin** (tidak ada pengurangan skor).
 
-#### Skenario 4: Skor Kembar (Mengaktifkan Sistem Tie-Breaker)
-Terjadi ketika waktu habis (10 menit) dan ada dua pemain yang memiliki skor akhir persis sama:
-*   **Pemain A (Budi)**: Berada di Kotak 45 (Baris 1) dengan 10 jawaban benar.
-    *   Skor: 100 Pts (Kuis) + 20 Pts (Baris) = **120 Pts**
-*   **Pemain B (Siti)**: Berada di Kotak 22 (Baris 3) dengan 11 jawaban benar.
-    *   Skor: 110 Pts (Kuis) + 10 Pts (Baris) = **120 Pts**
-*   *Proses Evaluasi Tie-Breaker*:
-    *   Sistem mengecek total skor: Keduanya sama-sama **120 Pts**.
-    *   Sistem mengecek jumlah jawaban benar (Tie-breaker prioritas integritas): Siti (**11 benar**) menang atas Budi (**10 benar**).
-    *   *Hasil*: **Siti dinyatakan sebagai Juara 1** dan Budi sebagai Juara 2.
+### B. Skor Kemajuan Baris Papan (+5 Poin / Tingkat Baris)
+Pemain dihargai atas kemajuan langkah mereka di papan. Setiap kali pion berhasil naik ke tingkat baris berikutnya (setiap kelipatan 10 kotak), pemain akan mendapatkan poin kemajuan:
+*   **Kotak 1–10** (Baris 1): **+0 Poin**
+*   **Kotak 11–20** (Baris 2): **+5 Poin**
+*   **Kotak 21–30** (Baris 3): **+10 Poin**
+*   **Kotak 31–40** (Baris 4): **+15 Poin**
+*   **Kotak 41–49** (Baris 5): **+20 Poin**
+*   **Kotak 50** (Garis Finis): **+25 Poin**
 
-#### Skenario 5: Skor & Jumlah Benar Kembar (Mengaktifkan Tie-Breaker Posisi Papan)
-*   **Pemain A (Budi)**: Berada di Kotak 35 (Baris 2) dengan 10 jawaban benar.
-    *   Skor: 100 Pts (Kuis) + 15 Pts (Baris) = **115 Pts**
-*   **Pemain B (Siti)**: Berada di Kotak 32 (Baris 2) dengan 10 jawaban benar.
-    *   Skor: 100 Pts (Kuis) + 15 Pts (Baris) = **115 Pts**
-*   *Proses Evaluasi Tie-Breaker*:
-    *   Sistem mengecek total skor: Keduanya sama-sama **115 Pts**.
-    *   Sistem mengecek jumlah jawaban benar: Keduanya sama-sama **10 benar**.
-    *   Sistem mengecek posisi kotak terakhir di papan: Budi (**Kotak 35**) menang atas Siti (**Kotak 32**).
-    *   *Hasil*: **Budi dinyatakan sebagai Pemenang**.
+### C. Poin Bonus Finis (+40 s.d. +10 Poin)
+Pemain yang berhasil mendarat tepat di Kotak 50 (Finis) akan mendapatkan bonus poin apresiasi berdasarkan urutan kedatangan mereka:
+*   Pemain ke-1 yang Finis: **+40 Poin**
+*   Pemain ke-2 yang Finis: **+30 Poin**
+*   Pemain ke-3 yang Finis: **+20 Poin**
+*   Pemain ke-4 yang Finis: **+10 Poin**
 
-3. Alur Putaran Giliran & Aturan Main (Gameplay Loop)
-Lempar Dadu: Pemain aktif mengocok dadu.
-Aturan Melebihi Batas (Overshoot): Angka dadu harus pas untuk masuk kotak 50. Jika angka dadu melebihi sisa langkah ke kotak 50, pion batal berjalan dan giliran langsung dilewati (skip).
-Mendarat di Kotak & Kuis: Pion berjalan selangkah demi selangkah. Setelah berhenti di kotak tujuan (kotak 2–49), kuis pilihan ganda akan muncul sesuai kategori warna kotak tersebut:
-🟦 Biru: Kotak Nilai PAK (Pendidikan Anti Korupsi)
-🟥 Merah: Kotak Pelanggaran
-🟨 Kuning: Kotak Dilema Moral
-🟩 Hijau: Kotak Kearifan Lokal
-🟪 Ungu: Kotak Aksi
-Timer Soal 15 Detik (Anti-Curang): Pemain memiliki batas waktu 15 detik untuk menjawab. Jika waktu habis, jawaban otomatis dianggap salah.
-Konsekuensi Ular & Tangga:
-Jika Jawaban Benar: Pemain mendapatkan poin, dan jika kotak tersebut memiliki tangga, pion akan otomatis memanjat naik ke atas.
-Jika Jawaban Salah/Timeout: Pemain tidak mendapat poin kuis, dan jika kotak memiliki kepala ular, pion akan otomatis merosot turun ke bawah.
-Mencapai Finish: Jika pion mendarat tepat di kotak 50, pemain mendapatkan poin bonus finish. Pada putaran berikutnya, giliran pemain tersebut akan dilewati (auto-skip) agar pemain lain yang belum finish bisa terus bermain.
-4. Kondisi Selesai Permainan (End Game Trigger)
-Permainan baru dinyatakan selesai (phase = finished) dan memunculkan Victory Modal hanya ketika:
+---
 
-Seluruh Pemain (termasuk bot/simulasi) telah sukses mendarat di kotak 50 (Finish).
-ATAU batas durasi waktu permainan (10, 20, 30, 40, 50, 60 menit) yang dipilih Host di lobi telah habis (timeRemaining === 0).
-5. Fitur Penunjang & Proteksi Koneksi (Reliability & UX)
-Tambah Bot Lobi (Pemain Simulasi): Host dapat menambahkan bot pintar (seperti Budi 🤖, Siti 🤖, dll.) menggunakan tombol + di lobi untuk mengisi slot bermain.
-Grace Period Disconnect (30 Detik): Jika pemain kehilangan koneksi (misalnya karena layar HP mati atau berganti tab di mobile), status mereka di papan skor berubah menjadi Offline dan permainan ditangguhkan sementara. Pemain memiliki waktu 30 detik untuk masuk kembali secara otomatis tanpa menghentikan lobi/permainan.
-Intersepsi Tombol Back Browser: Menekan tombol kembali (back) saat game berjalan tidak akan langsung mengeluarkan pemain, melainkan memicu layar jeda (Pause Menu) terlebih dahulu demi keamanan data game.
-6. Visual, Tema & Optimasi Mobile responsif
-Desain Chalkboard: Leaderboard memiliki warna hijau forest hangat (#122c06) dengan bingkai kayu cokelat gelap (#5c3208), serasi dengan meja kayu latar belakang.
-Optimasi Aset (WebP): Seluruh berkas gambar dikompresi menjadi format .webp berkualitas tinggi. Total ukuran aset menyusut dari ~25MB menjadi ~2.5MB, mempercepat waktu muat awal di HP mobile menjadi di bawah 0.5 detik.
-3-Tier Responsive Layout & Mobile Blocker:
-Desktop / Tablet: Papan skor ditampilkan melayang secara permanen di sisi kanan layar.
-Mobile Landscape: Papan skor disembunyikan di belakang tombol 🏆 (pojok kanan atas) agar area papan permainan tetap terlihat luas dan lega di layar HP.
-Portrait Blocker: Jika HP diposisikan vertikal (portrait), layar akan diblokir dengan animasi instruksi untuk memutar HP ke arah tidur (landscape).
-Posisi Timer Sisa Waktu: Diposisikan di pojok kiri atas (top-4 left-4) agar posisinya yang melayang tidak berbenturan secara visual dengan modal pertanyaan kuis di tengah layar.
-Semua komponen di atas sudah terintegrasi dan diselaraskan secara penuh di sisi frontend (Next.js) maupun backend (Socket.io). Game siap dimainkan dengan performa optimal! 🚀
+### 📊 Simulasi Keadilan Skor (Mengapa Sistem Ini Adil?)
+
+Berikut adalah beberapa contoh simulasi kejadian saat bermain untuk menggambarkan bagaimana sistem menghargai pengetahuan di atas keberuntungan murni:
+
+#### Skenario 1: Pemain Cepat vs Pemain Teliti
+*   **Pemain A (Beruntung)**: Melempar dadu tinggi, cepat sekali naik tangga, dan jarang menjawab kuis dengan benar. Finis **ke-1**.
+    *   Jawaban Benar: 4 kuis (+40 poin)
+    *   Skor Kemajuan Baris: +25 poin (karena finis)
+    *   Bonus Finis: +40 poin (sebagai yang pertama finis)
+    *   **Total Skor Akhir: 105 Poin**
+*   **Pemain B (Cerdas)**: Melangkah perlahan karena sering turun ular, tetapi menjawab hampir seluruh kuis dengan benar. Finis **ke-3**.
+    *   Jawaban Benar: 12 kuis (+120 poin)
+    *   Skor Kemajuan Baris: +25 poin (karena finis)
+    *   Bonus Finis: +20 poin (sebagai yang ketiga finis)
+    *   **Total Skor Akhir: 165 Poin**
+*   *Hasil Akhir*: **Pemain B Menang**. Hal ini sangat adil karena Pemain B menunjukkan pemahaman antikorupsi yang jauh lebih baik (12 kuis benar) dibanding Pemain A (hanya 4 kuis benar), meskipun Pemain A beruntung finis lebih dahulu.
+
+#### Skenario 2: Pemain Pintar Kehabisan Waktu vs Pemain Cepat
+*   **Pemain A (Cepat)**: Cepat finis tetapi asal-asalan menjawab kuis. Finis **ke-1**.
+    *   Jawaban Benar: 2 kuis (+20 poin)
+    *   Skor Kemajuan Baris: +25 poin
+    *   Bonus Finis: +40 poin
+    *   **Total Skor Akhir: 85 Poin**
+*   **Pemain B (Pintar)**: Terjebak di baris atas (kotak 45) karena durasi waktu bermain yang ditentukan lobi telah habis, namun ia memiliki akurasi kuis yang sangat tinggi.
+    *   Jawaban Benar: 13 kuis (+130 poin)
+    *   Skor Kemajuan Baris: +20 poin (berada di Baris 5)
+    *   Bonus Finis: +0 poin (karena belum menyentuh kotak 50)
+    *   **Total Skor Akhir: 150 Poin**
+*   *Hasil Akhir*: **Pemain B Menang**. Pengetahuan edukasi antikorupsi pemain dihargai jauh lebih tinggi daripada sekadar kecepatan melangkah tanpa pemahaman.
+
+#### Skenario 3: Aturan Penentu Jika Skor Kembar (Tie-Breaker)
+Jika terdapat dua pemain yang memiliki skor akhir yang persis sama ketika permainan selesai, sistem akan menentukan pemenang dengan aturan prioritas sebagai berikut:
+1.  **Prioritas Pertama (Akurasi Jawaban)**: Pemain dengan **jumlah jawaban kuis benar terbanyak** dinyatakan sebagai pemenang.
+2.  **Prioritas Kedua (Posisi Papan)**: Jika skor dan jumlah jawaban benar masih sama, pemain yang berada di **nomor kotak lebih depan** di papan dinyatakan sebagai pemenang.
+
+---
+
+## 3. Alur Permainan & Tantangan Kuis
+
+### A. Giliran Mengocok Dadu
+Pemain secara bergantian mengocok dadu untuk melangkah. Angka dadu yang keluar menunjukkan jumlah kotak yang akan dilewati oleh pion pemain.
+
+### B. Aturan Memantul di Finish (Overshoot Bouncing)
+Pemain harus mendarat dengan angka dadu yang pas untuk masuk ke Kotak 50. Jika hasil kocokan dadu melebihi jumlah kotak sisa menuju Finis, pion pemain akan melangkah maju hingga Kotak 50 lalu **memantul mundur** sejauh sisa langkah tersebut.
+*   *Contoh*: Pemain berada di Kotak 49 dan mendapatkan angka dadu 2. Pion akan maju 1 langkah ke Kotak 50, kemudian memantul mundur 1 langkah kembali ke Kotak 49.
+*   *Catatan*: Di kotak baru tempat pion mendarat setelah memantul, kuis baru akan tetap muncul dan pemain wajib menjawabnya untuk memperebutkan poin.
+
+### C. Makna Warna Petak Kuis
+Saat berhenti di sebuah petak (petak 2 s.d. 49), pemain akan ditantang menjawab pertanyaan pilihan ganda sesuai kategori warna kotak tersebut:
+*   🟦 **Biru (Nilai Integritas PAK)**: Pertanyaan seputar 9 nilai antikorupsi (jujur, disiplin, peduli, mandiri, tanggung jawab, kerja keras, sederhana, berani, adil).
+*   🔴 **Merah (Pelanggaran)**: Analisis skenario tentang bentuk kecurangan, pelanggaran aturan, kolusi, dan korupsi di lingkungan sekitar.
+*   🟨 **Kuning (Dilema Moral)**: Uji keputusan moral untuk memilih tindakan berintegritas saat berada di situasi sulit sehari-hari.
+*   🟩 **Hijau (Kearifan Lokal)**: Pertanyaan tentang nilai kebaikan, peribahasa, dan norma budaya tradisional Nusantara.
+*   🟪 **Ungu (Aksi)**: Contoh tindakan nyata dan langkah pencegahan kecurangan yang bisa diterapkan siswa di sekolah.
+
+### D. Batas Waktu Menjawab (15 Detik)
+Setiap kuis memiliki batas waktu **15 detik** untuk menjawab guna mencegah pemain mencari jawaban di internet atau buku pelajaran. Jika waktu habis sebelum memilih jawaban:
+*   Jawaban otomatis dianggap salah.
+*   Pemain mendapatkan 0 poin kuis.
+*   Layar pembahasan lengkap akan muncul untuk tetap memberikan edukasi kepada siswa.
+
+### E. Aturan Khas Ular & Tangga
+*   🪜 **Tangga (Mendaki)**: Jika pion berhenti di petak bagian bawah tangga, kuis khusus akan diberikan. Jika jawaban **BENAR**, pion akan memanjat naik ke ujung tangga. Jika **SALAH**, pion tetap berada di bawah.
+*   🐍 **Ular (Meluncur)**: Jika pion berhenti di petak berisi kepala ular, kuis khusus akan diberikan. Jika jawaban **BENAR**, pion selamat dan tetap berada di tempat. Jika **SALAH**, pion harus meluncur turun ke ujung ekor ular.
+
+### F. Setelah Mencapai Finish
+Setelah berhasil mendarat tepat di Kotak 50, pemain mendapatkan poin bonus finis. Pada putaran-putaran selanjutnya, giliran pemain tersebut akan dilewati secara otomatis (*auto-skip*) agar pemain lain yang masih berada di papan tetap memiliki kesempatan untuk terus bermain hingga selesai.
+
+---
+
+## 4. Kapan Permainan Selesai?
+
+Permainan akan diakhiri dan papan skor akhir (layar pemenang) akan ditampilkan jika salah satu kondisi ini terpenuhi:
+1.  **Semua pemain** (termasuk bot simulasi jika ada) telah berhasil mendarat di Kotak 50 (Finis).
+2.  **Batas durasi waktu permainan telah habis**. Durasi ini dapat diatur oleh Host di lobi sebelum permainan dimulai (pilihan yang tersedia: 10, 20, 30, 40, 50, atau 60 menit).
+
+---
+
+## 5. Fitur Kenyamanan & Proteksi Bermain
+
+*   🤖 **Bermain Bersama Bot (Simulasi Pemain)**: Jika Anda ingin bermain sendiri untuk belajar, atau jika jumlah pemain kurang dari 4 orang, Host dapat menambahkan bot simulasi (seperti Budi 🤖, Siti 🤖) dengan mengeklik tombol **`+`** di halaman tunggu lobi.
+*   🔌 **Perlindungan Koneksi Putus (Anti-Disconnect)**: Jika koneksi internet pemain terputus secara tidak sengaja (misalnya karena HP mati atau tidak sengaja menutup tab browser), status pemain akan berubah menjadi "Offline" di papan skor dan permainan dihentikan sementara. Pemain diberikan waktu **30 detik** untuk masuk kembali secara otomatis ke permainan tanpa harus mengulang lobi.
+*   🛡️ **Pencegah Tombol Kembali Browser**: Jika pemain tidak sengaja menekan tombol "Kembali" (*back*) pada browser saat permainan sedang berlangsung, sistem akan memblokir tindakan tersebut dan mengarahkan ke halaman jeda (Pause Menu) untuk mencegah pemain keluar secara tidak disengaja.
+
+---
+
+## 6. Desain Visual & Kenyamanan Layar HP
+
+*   🎨 **Tema Papan Tulis Klasik (Chalkboard)**: Papan skor didesain dengan warna hijau papan tulis sekolah yang hangat dibingkai dengan cokelat kayu yang elegan, memberikan kesan pembelajaran yang natural dan premium.
+*   ⚡ **Ukuran Ringan & Hemat Kuota**: Seluruh aset gambar dalam permainan telah dikompresi ke format modern berukuran sangat kecil tanpa mengurangi kualitas gambar. Waktu pemuatan awal pada HP sangat instan (di bawah 0,5 detik) sehingga sangat ramah kuota internet siswa.
+*   📱 **Optimalisasi Tampilan HP (Lanskap)**:
+    *   Game ini dirancang untuk dimainkan secara mendatar (landscape). Jika HP dalam posisi berdiri (portrait), layar akan menampilkan pesan ramah yang meminta pemain untuk memiringkan HP.
+    *   Pada layar HP, papan skor disembunyikan secara rapi di balik tombol piala emas (🏆) di pojok kanan atas agar area papan permainan tetap terlihat luas dan lega. Pemain dapat membuka dan menutup papan skor tersebut kapan saja dengan sekali sentuh.
+
+---
+*Game **Jejak Integritas** kini siap dimainkan dengan pengalaman yang seru, edukatif, adil, dan ramah pengguna!* 🚀
