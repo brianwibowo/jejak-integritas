@@ -2,10 +2,12 @@
 
 import { useRef, useEffect, useState } from 'react';
 import { BoxType, Player } from '../gameData';
+import { DeviceTier } from '../hooks/useDeviceTier';
 
 interface BoardProps {
   board: BoxType[];
   players: Player[];
+  tier?: DeviceTier;
 }
 
 const PLAYER_PIONS = [
@@ -24,7 +26,7 @@ interface ContentBox {
   height: number;
 }
 
-export default function Board({ board, players }: BoardProps) {
+export default function Board({ board, players, tier = 'desktop' }: BoardProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [contentBox, setContentBox] = useState<ContentBox>({ 
     offsetX: 0, 
@@ -82,12 +84,16 @@ export default function Board({ board, players }: BoardProps) {
     };
   }, []);
 
+  // Pion sizing per device tier
+  const pionScale = tier === 'mobile' ? { w: 0.025, h: 0.06 } 
+    : tier === 'tablet' ? { w: 0.022, h: 0.055 } 
+    : { w: 0.020, h: 0.05 };
+
   return (
     <div ref={containerRef} className="absolute inset-0 pointer-events-none z-10">
       {players.map((p, idx) => {
-        // Slightly smaller pawn dimensions (2.0% width, 5.0% height) for better fit
-        const pionWidth = contentBox.width * 0.020;
-        const pionHeight = contentBox.height * 0.05;
+        const pionWidth = contentBox.width * pionScale.w;
+        const pionHeight = contentBox.height * pionScale.h;
         const coord = getPawnCoordinates(p.position, idx, contentBox, pionWidth, pionHeight);
         const pionSrc = PLAYER_PIONS[idx % PLAYER_PIONS.length];
         

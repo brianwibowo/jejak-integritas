@@ -8,6 +8,8 @@ import Board from './components/Board';
 import PlayerPanel from './components/PlayerPanel';
 import QuestionModal from './components/QuestionModal';
 import DevBypass from './components/DevBypass';
+import PortraitBlocker from './components/PortraitBlocker';
+import { useDeviceTier } from './hooks/useDeviceTier';
 import { generateBoard, getRandomQuestion } from './gameData';
 import { playHomeLobbyMusic, stopHomeLobbyMusic, setHomeLobbyMusicMute, setHomeLobbyMusicVolume, playClickSound, setGlobalMuteState, playPopUpSound, playCorrectSound, playWrongSound, playMajuSound, playMundurSound, playWinSound, stopMajuSound, stopMundurSound } from './audioHelper';
 
@@ -36,6 +38,8 @@ const getBackendUrl = () => {
 export default function GamePage() {
   const gameMode = 'online';
   const router = useRouter();
+  const { tier, isPortrait, isMobile, isDesktop } = useDeviceTier();
+  const [showScoreboard, setShowScoreboard] = useState(false);
 
   // === ONLINE / SOCKET STATE ===
   const [socketConnected, setSocketConnected] = useState(false);
@@ -961,9 +965,14 @@ export default function GamePage() {
           backgroundRepeat: 'no-repeat',
         }}
       >
-        {/* === LAYER 1: Board Area (77% kiri) === */}
-        {/* Container ini membungkus papan + pion. Semua koordinat pion RELATIF terhadap container ini. */}
-        <div className="absolute top-0 h-full flex items-center justify-center" style={{ left: '2%', width: '76%' }}>
+        {/* === LAYER 1: Board Area === */}
+        <div 
+          className="absolute top-0 h-full flex items-center justify-center" 
+          style={{ 
+            left: isMobile ? '0%' : '2%', 
+            width: isMobile ? '100%' : '76%' 
+          }}
+        >
           {/* Sub-container papan — mempertahankan aspect ratio papan asli */}
           <div
             className="relative w-full h-full"
@@ -978,27 +987,68 @@ export default function GamePage() {
             />
 
             {/* Pion pemain — koordinat relatif terhadap container papan ini */}
-            <Board board={activeState.board} players={activeState.players} />
+            <Board board={activeState.board} players={activeState.players} tier={tier} />
           </div>
         </div>
 
-        {/* === LAYER 2: Scoreboard (23% kanan) === */}
-        <div className="absolute right-0 top-0 w-[23%] h-full p-3 flex flex-col justify-center select-none">
-          <PlayerPanel
-            players={activeState.players}
-            currentPlayerIndex={activeState.currentPlayerIndex}
-            diceValue={activeState.diceValue}
-            onRollDice={handleRollDice}
-            phase={activeState.phase}
-            message={activeState.message}
-            onNextTurn={() => {
-              if (isPaused) return;
-              socketRef.current?.emit('next-turn', { lobbyId: currentLobbyId });
-            }}
-            onPause={handlePause}
-            isMyTurn={isMyTurnOrDevDrive && !isPaused}
-          />
-        </div>
+        {/* === LAYER 2: Scoreboard === */}
+        {isMobile ? (
+          <>
+            {/* Mobile: Toggle button */}
+            <button 
+              className="scoreboard-toggle-btn"
+              onClick={() => setShowScoreboard(!showScoreboard)}
+            >
+              {showScoreboard ? '✕' : '🏆'}
+            </button>
+
+            {/* Mobile: Scoreboard overlay */}
+            {showScoreboard && (
+              <>
+                <div 
+                  className="scoreboard-overlay-backdrop" 
+                  onClick={() => setShowScoreboard(false)} 
+                />
+                <div className="scoreboard-overlay p-2">
+                  <PlayerPanel
+                    players={activeState.players}
+                    currentPlayerIndex={activeState.currentPlayerIndex}
+                    diceValue={activeState.diceValue}
+                    onRollDice={handleRollDice}
+                    phase={activeState.phase}
+                    message={activeState.message}
+                    onNextTurn={() => {
+                      if (isPaused) return;
+                      socketRef.current?.emit('next-turn', { lobbyId: currentLobbyId });
+                    }}
+                    onPause={handlePause}
+                    isMyTurn={isMyTurnOrDevDrive && !isPaused}
+                    tier={tier}
+                  />
+                </div>
+              </>
+            )}
+          </>
+        ) : (
+          /* Desktop/Tablet: Side scoreboard */
+          <div className="absolute right-0 top-0 w-[23%] h-full p-3 flex flex-col justify-center select-none">
+            <PlayerPanel
+              players={activeState.players}
+              currentPlayerIndex={activeState.currentPlayerIndex}
+              diceValue={activeState.diceValue}
+              onRollDice={handleRollDice}
+              phase={activeState.phase}
+              message={activeState.message}
+              onNextTurn={() => {
+                if (isPaused) return;
+                socketRef.current?.emit('next-turn', { lobbyId: currentLobbyId });
+              }}
+              onPause={handlePause}
+              isMyTurn={isMyTurnOrDevDrive && !isPaused}
+              tier={tier}
+            />
+          </div>
+        )}
       </div>
 
       {/* Question Modal — shown when there's a question in 'question' or 'result' phase */}
@@ -1015,6 +1065,7 @@ export default function GamePage() {
             onNext={() => socketRef.current?.emit('next-turn', { lobbyId: currentLobbyId })}
             showResult={activeState.phase === 'result'}
             isReadOnly={!isMyTurnOrDevDrive}
+            tier={tier}
           />
         )}
 
@@ -1138,6 +1189,9 @@ export default function GamePage() {
           </div>
         </div>
       )}
+
+      {/* === PORTRAIT BLOCKER === */}
+      <PortraitBlocker isPortrait={isPortrait} isDesktop={isDesktop} />
     </div>
   );
 }

@@ -138,3 +138,152 @@ body {
   animation: breath 2.2s ease-in-out infinite;
 }
 
+/* === Portrait Blocker === */
+.portrait-blocker {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0f172a;
+  color: white;
+}
+
+.portrait-blocker-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+  padding: 32px;
+  max-width: 320px;
+}
+
+.portrait-blocker-icon {
+  font-size: 4rem;
+  animation: rotatePhone 2s ease-in-out infinite;
+}
+
+.portrait-blocker-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.portrait-blocker-text {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  line-height: 1.5;
+}
+
+.portrait-blocker-arrow {
+  font-size: 2rem;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes rotatePhone {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(90deg); }
+  50%, 75% { transform: rotate(90deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.2); }
+}
+
+/* === Device Tier: Tablet (landscape 768-1023px) === */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .pause-menu {
+    min-width: 260px;
+    max-width: 340px;
+    padding: 28px 24px;
+    gap: 12px;
+  }
+
+  .pause-menu h2 {
+    font-size: 1.25rem;
+  }
+
+  .pause-btn {
+    padding: 12px 16px;
+    font-size: 0.85rem;
+  }
+}
+
+/* === Device Tier: Mobile (landscape < 768px) === */
+@media (max-width: 767px) {
+  .pause-menu {
+    min-width: 220px;
+    max-width: 300px;
+    padding: 20px 18px;
+    gap: 10px;
+    border-radius: 18px;
+  }
+
+  .pause-menu h2 {
+    font-size: 1.1rem;
+    margin-bottom: 2px;
+  }
+
+  .pause-btn {
+    padding: 10px 14px;
+    font-size: 0.78rem;
+    border-radius: 10px;
+  }
+}
+
+/* === Mobile Scoreboard Toggle Button === */
+.scoreboard-toggle-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 30;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(18, 44, 6, 0.85);
+  border: 2px solid rgba(92, 50, 8, 0.6);
+  color: white;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+}
+
+.scoreboard-toggle-btn:hover {
+  transform: scale(1.05);
+  background: rgba(18, 44, 6, 0.95);
+}
+
+.scoreboard-toggle-btn:active {
+  transform: scale(0.95);
+}
+
+/* Mobile scoreboard overlay */
+.scoreboard-overlay {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 260px;
+  height: 100%;
+  z-index: 25;
+  animation: slideInRight 0.25s ease;
+}
+
+.scoreboard-overlay-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 24;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}

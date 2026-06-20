@@ -1,6 +1,7 @@
 'use client';
 
 import { Question, boxTypeInfo, ColoredBoxType, themeLabels } from '../gameData';
+import { DeviceTier } from '../hooks/useDeviceTier';
 
 interface QuestionModalProps {
   question: Question;
@@ -12,6 +13,7 @@ interface QuestionModalProps {
   onNext: () => void;
   showResult: boolean;
   isReadOnly?: boolean;
+  tier?: DeviceTier;
 }
 
 const optionLabels = ['A', 'B', 'C', 'D'];
@@ -26,39 +28,43 @@ export default function QuestionModal({
   onNext,
   showResult,
   isReadOnly = false,
+  tier = 'desktop',
 }: QuestionModalProps) {
   const info = boxTypeInfo[question.boxType as ColoredBoxType];
   const themeName = themeLabels[question.theme];
+  const isMobile = tier === 'mobile';
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-2 sm:p-4">
       <div 
         className={`bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 flex flex-col ${
-          showResult ? 'max-w-4xl w-full max-h-[90vh]' : 'max-w-lg w-full max-h-[90vh]'
+          showResult 
+            ? (isMobile ? 'max-w-full w-full max-h-[95vh]' : 'max-w-4xl w-full max-h-[90vh]')
+            : (isMobile ? 'max-w-sm w-full max-h-[95vh]' : 'max-w-lg w-full max-h-[90vh]')
         }`}
       >
         {/* Header */}
         <div
-          className="text-white px-5 py-3 text-center flex-shrink-0"
+          className={`text-white ${isMobile ? 'px-3 py-2' : 'px-5 py-3'} text-center flex-shrink-0`}
           style={{ backgroundColor: info.color }}
         >
-          <div className="font-bold text-base">{info.label}</div>
-          <div className="text-sm opacity-90">Tema: {themeName}</div>
+          <div className={`font-bold ${isMobile ? 'text-sm' : 'text-base'}`}>{info.label}</div>
+          <div className={`${isMobile ? 'text-xs' : 'text-sm'} opacity-90`}>Tema: {themeName}</div>
         </div>
 
         {/* Content Area */}
-        <div className={`overflow-y-auto flex-1 p-5 ${showResult ? 'grid grid-cols-1 md:grid-cols-2 gap-6' : 'flex flex-col'}`}>
+        <div className={`overflow-y-auto flex-1 ${isMobile ? 'p-3' : 'p-5'} ${showResult ? (isMobile ? 'flex flex-col gap-4' : 'grid grid-cols-1 md:grid-cols-2 gap-6') : 'flex flex-col'}`}>
           
           {/* Column 1: Question and Options */}
           <div className="flex flex-col justify-between h-full">
             <div>
               {/* Question */}
-              <p className="text-gray-800 text-sm sm:text-base mb-5 leading-relaxed font-semibold">
+              <p className={`text-gray-800 ${isMobile ? 'text-xs' : 'text-sm sm:text-base'} mb-3 sm:mb-5 leading-relaxed font-semibold`}>
                 {question.question}
               </p>
 
               {/* Options */}
-              <div className="flex flex-col gap-2 mb-5">
+              <div className={`flex flex-col ${isMobile ? 'gap-1.5 mb-3' : 'gap-2 mb-5'}`}>
                 {question.options.map((option, i) => {
                   let borderColor = '#E5E7EB';
                   let bgColor = 'transparent';
@@ -81,7 +87,7 @@ export default function QuestionModal({
                       key={i}
                       onClick={() => !(showResult || isReadOnly) && onSelectAnswer(i)}
                       disabled={showResult || isReadOnly}
-                      className="text-left px-4 py-3 rounded-lg transition-all text-sm sm:text-base font-sans"
+                      className={`text-left ${isMobile ? 'px-3 py-2' : 'px-4 py-3'} rounded-lg transition-all ${isMobile ? 'text-xs' : 'text-sm sm:text-base'} font-sans`}
                       style={{
                         border: `2px solid ${borderColor}`,
                         backgroundColor: bgColor,
@@ -128,7 +134,7 @@ export default function QuestionModal({
                 <button
                   onClick={onSubmit}
                   disabled={selectedAnswer === null}
-                  className="w-full py-3 bg-blue-600 text-white rounded-lg font-bold text-sm hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-sans cursor-pointer"
+                  className={`w-full ${isMobile ? 'py-2 text-xs' : 'py-3 text-sm'} bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-sans cursor-pointer`}
                 >
                   Jawab
                 </button>
@@ -159,8 +165,8 @@ export default function QuestionModal({
 
           {/* Column 2: Explanation (only shown when showResult is true) */}
           {showResult && question.explanation && (
-            <div className="flex flex-col h-full bg-blue-50/70 rounded-xl border border-blue-100 p-4 overflow-y-auto max-h-[50vh] md:max-h-[70vh] shadow-inner text-left">
-              <div className="text-sm font-black text-blue-800 uppercase tracking-wider mb-2.5 flex items-center gap-1.5 flex-shrink-0 font-sans">
+            <div className={`flex flex-col h-full bg-blue-50/70 rounded-xl border border-blue-100 ${isMobile ? 'p-3' : 'p-4'} overflow-y-auto ${isMobile ? 'max-h-[40vh]' : 'max-h-[50vh] md:max-h-[70vh]'} shadow-inner text-left`}>
+              <div className={`${isMobile ? 'text-xs' : 'text-sm'} font-black text-blue-800 uppercase tracking-wider mb-2.5 flex items-center gap-1.5 flex-shrink-0 font-sans`}>
                 💡 Pembahasan Lengkap
               </div>
               <p className="text-xs sm:text-sm text-blue-950 leading-relaxed font-semibold whitespace-pre-line font-sans">

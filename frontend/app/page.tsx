@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { playHomeLobbyMusic, playClickSound } from './game/audioHelper';
+import { useDeviceTier } from './game/hooks/useDeviceTier';
+import PortraitBlocker from './game/components/PortraitBlocker';
 
 export default function Home() {
   const router = useRouter();
@@ -12,6 +14,7 @@ export default function Home() {
   const [videoMuted, setVideoMuted] = useState(false);
   const [curtainActive, setCurtainActive] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const { tier, isPortrait, isMobile, isDesktop } = useDeviceTier();
 
   // === SESSION CHECK FOR INTRO WATCHED ===
   useEffect(() => {
@@ -165,7 +168,12 @@ export default function Home() {
         <button
           onClick={() => setIsTutorialOpen(true)}
           className="absolute z-20 hover:scale-105 active:scale-95 transition-all cursor-pointer bg-transparent border-0 p-0 outline-none focus:outline-none"
-          style={{ bottom: '4.5rem', right: '6.2rem', width: '5.4rem', height: '5.4rem' }}
+          style={{ 
+            bottom: isMobile ? '2rem' : '4.5rem', 
+            right: isMobile ? '2rem' : '6.2rem', 
+            width: isMobile ? '3.5rem' : '5.4rem', 
+            height: isMobile ? '3.5rem' : '5.4rem' 
+          }}
         >
           <img
             src="/tombol_info.png"
@@ -185,11 +193,11 @@ export default function Home() {
           }}
           className="absolute z-20 hover:scale-105 active:scale-95 transition-all cursor-pointer block bg-transparent border-0 p-0 outline-none focus:outline-none animate-breath"
           style={{
-            bottom: '3.4rem',
+            bottom: isMobile ? '1.5rem' : '3.4rem',
             left: '50%',
             transform: 'translateX(-50%)',
-            width: '15.6rem',
-            height: '5.0rem',
+            width: isMobile ? '10rem' : '15.6rem',
+            height: isMobile ? '3.2rem' : '5.0rem',
           }}
         >
           <img
@@ -302,6 +310,9 @@ export default function Home() {
             </div>
           </div>
         )}
+
+        {/* PORTRAIT BLOCKER */}
+        <PortraitBlocker isPortrait={isPortrait} isDesktop={isDesktop} />
       </div>
     </>
   );
