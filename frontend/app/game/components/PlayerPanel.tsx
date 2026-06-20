@@ -69,7 +69,7 @@ export default function PlayerPanel({
   const sectionPad = isMobile ? 'p-2' : 'p-3';
 
   return (
-    <div className={`flex flex-col ${panelGap} w-full ${panelHeight} bg-[#122c06] border-[6px] border-[#5c3208] rounded-3xl shadow-[inset_0_4px_12px_rgba(0,0,0,0.6),0_10px_30px_rgba(0,0,0,0.5)] ${panelPad} font-sans text-slate-100 select-none`}>
+    <div className={`flex flex-col ${panelGap} w-full ${panelHeight} bg-[#122c06] border-[6px] border-[#5c3208] rounded-3xl shadow-[inset_0_4px_12px_rgba(0,0,0,0.6),0_10px_30px_rgba(0,0,0,0.5)] ${panelPad} font-sans text-slate-100 select-none overflow-hidden`}>
 
       {/* 1. CURRENT TURN & DICE ROLL */}
       <div className={`text-center ${sectionPad} bg-black/25 border border-white/10 rounded-2xl flex flex-col gap-2`}>

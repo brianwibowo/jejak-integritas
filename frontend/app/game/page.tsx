@@ -374,6 +374,30 @@ export default function GamePage() {
       window.removeEventListener('popstate', handlePopState);
     };
   }, [onlineGameState?.phase]);
+  // === LOADING SCREEN FOR NON-HOST (GAME START SYNC) ===
+  useEffect(() => {
+    if (onlineGameState) {
+      if (onlineGameState.phase !== 'setup' && onlineGameState.phase !== 'finished') {
+        const sessionKey = `loading_started_${onlineGameState.lobbyId || currentLobbyId}`;
+        if (typeof window !== 'undefined' && !sessionStorage.getItem(sessionKey)) {
+          sessionStorage.setItem(sessionKey, 'true');
+          if (loadingProgress === null) {
+            setLoadingProgress(0);
+          }
+        }
+      } else if (onlineGameState.phase === 'setup') {
+        // Clear session key in lobby/setup, allowing loading triggers for next game starts
+        const sessionKey = `loading_started_${onlineGameState.lobbyId || currentLobbyId}`;
+        if (typeof window !== 'undefined') {
+          sessionStorage.removeItem(sessionKey);
+        }
+      }
+    } else {
+      if (typeof window !== 'undefined' && currentLobbyId) {
+        sessionStorage.removeItem(`loading_started_${currentLobbyId}`);
+      }
+    }
+  }, [onlineGameState?.phase, onlineGameState?.lobbyId, currentLobbyId, loadingProgress]);
 
   // === LOADING SCREEN TIMER CONTROL ===
   useEffect(() => {
@@ -389,10 +413,10 @@ export default function GamePage() {
       const timer = setTimeout(() => {
         setLoadingProgress((prev) => {
           if (prev === null) return null;
-          const next = prev + Math.floor(Math.random() * 8) + 4;
+          const next = prev + Math.floor(Math.random() * 4) + 2; // +2% to +5% per step
           return next > 100 ? 100 : next;
         });
-      }, 70 + Math.random() * 70);
+      }, 100 + Math.random() * 100); // 100ms - 200ms
       return () => clearTimeout(timer);
     } else {
       const timer = setTimeout(() => {
@@ -400,9 +424,7 @@ export default function GamePage() {
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [loadingProgress, isMuted]);
-
-  // === ANIMATION TIMEOUT: ONLINE WALKING (Active Player Only) ===
+  }, [loadingProgress, isMuted]);  // === ANIMATION TIMEOUT: ONLINE WALKING (Active Player Only) ===
   useEffect(() => {
     if (!onlineGameState || onlineGameState.phase !== 'walking' || onlineGameState.targetPosition === null) return;
     if (isPaused) return;

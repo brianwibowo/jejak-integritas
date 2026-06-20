@@ -24,6 +24,7 @@ export default function Home() {
       playBottom: '3.4rem',
       infoWidth: '13.5rem',
       infoHeight: '4.5rem',
+      infoTop: 'auto',
       infoBottom: '3.6rem',
       infoRight: '6.2rem',
       logoWidth: '12rem',
@@ -34,6 +35,7 @@ export default function Home() {
       playBottom: '2.5rem',
       infoWidth: '11.4rem',
       infoHeight: '3.8rem',
+      infoTop: 'auto',
       infoBottom: '2.7rem',
       infoRight: '4.5rem',
       logoWidth: '10.5rem',
@@ -44,8 +46,9 @@ export default function Home() {
       playBottom: '1.5rem',
       infoWidth: '8.4rem',
       infoHeight: '2.8rem',
-      infoBottom: '1.6rem',
-      infoRight: '2.0rem',
+      infoTop: '1.31rem',
+      infoBottom: 'auto',
+      infoRight: '1.23rem',
       logoWidth: '9.0rem',
     },
   }[tier] || {
@@ -54,6 +57,7 @@ export default function Home() {
     playBottom: '3.4rem',
     infoWidth: '13.5rem',
     infoHeight: '4.5rem',
+    infoTop: 'auto',
     infoBottom: '3.6rem',
     infoRight: '6.2rem',
     logoWidth: '12rem',
@@ -209,11 +213,12 @@ export default function Home() {
           />
         </div>
 
-        {/* Bottom Right: Info / Tutorial Button */}
+        {/* Bottom Right / Top Right (Mobile): Info / Tutorial Button */}
         <button
           onClick={() => setIsTutorialOpen(true)}
           className="absolute z-20 hover:scale-105 active:scale-95 transition-all cursor-pointer bg-transparent border-0 p-0 outline-none focus:outline-none"
           style={{
+            top: layoutConfig.infoTop,
             bottom: layoutConfig.infoBottom,
             right: layoutConfig.infoRight,
             width: layoutConfig.infoWidth,
