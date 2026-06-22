@@ -199,13 +199,13 @@ export default function PlayerPanel({
         {/* Settings/Pause Gear Icon (Absolute, rightmost inside Section 1) */}
         <button
           onClick={onPause}
-          className={`absolute ${isMobile ? 'right-2.5' : 'right-3'} top-1/2 -translate-y-1/2 hover:scale-110 active:scale-95 transition-all cursor-pointer bg-black/45 hover:bg-black/60 p-1 rounded-full border border-white/10 shadow-md flex-shrink-0`}
+          className={`absolute ${isMobile ? 'right-1.5' : 'right-3'} top-1/2 -translate-y-1/2 hover:scale-110 active:scale-95 transition-all cursor-pointer bg-black/45 hover:bg-black/60 ${isMobile ? 'p-1.5' : 'p-1'} rounded-full border border-white/10 shadow-md flex-shrink-0`}
           title="Jeda Permainan"
         >
           <img
             src="/gear_pause.png"
             alt="Pause"
-            className={`${isMobile ? 'w-4 h-4' : 'w-5.5 h-5.5'} object-contain hover:rotate-90 transition-transform duration-500`}
+            className={`${isMobile ? 'w-4.5 h-4.5' : 'w-5.5 h-5.5'} object-contain hover:rotate-90 transition-transform duration-500`}
           />
         </button>
       </div>

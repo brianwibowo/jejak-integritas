@@ -1065,8 +1065,8 @@ export default function GamePage() {
         <div 
           className="absolute top-0 h-full flex items-center justify-center" 
           style={{ 
-            left: isMobile ? '0%' : '2%', 
-            width: isMobile ? '100%' : '76%' 
+            left: isMobile ? '1%' : '2%', 
+            width: isMobile ? '75%' : '76%' 
           }}
         >
           {/* Sub-container papan — mempertahankan aspect ratio papan asli */}
@@ -1088,63 +1088,26 @@ export default function GamePage() {
         </div>
 
         {/* === LAYER 2: Scoreboard === */}
-        {isMobile ? (
-          <>
-            {/* Mobile: Toggle button */}
-            <button 
-              className="scoreboard-toggle-btn"
-              onClick={() => setShowScoreboard(!showScoreboard)}
-            >
-              {showScoreboard ? '✕' : '🏆'}
-            </button>
-
-            {/* Mobile: Scoreboard overlay */}
-            {showScoreboard && (
-              <>
-                <div 
-                  className="scoreboard-overlay-backdrop" 
-                  onClick={() => setShowScoreboard(false)} 
-                />
-                <div className="scoreboard-overlay p-2">
-                  <PlayerPanel
-                    players={activeState.players}
-                    currentPlayerIndex={activeState.currentPlayerIndex}
-                    diceValue={activeState.diceValue}
-                    onRollDice={handleRollDice}
-                    phase={activeState.phase}
-                    message={activeState.message}
-                    onNextTurn={() => {
-                      if (isPaused) return;
-                      socketRef.current?.emit('next-turn', { lobbyId: currentLobbyId });
-                    }}
-                    onPause={handlePause}
-                    isMyTurn={isMyTurnOrDevDrive && !isPaused}
-                    tier={tier}
-                  />
-                </div>
-              </>
-            )}
-          </>
-        ) : (
-          /* Desktop/Tablet: Side scoreboard */
-          <div className="absolute right-0 top-0 w-[23%] h-full p-3 flex flex-col justify-center select-none">
-            <PlayerPanel
-              players={activeState.players}
-              currentPlayerIndex={activeState.currentPlayerIndex}
-              diceValue={activeState.diceValue}
-              onRollDice={handleRollDice}
-              phase={activeState.phase}
-              message={activeState.message}
-              onNextTurn={() => {
-                if (isPaused) return;
-                socketRef.current?.emit('next-turn', { lobbyId: currentLobbyId });
-              }}
-              onPause={handlePause}
-              isMyTurn={isMyTurnOrDevDrive && !isPaused}
-              tier={tier}
-            />
-          </div>
-        )}
+        <div 
+          className="absolute right-0 top-0 h-full p-3 flex flex-col justify-center select-none"
+          style={{ width: isMobile ? '24%' : '23%' }}
+        >
+          <PlayerPanel
+            players={activeState.players}
+            currentPlayerIndex={activeState.currentPlayerIndex}
+            diceValue={activeState.diceValue}
+            onRollDice={handleRollDice}
+            phase={activeState.phase}
+            message={activeState.message}
+            onNextTurn={() => {
+              if (isPaused) return;
+              socketRef.current?.emit('next-turn', { lobbyId: currentLobbyId });
+            }}
+            onPause={handlePause}
+            isMyTurn={isMyTurnOrDevDrive && !isPaused}
+            tier={tier}
+          />
+        </div>
       </div>
       {/* Floating Game Timer */}
       {activeState.timeRemaining !== undefined && activeState.timeRemaining !== null && (

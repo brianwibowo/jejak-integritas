@@ -46,9 +46,9 @@ export default function Home() {
       playBottom: '1.5rem',
       infoWidth: '8.4rem',
       infoHeight: '2.8rem',
-      infoTop: '1.31rem',
-      infoBottom: 'auto',
-      infoRight: '4.5rem',
+      infoTop: 'auto',
+      infoBottom: '1.7rem',
+      infoRight: '3.2rem',
       logoWidth: '9.0rem',
     },
   }[tier] || {
