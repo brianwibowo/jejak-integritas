@@ -41,6 +41,38 @@ const formatTime = (seconds: number) => {
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 };
 
+const fadeAudioVolume = (audio: HTMLAudioElement | null, targetVolume: number, durationMs: number = 300) => {
+  if (!audio) return;
+  if ((audio as any).fadeInterval) {
+    clearInterval((audio as any).fadeInterval);
+  }
+  const startVolume = audio.volume;
+  const volumeDiff = targetVolume - startVolume;
+  if (volumeDiff === 0) return;
+
+  const stepTime = 16;
+  const steps = durationMs / stepTime;
+  const volumeStep = volumeDiff / steps;
+  let currentStep = 0;
+
+  const interval = setInterval(() => {
+    currentStep++;
+    let nextVolume = startVolume + (volumeStep * currentStep);
+    if (volumeDiff > 0) {
+      nextVolume = Math.min(nextVolume, targetVolume);
+    } else {
+      nextVolume = Math.max(nextVolume, targetVolume);
+    }
+    audio.volume = nextVolume;
+
+    if (currentStep >= steps || audio.volume === targetVolume) {
+      clearInterval(interval);
+      (audio as any).fadeInterval = null;
+    }
+  }, stepTime);
+  (audio as any).fadeInterval = interval;
+};
+
 export default function GamePage() {
   const gameMode = 'online';
   const router = useRouter();
@@ -548,15 +580,24 @@ export default function GamePage() {
   // === PAUSE HANDLERS ===
   const handlePause = useCallback(() => {
     setIsPaused(true);
+    stopMajuSound();
+    stopMundurSound();
+    if (rollSoundRef.current) {
+      try {
+        rollSoundRef.current.pause();
+        rollSoundRef.current.currentTime = 0;
+      } catch (e) {}
+      isRollPlayingRef.current = false;
+    }
     if (bgMusicRef.current && !isMuted) {
-      bgMusicRef.current.volume = 0.08;
+      fadeAudioVolume(bgMusicRef.current, 0.08, 300);
     }
   }, [isMuted]);
 
   const handleResume = useCallback(() => {
     setIsPaused(false);
     if (bgMusicRef.current && !isMuted) {
-      bgMusicRef.current.volume = 0.25;
+      fadeAudioVolume(bgMusicRef.current, 0.25, 300);
     }
   }, [isMuted]);
 

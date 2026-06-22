@@ -75,7 +75,7 @@ function handlePlayerFinished(lobby, playerIdx) {
   const player = lobby.gameState.players[playerIdx];
   if (player.isFinished) return;
 
-  const bonus = [40, 30, 20, 10][lobby.gameState.finishOrder.length] || 0;
+  const bonus = [200, 100, 50, 10][lobby.gameState.finishOrder.length] || 0;
   lobby.gameState.finishOrder.push(player.socketId);
 
   lobby.gameState.players = lobby.gameState.players.map((p, idx) => {
@@ -379,7 +379,7 @@ io.on('connection', (socket) => {
     lobby.gameState.selectedAnswer = null;
     lobby.gameState.answerCorrect = null;
     lobby.gameState.consequence = null;
-    lobby.gameState.questionTimeRemaining = 15; // Set 15 seconds to answer!
+    lobby.gameState.questionTimeRemaining = 30; // Set 30 seconds to answer!
 
     io.to(`room-${lobbyId}`).emit('game-state-update', lobby.gameState);
   });
@@ -461,12 +461,21 @@ io.on('connection', (socket) => {
     const activePlayer = lobby.gameState.players[lobby.gameState.currentPlayerIndex];
     if (!isDriver(activePlayer, lobby)) return;
 
-    let nextIndex = (lobby.gameState.currentPlayerIndex + 1) % lobby.gameState.players.length;
-    // Skip finished players
-    let attempts = 0;
-    while (lobby.gameState.players[nextIndex].isFinished && attempts < lobby.gameState.players.length) {
-      nextIndex = (nextIndex + 1) % lobby.gameState.players.length;
-      attempts++;
+    const rolledSix = (lobby.gameState.diceValue === 6);
+    let nextIndex = lobby.gameState.currentPlayerIndex;
+    let customMessage = null;
+
+    if (rolledSix && !activePlayer.isFinished) {
+      nextIndex = lobby.gameState.currentPlayerIndex;
+      customMessage = `🎲 ${activePlayer.name} mendapat angka 6 dan berhak melempar dadu kembali!`;
+    } else {
+      nextIndex = (lobby.gameState.currentPlayerIndex + 1) % lobby.gameState.players.length;
+      // Skip finished players
+      let attempts = 0;
+      while (lobby.gameState.players[nextIndex].isFinished && attempts < lobby.gameState.players.length) {
+        nextIndex = (nextIndex + 1) % lobby.gameState.players.length;
+        attempts++;
+      }
     }
 
     lobby.gameState.phase = 'rolling';
@@ -476,7 +485,7 @@ io.on('connection', (socket) => {
     lobby.gameState.selectedAnswer = null;
     lobby.gameState.answerCorrect = null;
     lobby.gameState.consequence = null;
-    lobby.gameState.message = null;
+    lobby.gameState.message = customMessage;
     lobby.gameState.targetPosition = null;
 
     io.to(`room-${lobbyId}`).emit('game-state-update', lobby.gameState);

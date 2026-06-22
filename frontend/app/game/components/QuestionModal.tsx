@@ -61,7 +61,7 @@ export default function QuestionModal({
               className={`h-full transition-all duration-1000 ease-linear ${
                 timeRemaining <= 5 ? 'bg-red-500 animate-pulse' : 'bg-blue-500'
               }`}
-              style={{ width: `${(timeRemaining / 15) * 100}%` }}
+              style={{ width: `${(timeRemaining / 30) * 100}%` }}
             />
           </div>
         )}

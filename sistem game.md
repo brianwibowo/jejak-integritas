@@ -41,46 +41,46 @@ Pemain dihargai atas kemajuan langkah mereka di papan. Setiap kali pion berhasil
 *   **Kotak 21–30** (Baris 3): **+10 Poin**
 *   **Kotak 31–40** (Baris 4): **+15 Poin**
 *   **Kotak 41–49** (Baris 5): **+20 Poin**
-*   **Kotak 50** (Garis Finis): **+25 Poin**
+*   **Kotak 50**
 
-### C. Poin Bonus Finis (+40 s.d. +10 Poin)
+### C. Poin Bonus Finis (+200 s.d. +10 Poin)
 Pemain yang berhasil mendarat tepat di Kotak 50 (Finis) akan mendapatkan bonus poin apresiasi berdasarkan urutan kedatangan mereka:
-*   Pemain ke-1 yang Finis: **+40 Poin**
-*   Pemain ke-2 yang Finis: **+30 Poin**
-*   Pemain ke-3 yang Finis: **+20 Poin**
+*   Pemain ke-1 yang Finis: **+200 Poin**
+*   Pemain ke-2 yang Finis: **+100 Poin**
+*   Pemain ke-3 yang Finis: **+50 Poin**
 *   Pemain ke-4 yang Finis: **+10 Poin**
 
 ---
 
-### 📊 Simulasi Keadilan Skor (Mengapa Sistem Ini Adil?)
+## 5. Simulasi Keadilan Skor (Contoh Perhitungan)
 
-Berikut adalah beberapa contoh simulasi kejadian saat bermain untuk menggambarkan bagaimana sistem menghargai pengetahuan di atas keberuntungan murni:
+Berikut adalah beberapa contoh simulasi kejadian saat bermain untuk menggambarkan bagaimana sistem menghitung skor akhir:
 
 #### Skenario 1: Pemain Cepat vs Pemain Teliti
 *   **Pemain A (Beruntung)**: Melempar dadu tinggi, cepat sekali naik tangga, dan jarang menjawab kuis dengan benar. Finis **ke-1**.
     *   Jawaban Benar: 4 kuis (+40 poin)
     *   Skor Kemajuan Baris: +25 poin (karena finis)
-    *   Bonus Finis: +40 poin (sebagai yang pertama finis)
-    *   **Total Skor Akhir: 105 Poin**
+    *   Bonus Finis: +200 poin (sebagai yang pertama finis)
+    *   **Total Skor Akhir: 265 Poin**
 *   **Pemain B (Cerdas)**: Melangkah perlahan karena sering turun ular, tetapi menjawab hampir seluruh kuis dengan benar. Finis **ke-3**.
     *   Jawaban Benar: 12 kuis (+120 poin)
     *   Skor Kemajuan Baris: +25 poin (karena finis)
-    *   Bonus Finis: +20 poin (sebagai yang ketiga finis)
-    *   **Total Skor Akhir: 165 Poin**
-*   *Hasil Akhir*: **Pemain B Menang**. Hal ini sangat adil karena Pemain B menunjukkan pemahaman antikorupsi yang jauh lebih baik (12 kuis benar) dibanding Pemain A (hanya 4 kuis benar), meskipun Pemain A beruntung finis lebih dahulu.
+    *   Bonus Finis: +50 poin (sebagai yang ketiga finis)
+    *   **Total Skor Akhir: 195 Poin**
+*   *Hasil Akhir*: **Pemain A Menang**. Berkat bonus finis yang besar (+200 Poin), pemain A berhasil mempertahankan keunggulannya meskipun pemain B menjawab kuis lebih banyak. Ini memberikan insentif yang kuat bagi pemain untuk berlomba mencapai garis finis sesegera mungkin.
 
 #### Skenario 2: Pemain Pintar Kehabisan Waktu vs Pemain Cepat
 *   **Pemain A (Cepat)**: Cepat finis tetapi asal-asalan menjawab kuis. Finis **ke-1**.
     *   Jawaban Benar: 2 kuis (+20 poin)
     *   Skor Kemajuan Baris: +25 poin
-    *   Bonus Finis: +40 poin
-    *   **Total Skor Akhir: 85 Poin**
+    *   Bonus Finis: +200 poin
+    *   **Total Skor Akhir: 245 Poin**
 *   **Pemain B (Pintar)**: Terjebak di baris atas (kotak 45) karena durasi waktu bermain yang ditentukan lobi telah habis, namun ia memiliki akurasi kuis yang sangat tinggi.
     *   Jawaban Benar: 13 kuis (+130 poin)
     *   Skor Kemajuan Baris: +20 poin (berada di Baris 5)
     *   Bonus Finis: +0 poin (karena belum menyentuh kotak 50)
     *   **Total Skor Akhir: 150 Poin**
-*   *Hasil Akhir*: **Pemain B Menang**. Pengetahuan edukasi antikorupsi pemain dihargai jauh lebih tinggi daripada sekadar kecepatan melangkah tanpa pemahaman.
+*   *Hasil Akhir*: **Pemain A Menang**. Walaupun Pemain B menjawab benar lebih banyak, Pemain A mendapatkan bonus finis yang dominan yang memastikan posisi kemenangannya.
 
 #### Skenario 3: Aturan Penentu Jika Skor Kembar (Tie-Breaker)
 Jika terdapat dua pemain yang memiliki skor akhir yang persis sama ketika permainan selesai, sistem akan menentukan pemenang dengan aturan prioritas sebagai berikut:

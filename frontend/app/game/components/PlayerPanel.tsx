@@ -1,9 +1,8 @@
 'use client';
 
+import React, { useState, useEffect, useRef } from 'react';
 import { Player, GamePhase } from '../gameData';
 import { DeviceTier } from '../hooks/useDeviceTier';
-
-const DICE_FACES = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
 
 interface PlayerPanelProps {
   players: Player[];
@@ -31,6 +30,73 @@ const PLAYER_COLORS = [
   '#2ECC71', // Green
   '#111111', // Black
 ];
+
+function SvgDice({ value, isMobile }: { value: number | null; isMobile: boolean }) {
+  const diceSize = isMobile ? 'w-6 h-6' : 'w-8 h-8';
+
+  // 9 possible dot positions in a 3x3 layout
+  // TL: 8,8 | TR: 24,8
+  // ML: 8,16 | MC: 16,16 | MR: 24,16
+  // BL: 8,24 | BR: 24,24
+  const dotsMap: Record<number, { cx: number; cy: number }[]> = {
+    1: [{ cx: 16, cy: 16 }],
+    2: [{ cx: 8, cy: 8 }, { cx: 24, cy: 24 }],
+    3: [{ cx: 8, cy: 8 }, { cx: 16, cy: 16 }, { cx: 24, cy: 24 }],
+    4: [{ cx: 8, cy: 8 }, { cx: 24, cy: 8 }, { cx: 8, cy: 24 }, { cx: 24, cy: 24 }],
+    5: [{ cx: 8, cy: 8 }, { cx: 24, cy: 8 }, { cx: 16, cy: 16 }, { cx: 8, cy: 24 }, { cx: 24, cy: 24 }],
+    6: [{ cx: 8, cy: 8 }, { cx: 24, cy: 8 }, { cx: 8, cy: 16 }, { cx: 24, cy: 16 }, { cx: 8, cy: 24 }, { cx: 24, cy: 24 }]
+  };
+
+  const dots = value !== null ? (dotsMap[value] || []) : [];
+
+  return (
+    <div className={`${diceSize} select-none flex-shrink-0 flex items-center justify-center`}>
+      <svg
+        viewBox="0 0 32 32"
+        className="w-full h-full drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)]"
+      >
+        {/* White rounded square card (the dice base) */}
+        <rect
+          x="1"
+          y="1"
+          width="30"
+          height="30"
+          rx="6"
+          ry="6"
+          fill="white"
+          stroke="#d1d5db"
+          strokeWidth="1.5"
+        />
+
+        {value === null ? (
+          // Display red bold question mark when null (before roll)
+          <text
+            x="16"
+            y="23"
+            fontFamily="sans-serif"
+            fontSize="18"
+            fontWeight="bold"
+            textAnchor="middle"
+            fill="#dc2626"
+          >
+            ?
+          </text>
+        ) : (
+          // Display standard solid black dot layouts for 1-6
+          dots.map((dot, i) => (
+            <circle
+              key={i}
+              cx={dot.cx}
+              cy={dot.cy}
+              r="2.5"
+              fill="#1e293b"
+            />
+          ))
+        )}
+      </svg>
+    </div>
+  );
+}
 
 export default function PlayerPanel({
   players,
@@ -70,6 +136,31 @@ export default function PlayerPanel({
   const statSize = isMobile ? 'text-[7px]' : 'text-[9px]';
   const sectionPad = isMobile ? 'p-2' : 'p-3';
 
+  // --- DICE ROLL ANIMATION ---
+  const [animatingValue, setAnimatingValue] = useState<number | null>(null);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const prevDiceValue = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (prevDiceValue.current === null && diceValue !== null) {
+      setIsAnimating(true);
+      let count = 0;
+      const interval = setInterval(() => {
+        setAnimatingValue(Math.floor(Math.random() * 6) + 1);
+        count++;
+        if (count >= 8) {
+          clearInterval(interval);
+          setIsAnimating(false);
+          setAnimatingValue(null);
+        }
+      }, 60);
+      return () => clearInterval(interval);
+    }
+    prevDiceValue.current = diceValue;
+  }, [diceValue]);
+
+  const displayValue = isAnimating ? animatingValue : diceValue;
+
   return (
     <div className={`relative flex flex-col ${panelGap} w-full ${panelHeight} bg-[#122c06] border-[6px] border-[#5c3208] rounded-3xl shadow-[inset_0_4px_12px_rgba(0,0,0,0.6),0_10px_30px_rgba(0,0,0,0.5)] ${panelPad} font-sans text-slate-100 select-none overflow-hidden`}>
 
@@ -85,10 +176,7 @@ export default function PlayerPanel({
               className={`${isMobile ? 'w-5 h-5' : 'w-7 h-7'} object-contain flex-shrink-0`}
             />
           )}
-          <div className="flex flex-col min-w-0">
-            {!isMobile && (
-              <span className={`${turnTitleSize} font-bold text-emerald-300 uppercase tracking-wider pl-0.5`}>Giliran</span>
-            )}
+          <div className="flex flex-col min-w-0 justify-center">
             <span className={`font-black ${nameSize} text-white truncate`}>
               {currentPlayer?.name}
             </span>
@@ -97,9 +185,7 @@ export default function PlayerPanel({
 
         {/* Right Side: Compact Dice, Roll Button, and Pause Icon */}
         <div className="flex items-center gap-1.5 flex-shrink-0">
-          <div className={`${isMobile ? 'text-xl' : 'text-2.5xl'} select-none text-white flex items-center justify-center`} title={diceValue !== null ? `Hasil: ${diceValue}` : 'Dadu'}>
-            {diceValue !== null ? DICE_FACES[diceValue - 1] : '🎲'}
-          </div>
+          <SvgDice value={displayValue} isMobile={isMobile} />
 
           <button
             onClick={onRollDice}
@@ -152,83 +238,97 @@ export default function PlayerPanel({
       {/* Divider */}
       <div className="border-t border-white/10 my-0.5" />
 
-      {/* 2. LEADERBOARD (Consolidated inside PlayerPanel) */}
+      {/* 2. LEADERBOARD (Consolidated inside PlayerPanel with MotoGP Swap Animation) */}
       <div className="flex flex-col gap-2 flex-1 min-h-0">
         <h2 className={`${turnTitleSize} font-black text-emerald-200/90 uppercase tracking-widest flex items-center gap-1.5 pl-0.5`}>
           🏆 Papan Skor
         </h2>
 
-        <div className={`flex flex-col ${isMobile ? 'gap-1' : 'gap-2'} overflow-y-auto pr-1 flex-1`}>
-          {rankedPlayers.map((player, i) => {
-            const isCurrent = player.id === currentPlayer?.id;
-            const originalIndex = players.findIndex(pl => pl.id === player.id);
-            const pionIndex = originalIndex !== -1 ? originalIndex : i;
-            const borderCol = PLAYER_COLORS[pionIndex % PLAYER_COLORS.length];
+        {(() => {
+          const cardHeight = isMobile ? 50 : 68;
+          const cardGap = isMobile ? 4 : 8;
+          const containerHeight = players.length * (cardHeight + cardGap) - cardGap;
 
-            return (
-              <div
-                key={player.id}
-                className={`flex flex-col gap-1.5 ${isMobile ? 'p-2' : 'p-2.5'} rounded-2xl transition-all border shadow-sm`}
-                style={{
-                  borderLeft: `5px solid ${borderCol}`,
-                  backgroundColor: isCurrent ? 'rgba(254, 240, 138, 0.08)' : 'rgba(255, 255, 255, 0.03)',
-                  borderColor: isCurrent ? 'rgba(254, 240, 138, 0.3)' : 'rgba(255, 255, 255, 0.08)',
-                  boxShadow: isCurrent ? '0 0 12px rgba(254, 240, 138, 0.1)' : 'none',
-                }}
-              >
-                {/* Top row: rank + pion + name + active indicator */}
-                <div className="flex items-center gap-1.5">
-                  <span className={`${leaderNameSize} font-black text-slate-300 w-5 text-center flex-shrink-0`}>
-                    {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`}
-                  </span>
-                  <img
-                    src={PLAYER_PIONS[pionIndex % PLAYER_PIONS.length]}
-                    alt={player.name}
-                    className={`${leaderPionSize} object-contain flex-shrink-0`}
-                  />
-                  <span className={`font-extrabold ${leaderNameSize} text-white truncate flex-1 flex items-center gap-1`}>
-                    <span>{player.name}</span>
-                    {player.isOffline && (
-                      <span className="text-[8px] bg-rose-950/60 border border-rose-800 text-rose-300 px-1.5 py-0.5 rounded-md font-extrabold uppercase animate-pulse">
-                        Offline
+          return (
+            <div 
+              className="relative w-full flex-shrink-0"
+              style={{ height: `${containerHeight}px` }}
+            >
+              {rankedPlayers.map((player, i) => {
+                const isCurrent = player.id === currentPlayer?.id;
+                const originalIndex = players.findIndex(pl => pl.id === player.id);
+                const pionIndex = originalIndex !== -1 ? originalIndex : i;
+                const borderCol = PLAYER_COLORS[pionIndex % PLAYER_COLORS.length];
+
+                return (
+                  <div
+                    key={player.id}
+                    className={`absolute left-0 right-0 flex flex-col gap-1.5 ${isMobile ? 'p-2' : 'p-2.5'} rounded-2xl border shadow-sm overflow-hidden`}
+                    style={{
+                      height: `${cardHeight}px`,
+                      top: `${i * (cardHeight + cardGap)}px`,
+                      transition: 'top 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.3s, border-color 0.3s',
+                      borderLeft: `5px solid ${borderCol}`,
+                      backgroundColor: isCurrent ? 'rgba(254, 240, 138, 0.08)' : 'rgba(255, 255, 255, 0.03)',
+                      borderColor: isCurrent ? 'rgba(254, 240, 138, 0.3)' : 'rgba(255, 255, 255, 0.08)',
+                      boxShadow: isCurrent ? '0 0 12px rgba(254, 240, 138, 0.1)' : 'none',
+                    }}
+                  >
+                    {/* Top row: rank + pion + name + active indicator */}
+                    <div className="flex items-center gap-1.5">
+                      <span className={`${leaderNameSize} font-black text-slate-300 w-5 text-center flex-shrink-0`}>
+                        {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`}
                       </span>
-                    )}
-                  </span>
-                  {isCurrent && (
-                    <span className="w-2 h-2 rounded-full bg-yellow-300 animate-ping flex-shrink-0" />
-                  )}
-                </div>
+                      <img
+                        src={PLAYER_PIONS[pionIndex % PLAYER_PIONS.length]}
+                        alt={player.name}
+                        className={`${leaderPionSize} object-contain flex-shrink-0`}
+                      />
+                      <span className={`font-extrabold ${leaderNameSize} text-white truncate flex-1 flex items-center gap-1`}>
+                        <span>{player.name}</span>
+                        {player.isOffline && (
+                          <span className="text-[8px] bg-rose-950/60 border border-rose-800 text-rose-300 px-1.5 py-0.5 rounded-md font-extrabold uppercase animate-pulse">
+                            Offline
+                          </span>
+                        )}
+                      </span>
+                      {isCurrent && (
+                        <span className="w-2 h-2 rounded-full bg-yellow-300 animate-ping flex-shrink-0" />
+                      )}
+                    </div>
 
-                {/* Bottom row: score + position + stats */}
-                <div className="flex items-center justify-between gap-1 pl-1 flex-wrap">
-                  {/* Poin */}
-                  <span className={`text-amber-200 font-black ${statSize} bg-amber-950/40 px-2 py-0.5 rounded-full border border-amber-800/35 flex items-center gap-0.5 shadow-sm`}>
-                    ⭐ {player.score || 0} Pts
-                  </span>
+                    {/* Bottom row: score + position + stats (flex-nowrap to avoid breaking fixed height) */}
+                    <div className="flex items-center justify-between gap-1 pl-1 flex-nowrap overflow-hidden">
+                      {/* Poin */}
+                      <span className={`text-amber-200 font-black ${statSize} bg-amber-950/40 px-2 py-0.5 rounded-full border border-amber-800/35 flex items-center gap-0.5 shadow-sm`}>
+                        ⭐ {player.score || 0} Pts
+                      </span>
 
-                  {/* Posisi Papan */}
-                  <span className={`${statSize} font-extrabold px-2 py-0.5 bg-sky-950/30 text-sky-200 border border-sky-800/25 rounded-full`}>
-                    {player.isFinished
-                      ? `🏁 Finis #${player.finishRank}`
-                      : player.position === 0
-                        ? '📍 Mulai'
-                        : `📍 Kotak ${player.position}`}
-                  </span>
+                      {/* Posisi Papan */}
+                      <span className={`${statSize} font-extrabold px-2 py-0.5 bg-sky-950/30 text-sky-200 border border-sky-800/25 rounded-full`}>
+                        {player.isFinished
+                          ? `🏁 Finis #${player.finishRank}`
+                          : player.position === 0
+                            ? '📍 Mulai'
+                            : `📍 Kotak ${player.position}`}
+                      </span>
 
-                  {/* Akurasi Kuis */}
-                  <div className={`flex items-center ${isMobile ? 'gap-0.5' : 'gap-1'} ${statSize} font-bold`}>
-                    <span className="bg-emerald-950/30 text-emerald-300 border border-emerald-800/25 px-1.5 py-0.5 rounded-md" title="Benar">
-                      ✓ {player.correctAnswers || 0}
-                    </span>
-                    <span className="bg-rose-950/30 text-rose-300 border border-rose-800/25 px-1.5 py-0.5 rounded-md" title="Salah">
-                      ✗ {player.wrongAnswers || 0}
-                    </span>
+                      {/* Akurasi Kuis */}
+                      <div className={`flex items-center ${isMobile ? 'gap-0.5' : 'gap-1'} ${statSize} font-bold flex-shrink-0`}>
+                        <span className="bg-emerald-950/30 text-emerald-300 border border-emerald-800/25 px-1.5 py-0.5 rounded-md" title="Benar">
+                          ✓ {player.correctAnswers || 0}
+                        </span>
+                        <span className="bg-rose-950/30 text-rose-300 border border-rose-800/25 px-1.5 py-0.5 rounded-md" title="Salah">
+                          ✗ {player.wrongAnswers || 0}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+                );
+              })}
+            </div>
+          );
+        })()}
       </div>
     </div>
   );
