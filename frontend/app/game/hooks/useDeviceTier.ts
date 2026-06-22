@@ -33,9 +33,17 @@ export function useDeviceTier(): DeviceTierResult {
 
   useEffect(() => {
     const update = () => {
-      // Use the larger dimension to determine tier (so portrait doesn't misclassify)
-      const w = Math.max(window.innerWidth, window.innerHeight);
-      setTier(getTier(w));
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      // If the smaller screen dimension is less than 500px, it is definitely a mobile phone
+      const isActuallyMobile = Math.min(w, h) < 500;
+      if (isActuallyMobile) {
+        setTier('mobile');
+      } else {
+        // Use the larger dimension to determine tier (so portrait doesn't misclassify)
+        const maxDim = Math.max(w, h);
+        setTier(getTier(maxDim));
+      }
       setIsPortrait(getIsPortrait());
     };
 

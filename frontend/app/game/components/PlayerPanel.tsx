@@ -165,7 +165,7 @@ export default function PlayerPanel({
     <div className={`relative flex flex-col ${panelGap} w-full ${panelHeight} bg-[#122c06] border-[6px] border-[#5c3208] rounded-3xl shadow-[inset_0_4px_12px_rgba(0,0,0,0.6),0_10px_30px_rgba(0,0,0,0.5)] ${panelPad} font-sans text-slate-100 select-none overflow-hidden`}>
 
       {/* 1. COMPACT CURRENT TURN & DICE ROLL */}
-      <div className={`flex items-center justify-between ${sectionPad} bg-black/30 border border-white/10 rounded-2xl gap-2`}>
+      <div className={`relative flex items-center justify-between ${sectionPad} bg-black/30 border border-white/10 rounded-2xl gap-2 ${isMobile ? 'pr-9' : 'pr-12'}`}>
 
         {/* Left Side: Current Player Info */}
         <div className="flex items-center gap-1.5 min-w-0 flex-1">
@@ -183,7 +183,7 @@ export default function PlayerPanel({
           </div>
         </div>
 
-        {/* Right Side: Compact Dice, Roll Button, and Pause Icon */}
+        {/* Right Side: Compact Dice, Roll Button */}
         <div className="flex items-center gap-1.5 flex-shrink-0">
           <SvgDice value={displayValue} isMobile={isMobile} />
 
@@ -194,20 +194,20 @@ export default function PlayerPanel({
           >
             {phase === 'rolling' && isMyTurn ? 'Dadu' : diceValue !== null ? `Dadu: ${diceValue}` : 'Dadu'}
           </button>
-
-          {/* Settings/Pause Gear Icon (Flex item, rightmost) */}
-          <button
-            onClick={onPause}
-            className="hover:scale-110 active:scale-95 transition-all cursor-pointer bg-black/45 hover:bg-black/60 p-1 rounded-full border border-white/10 shadow-md flex-shrink-0"
-            title="Jeda Permainan"
-          >
-            <img
-              src="/gear_pause.png"
-              alt="Pause"
-              className={`${isMobile ? 'w-4 h-4' : 'w-5.5 h-5.5'} object-contain hover:rotate-90 transition-transform duration-500`}
-            />
-          </button>
         </div>
+
+        {/* Settings/Pause Gear Icon (Absolute, rightmost inside Section 1) */}
+        <button
+          onClick={onPause}
+          className={`absolute ${isMobile ? 'right-2.5' : 'right-3'} top-1/2 -translate-y-1/2 hover:scale-110 active:scale-95 transition-all cursor-pointer bg-black/45 hover:bg-black/60 p-1 rounded-full border border-white/10 shadow-md flex-shrink-0`}
+          title="Jeda Permainan"
+        >
+          <img
+            src="/gear_pause.png"
+            alt="Pause"
+            className={`${isMobile ? 'w-4 h-4' : 'w-5.5 h-5.5'} object-contain hover:rotate-90 transition-transform duration-500`}
+          />
+        </button>
       </div>
 
       {/* Message Banner (for overshoot, neutral, etc.) */}
@@ -245,8 +245,8 @@ export default function PlayerPanel({
         </h2>
 
         {(() => {
-          const cardHeight = isMobile ? 50 : 68;
-          const cardGap = isMobile ? 4 : 8;
+          const cardHeight = isMobile ? 36 : 68;
+          const cardGap = isMobile ? 3.5 : 8;
           const containerHeight = players.length * (cardHeight + cardGap) - cardGap;
 
           return (
@@ -263,66 +263,118 @@ export default function PlayerPanel({
                 return (
                   <div
                     key={player.id}
-                    className={`absolute left-0 right-0 flex flex-col gap-1.5 ${isMobile ? 'p-2' : 'p-2.5'} rounded-2xl border shadow-sm overflow-hidden`}
+                    className={`absolute left-0 right-0 flex ${isMobile ? 'flex-row items-center justify-between px-2 py-1 rounded-xl' : 'flex-col gap-1.5 p-2.5 rounded-2xl'} border shadow-sm overflow-hidden`}
                     style={{
                       height: `${cardHeight}px`,
                       top: `${i * (cardHeight + cardGap)}px`,
                       transition: 'top 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.3s, border-color 0.3s',
-                      borderLeft: `5px solid ${borderCol}`,
+                      borderLeft: `${isMobile ? '4px' : '5px'} solid ${borderCol}`,
                       backgroundColor: isCurrent ? 'rgba(254, 240, 138, 0.08)' : 'rgba(255, 255, 255, 0.03)',
                       borderColor: isCurrent ? 'rgba(254, 240, 138, 0.3)' : 'rgba(255, 255, 255, 0.08)',
                       boxShadow: isCurrent ? '0 0 12px rgba(254, 240, 138, 0.1)' : 'none',
                     }}
                   >
-                    {/* Top row: rank + pion + name + active indicator */}
-                    <div className="flex items-center gap-1.5">
-                      <span className={`${leaderNameSize} font-black text-slate-300 w-5 text-center flex-shrink-0`}>
-                        {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`}
-                      </span>
-                      <img
-                        src={PLAYER_PIONS[pionIndex % PLAYER_PIONS.length]}
-                        alt={player.name}
-                        className={`${leaderPionSize} object-contain flex-shrink-0`}
-                      />
-                      <span className={`font-extrabold ${leaderNameSize} text-white truncate flex-1 flex items-center gap-1`}>
-                        <span>{player.name}</span>
-                        {player.isOffline && (
-                          <span className="text-[8px] bg-rose-950/60 border border-rose-800 text-rose-300 px-1.5 py-0.5 rounded-md font-extrabold uppercase animate-pulse">
-                            Offline
+                    {isMobile ? (
+                      <>
+                        {/* Mobile: Compact single-row layout */}
+                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                          <span className="text-[10px] font-black text-slate-300 w-4 text-center flex-shrink-0">
+                            {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`}
                           </span>
-                        )}
-                      </span>
-                      {isCurrent && (
-                        <span className="w-2 h-2 rounded-full bg-yellow-300 animate-ping flex-shrink-0" />
-                      )}
-                    </div>
+                          <img
+                            src={PLAYER_PIONS[pionIndex % PLAYER_PIONS.length]}
+                            alt={player.name}
+                            className="w-4.5 h-4.5 object-contain flex-shrink-0"
+                          />
+                          <span className="font-extrabold text-[9.5px] text-white truncate flex items-center gap-0.5 min-w-0 flex-1">
+                            <span className="truncate">{player.name}</span>
+                            {player.isOffline && (
+                              <span className="text-[6px] bg-rose-950/60 border border-rose-800 text-rose-300 px-1 py-0.2 rounded font-extrabold uppercase animate-pulse flex-shrink-0">
+                                Off
+                              </span>
+                            )}
+                          </span>
+                          {isCurrent && (
+                            <span className="w-1.5 h-1.5 rounded-full bg-yellow-300 animate-ping flex-shrink-0" />
+                          )}
+                        </div>
 
-                    {/* Bottom row: score + position + stats (flex-nowrap to avoid breaking fixed height) */}
-                    <div className="flex items-center justify-between gap-1 pl-1 flex-nowrap overflow-hidden">
-                      {/* Poin */}
-                      <span className={`text-amber-200 font-black ${statSize} bg-amber-950/40 px-2 py-0.5 rounded-full border border-amber-800/35 flex items-center gap-0.5 shadow-sm`}>
-                        ⭐ {player.score || 0} Pts
-                      </span>
+                        {/* Right part: Compact stats */}
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          {/* Score */}
+                          <span className="text-amber-250 font-black text-[7.5px] bg-amber-950/40 px-1.5 py-0.5 rounded-full border border-amber-800/35 flex items-center gap-0.5 shadow-sm">
+                            ⭐{player.score || 0}
+                          </span>
 
-                      {/* Posisi Papan */}
-                      <span className={`${statSize} font-extrabold px-2 py-0.5 bg-sky-950/30 text-sky-200 border border-sky-800/25 rounded-full`}>
-                        {player.isFinished
-                          ? `🏁 Finis #${player.finishRank}`
-                          : player.position === 0
-                            ? '📍 Mulai'
-                            : `📍 Kotak ${player.position}`}
-                      </span>
+                          {/* Position */}
+                          <span className="text-[7.5px] font-extrabold px-1.5 py-0.5 bg-sky-950/30 text-sky-200 border border-sky-800/25 rounded-full">
+                            {player.isFinished
+                              ? `🏁#${player.finishRank}`
+                              : player.position === 0
+                                ? 'Mulai'
+                                : `K.${player.position}`}
+                          </span>
 
-                      {/* Akurasi Kuis */}
-                      <div className={`flex items-center ${isMobile ? 'gap-0.5' : 'gap-1'} ${statSize} font-bold flex-shrink-0`}>
-                        <span className="bg-emerald-950/30 text-emerald-300 border border-emerald-800/25 px-1.5 py-0.5 rounded-md" title="Benar">
-                          ✓ {player.correctAnswers || 0}
-                        </span>
-                        <span className="bg-rose-950/30 text-rose-300 border border-rose-800/25 px-1.5 py-0.5 rounded-md" title="Salah">
-                          ✗ {player.wrongAnswers || 0}
-                        </span>
-                      </div>
-                    </div>
+                          {/* Accuracy */}
+                          <div className="flex items-center gap-0.5 text-[7.5px] font-bold">
+                            <span className="bg-emerald-950/30 text-emerald-300 border border-emerald-800/25 px-1 py-0.2 rounded" title="Benar">
+                              ✓{player.correctAnswers || 0}
+                            </span>
+                            <span className="bg-rose-950/30 text-rose-300 border border-rose-800/25 px-1 py-0.2 rounded" title="Salah">
+                              ✗{player.wrongAnswers || 0}
+                            </span>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        {/* Tablet/Desktop Layout: Two Rows */}
+                        <div className="flex items-center gap-1.5">
+                          <span className={`${leaderNameSize} font-black text-slate-300 w-5 text-center flex-shrink-0`}>
+                            {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`}
+                          </span>
+                          <img
+                            src={PLAYER_PIONS[pionIndex % PLAYER_PIONS.length]}
+                            alt={player.name}
+                            className={`${leaderPionSize} object-contain flex-shrink-0`}
+                          />
+                          <span className={`font-extrabold ${leaderNameSize} text-white truncate flex-1 flex items-center gap-1`}>
+                            <span>{player.name}</span>
+                            {player.isOffline && (
+                              <span className="text-[8px] bg-rose-950/60 border border-rose-800 text-rose-300 px-1.5 py-0.5 rounded-md font-extrabold uppercase animate-pulse">
+                                Offline
+                              </span>
+                            )}
+                          </span>
+                          {isCurrent && (
+                            <span className="w-2 h-2 rounded-full bg-yellow-300 animate-ping flex-shrink-0" />
+                          )}
+                        </div>
+
+                        <div className="flex items-center justify-between gap-1 pl-1 flex-nowrap overflow-hidden">
+                          <span className={`text-amber-250 font-black ${statSize} bg-amber-950/40 px-2 py-0.5 rounded-full border border-amber-800/35 flex items-center gap-0.5 shadow-sm`}>
+                            ⭐ {player.score || 0} Pts
+                          </span>
+
+                          <span className={`${statSize} font-extrabold px-2 py-0.5 bg-sky-950/30 text-sky-200 border border-sky-800/25 rounded-full`}>
+                            {player.isFinished
+                              ? `🏁 Finis #${player.finishRank}`
+                              : player.position === 0
+                                ? '📍 Mulai'
+                                : `📍 Kotak ${player.position}`}
+                          </span>
+
+                          <div className={`flex items-center ${isMobile ? 'gap-0.5' : 'gap-1'} ${statSize} font-bold flex-shrink-0`}>
+                            <span className="bg-emerald-950/30 text-emerald-300 border border-emerald-800/25 px-1.5 py-0.5 rounded-md" title="Benar">
+                              ✓ {player.correctAnswers || 0}
+                            </span>
+                            <span className="bg-rose-950/30 text-rose-300 border border-rose-800/25 px-1.5 py-0.5 rounded-md" title="Salah">
+                              ✗ {player.wrongAnswers || 0}
+                            </span>
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
                 );
               })}
