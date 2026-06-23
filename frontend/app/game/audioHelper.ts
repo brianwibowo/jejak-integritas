@@ -66,18 +66,15 @@ export function setHomeLobbyMusicVolume(volumeMultiplier: number) {
   }
 }
 
-// Helper for playing preloaded SFX with cloning to support rapid overlap
+// Helper for playing preloaded SFX directly without cloning to prevent network requests and latency on Vercel
 function playPreloadedSFX(audioElement: HTMLAudioElement | null, defaultVolume: number) {
   if (!audioElement || isGlobalMuted) return;
   try {
-    const clone = audioElement.cloneNode(true) as HTMLAudioElement;
-    clone.volume = defaultVolume;
-    clone.play().catch((err) => console.log("SFX play failed:", err));
-  } catch (err) {
-    // Fallback if cloning fails
     audioElement.volume = defaultVolume;
     audioElement.currentTime = 0;
-    audioElement.play().catch(() => {});
+    audioElement.play().catch((err) => console.log("SFX play failed:", err));
+  } catch (err) {
+    console.error("SFX play failed:", err);
   }
 }
 

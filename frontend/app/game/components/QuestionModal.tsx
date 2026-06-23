@@ -70,7 +70,7 @@ export default function QuestionModal({
         <div className={`overflow-y-auto flex-1 ${isMobile ? 'p-3' : 'p-5'} ${showResult ? (isMobile ? 'flex flex-col gap-4' : 'grid grid-cols-1 md:grid-cols-2 gap-6') : 'flex flex-col'}`}>
           
           {/* Column 1: Question and Options */}
-          <div className="flex flex-col justify-between h-full">
+          <div className={`flex flex-col justify-between ${isMobile ? 'h-auto flex-shrink-0' : 'h-full'}`}>
             <div>
               {/* Question Timer Badge */}
               {timeRemaining !== undefined && timeRemaining !== null && !showResult && (
@@ -191,7 +191,7 @@ export default function QuestionModal({
 
           {/* Column 2: Explanation (only shown when showResult is true) */}
           {showResult && question.explanation && (
-            <div className={`flex flex-col h-full bg-blue-50/70 rounded-xl border border-blue-100 ${isMobile ? 'p-3' : 'p-4'} overflow-y-auto ${isMobile ? 'max-h-[40vh]' : 'max-h-[50vh] md:max-h-[70vh]'} shadow-inner text-left`}>
+            <div className={`flex flex-col ${isMobile ? 'h-auto flex-shrink-0' : 'h-full'} bg-blue-50/70 rounded-xl border border-blue-100 ${isMobile ? 'p-3' : 'p-4'} overflow-y-auto ${isMobile ? 'max-h-[40vh]' : 'max-h-[50vh] md:max-h-[70vh]'} shadow-inner text-left`}>
               <div className={`${isMobile ? 'text-xs' : 'text-sm'} font-black text-blue-800 uppercase tracking-wider mb-2.5 flex items-center gap-1.5 flex-shrink-0 font-sans`}>
                 💡 Pembahasan Lengkap
               </div>
