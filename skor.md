@@ -11,8 +11,8 @@ Skor setiap pemain dihitung dari **tiga komponen**:
 | Komponen | Penjelasan | Poin |
 |----------|-----------|------|
 | **Jawaban Benar** | Setiap jawaban benar mendapat poin | **+10 poin** per jawaban benar |
-| **Poin Kemajuan (Row Points)** | Bonus yang bertambah seiring pemain maju ke baris lebih tinggi | **0 – 25 poin** (lihat tabel di bawah) |
-| **Bonus Selesai (Finish)** | Bonus tambahan bagi pemain yang berhasil mencapai kotak FINISH | Juara 1: **+20**, Juara 2: **+15**, Juara 3: **+10**, Juara 4: **+5** |
+| **Poin Kemajuan (Row Points)** | Bonus yang bertambah seiring pemain maju ke baris lebih tinggi | **5 – 30 poin** (lihat tabel di bawah) |
+| **Bonus Selesai (Finish)** | Bonus tambahan bagi pemain yang berhasil mencapai kotak FINISH | Juara 1: **+200**, Juara 2: **+100**, Juara 3: **+50**, Juara 4: **+10** |
 
 ### Total Skor:
 
@@ -26,12 +26,12 @@ Papan permainan memiliki **50 kotak** yang terbagi dalam **5 baris**. Semakin ti
 
 | Baris | Kotak | Warna | Kategori Soal | Poin Kemajuan |
 |-------|-------|-------|---------------|---------------|
-| Baris 1 (bawah) | 1 – 10 | 🔵 Biru | Kotak Nilai PAK | **0 poin** |
-| Baris 2 | 11 – 20 | 🔴 Merah | Kotak Pelanggaran | **5 poin** |
-| Baris 3 | 21 – 30 | 🟡 Kuning | Kotak Dilema Moral | **10 poin** |
-| Baris 4 | 31 – 40 | 🟢 Hijau | Kotak Kearifan Lokal | **15 poin** |
-| Baris 5 (atas) | 41 – 50 | 🟣 Ungu | Kotak Aksi | **20 poin** |
-| FINISH | 50 | — | — | **25 poin** |
+| Baris 1 (bawah) | 1 – 10 | 🔵 Biru | Kotak Nilai PAK | **5 poin** |
+| Baris 2 | 11 – 20 | 🔴 Merah | Kotak Pelanggaran | **10 poin** |
+| Baris 3 | 21 – 30 | 🟡 Kuning | Kotak Dilema Moral | **15 poin** |
+| Baris 4 | 31 – 40 | 🟢 Hijau | Kotak Kearifan Lokal | **20 poin** |
+| Baris 5 (atas) | 41 – 50 | 🟣 Ungu | Kotak Aksi | **25 poin** |
+| FINISH | 50 | — | — | **30 poin** |
 
 ---
 
@@ -76,21 +76,21 @@ Jika pemain menjawab **salah** dan berada di kotak ular, pemain **turun** ke kot
 
 | Momen | Posisi | Jawaban | Total Benar | Poin Kemajuan | Skor |
 |-------|--------|---------|------------|---------------|------|
-| Ronde 1 | Kotak 5 | ✅ Benar | 1 | 0 | **10** |
-| Ronde 2 | Kotak 11 → 🪜 naik ke 30 | ✅ Benar | 2 | 10 | **30** |
-| Ronde 3 | Kotak 35 | ✅ Benar | 3 | 15 | **45** |
-| Ronde 4 | Kotak 44 | ✅ Benar | 4 | 20 | **60** |
-| FINISH | Kotak 50 (Juara 1) | — | 4 | 25 + Bonus 20 | **85** |
+| Ronde 1 | Kotak 5 | ✅ Benar | 1 | 5 | **15** |
+| Ronde 2 | Kotak 11 → 🪜 naik ke 30 | ✅ Benar | 2 | 15 | **35** |
+| Ronde 3 | Kotak 35 | ✅ Benar | 3 | 20 | **50** |
+| Ronde 4 | Kotak 44 | ✅ Benar | 4 | 25 | **65** |
+| FINISH | Kotak 50 (Juara 1) | — | 4 | 30 + Bonus 200 | **270** |
 
 ### Pemain B — Ada Kesalahan
 
 | Momen | Posisi | Jawaban | Total Benar | Poin Kemajuan | Skor |
 |-------|--------|---------|------------|---------------|------|
-| Ronde 1 | Kotak 8 | ✅ Benar | 1 | 0 | **10** |
-| Ronde 2 | Kotak 15 → 🪜 naik ke 26 | ✅ Benar | 2 | 10 | **30** |
-| Ronde 3 | Kotak 35 → 🐍 turun ke 12 | ❌ Salah | 2 | 5 | **25** |
-| Ronde 4 | Kotak 19 → 🪜 naik ke 38 | ✅ Benar | 3 | 15 | **45** |
-| FINISH | Kotak 50 (Juara 2) | — | 5 | 25 + Bonus 15 | **90** |
+| Ronde 1 | Kotak 8 | ✅ Benar | 1 | 5 | **15** |
+| Ronde 2 | Kotak 15 → 🪜 naik ke 26 | ✅ Benar | 2 | 15 | **35** |
+| Ronde 3 | Kotak 35 → 🐍 turun ke 12 | ❌ Salah | 2 | 10 | **30** |
+| Ronde 4 | Kotak 19 → 🪜 naik ke 38 | ✅ Benar | 3 | 20 | **50** |
+| FINISH | Kotak 50 (Juara 2) | — | 5 | 30 + Bonus 100 | **180** |
 
 > **Catatan**: Meskipun Pemain B sempat menjawab salah dan turun karena ular, ia bisa menyusul dengan lebih banyak menjawab benar di ronde selanjutnya.
 

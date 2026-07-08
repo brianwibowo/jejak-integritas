@@ -150,6 +150,11 @@ function ScanContent() {
     );
   }
 
+  // Calculate movement instructions for physical board game players (simplified for physical play)
+  const instructionMessage = isCorrect
+    ? 'Silakan lanjut! 👉'
+    : 'Anda tetap/turun dari posisi itu. 📍';
+
   // Render question card
   if (!currentQuestion) return null;
 
@@ -231,14 +236,21 @@ function ScanContent() {
             <div className="mt-2 border-t border-slate-100 pt-5 flex flex-col gap-4 animate-slide-up">
               {/* Correct/Incorrect Badge */}
               <div
-                className="p-3.5 rounded-2xl text-sm font-extrabold text-center border"
+                className="p-3.5 rounded-2xl text-sm font-extrabold text-center border flex flex-col gap-1"
                 style={{
                   backgroundColor: isCorrect ? '#F0FDF4' : '#FEF2F2',
                   color: isCorrect ? '#166534' : '#991B1B',
                   borderColor: isCorrect ? '#BBF7D0' : '#FECACA',
                 }}
               >
-                {isCorrect ? '🎉 Jawaban Anda Benar!' : '❌ Jawaban Kurang Tepat'}
+                <div>
+                  {isCorrect ? '🎉 Jawaban Anda Benar!' : '❌ Jawaban Kurang Tepat'}
+                </div>
+                {instructionMessage && (
+                  <div className="text-xs font-semibold opacity-90 mt-1">
+                    {instructionMessage}
+                  </div>
+                )}
               </div>
 
               {/* Explanation Box */}

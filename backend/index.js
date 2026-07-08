@@ -66,8 +66,8 @@ function getSortedPlayers(players) {
 
 // Helper to calculate row points based on position (for 50 boxes board)
 function getRowPoints(pos) {
-  if (pos >= 50) return 25;
-  return Math.max(0, Math.floor((pos - 1) / 10)) * 5;
+  if (pos >= 50) return 30;
+  return Math.floor((pos - 1) / 10) * 5 + 5;
 }
 
 // Helper to handle a player reaching the finish line (box 50)
@@ -82,7 +82,7 @@ function handlePlayerFinished(lobby, playerIdx) {
     if (idx === playerIdx) {
       const correctAnswers = p.correctAnswers;
       const baseScore = correctAnswers * 10;
-      const rowPoints = 25; // Crossed all 5 rows to reach 50
+      const rowPoints = getRowPoints(50); // Crossed all 5 rows to reach 50
       const score = baseScore + rowPoints + bonus;
       return {
         ...p,

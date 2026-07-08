@@ -36,12 +36,12 @@ $$\text{Skor Akhir} = \text{Poin Jawaban Kuis} + \text{Skor Kemajuan Baris} + \t
 
 ### B. Skor Kemajuan Baris Papan (+5 Poin / Tingkat Baris)
 Pemain dihargai atas kemajuan langkah mereka di papan. Setiap kali pion berhasil naik ke tingkat baris berikutnya (setiap kelipatan 10 kotak), pemain akan mendapatkan poin kemajuan:
-*   **Kotak 1–10** (Baris 1): **+0 Poin**
-*   **Kotak 11–20** (Baris 2): **+5 Poin**
-*   **Kotak 21–30** (Baris 3): **+10 Poin**
-*   **Kotak 31–40** (Baris 4): **+15 Poin**
-*   **Kotak 41–49** (Baris 5): **+20 Poin**
-*   **Kotak 50**
+*   **Kotak 1–10** (Baris 1): **+5 Poin**
+*   **Kotak 11–20** (Baris 2): **+10 Poin**
+*   **Kotak 21–30** (Baris 3): **+15 Poin**
+*   **Kotak 31–40** (Baris 4): **+20 Poin**
+*   **Kotak 41–49** (Baris 5): **+25 Poin**
+*   **Kotak 50** (Finish): **+30 Poin**
 
 ### C. Poin Bonus Finis (+200 s.d. +10 Poin)
 Pemain yang berhasil mendarat tepat di Kotak 50 (Finis) akan mendapatkan bonus poin apresiasi berdasarkan urutan kedatangan mereka:
@@ -59,27 +59,27 @@ Berikut adalah beberapa contoh simulasi kejadian saat bermain untuk menggambarka
 #### Skenario 1: Pemain Cepat vs Pemain Teliti
 *   **Pemain A (Beruntung)**: Melempar dadu tinggi, cepat sekali naik tangga, dan jarang menjawab kuis dengan benar. Finis **ke-1**.
     *   Jawaban Benar: 4 kuis (+40 poin)
-    *   Skor Kemajuan Baris: +25 poin (karena finis)
+    *   Skor Kemajuan Baris: +30 poin (karena finis)
     *   Bonus Finis: +200 poin (sebagai yang pertama finis)
-    *   **Total Skor Akhir: 265 Poin**
+    *   **Total Skor Akhir: 270 Poin**
 *   **Pemain B (Cerdas)**: Melangkah perlahan karena sering turun ular, tetapi menjawab hampir seluruh kuis dengan benar. Finis **ke-3**.
     *   Jawaban Benar: 12 kuis (+120 poin)
-    *   Skor Kemajuan Baris: +25 poin (karena finis)
+    *   Skor Kemajuan Baris: +30 poin (karena finis)
     *   Bonus Finis: +50 poin (sebagai yang ketiga finis)
-    *   **Total Skor Akhir: 195 Poin**
+    *   **Total Skor Akhir: 200 Poin**
 *   *Hasil Akhir*: **Pemain A Menang**. Berkat bonus finis yang besar (+200 Poin), pemain A berhasil mempertahankan keunggulannya meskipun pemain B menjawab kuis lebih banyak. Ini memberikan insentif yang kuat bagi pemain untuk berlomba mencapai garis finis sesegera mungkin.
-
+ 
 #### Skenario 2: Pemain Pintar Kehabisan Waktu vs Pemain Cepat
 *   **Pemain A (Cepat)**: Cepat finis tetapi asal-asalan menjawab kuis. Finis **ke-1**.
     *   Jawaban Benar: 2 kuis (+20 poin)
-    *   Skor Kemajuan Baris: +25 poin
+    *   Skor Kemajuan Baris: +30 poin
     *   Bonus Finis: +200 poin
-    *   **Total Skor Akhir: 245 Poin**
+    *   **Total Skor Akhir: 250 Poin**
 *   **Pemain B (Pintar)**: Terjebak di baris atas (kotak 45) karena durasi waktu bermain yang ditentukan lobi telah habis, namun ia memiliki akurasi kuis yang sangat tinggi.
     *   Jawaban Benar: 13 kuis (+130 poin)
-    *   Skor Kemajuan Baris: +20 poin (berada di Baris 5)
+    *   Skor Kemajuan Baris: +25 poin (berada di Baris 5)
     *   Bonus Finis: +0 poin (karena belum menyentuh kotak 50)
-    *   **Total Skor Akhir: 150 Poin**
+    *   **Total Skor Akhir: 155 Poin**
 *   *Hasil Akhir*: **Pemain A Menang**. Walaupun Pemain B menjawab benar lebih banyak, Pemain A mendapatkan bonus finis yang dominan yang memastikan posisi kemenangannya.
 
 #### Skenario 3: Aturan Penentu Jika Skor Kembar (Tie-Breaker)
@@ -107,8 +107,8 @@ Saat berhenti di sebuah petak (petak 2 s.d. 49), pemain akan ditantang menjawab 
 *   🟩 **Hijau (Kearifan Lokal)**: Pertanyaan tentang nilai kebaikan, peribahasa, dan norma budaya tradisional Nusantara.
 *   🟪 **Ungu (Aksi)**: Contoh tindakan nyata dan langkah pencegahan kecurangan yang bisa diterapkan siswa di sekolah.
 
-### D. Batas Waktu Menjawab (15 Detik)
-Setiap kuis memiliki batas waktu **15 detik** untuk menjawab guna mencegah pemain mencari jawaban di internet atau buku pelajaran. Jika waktu habis sebelum memilih jawaban:
+### D. Batas Waktu Menjawab (30 Detik)
+Setiap kuis memiliki batas waktu **30 detik** untuk menjawab guna mencegah pemain mencari jawaban di internet atau buku pelajaran. Jika waktu habis sebelum memilih jawaban:
 *   Jawaban otomatis dianggap salah.
 *   Pemain mendapatkan 0 poin kuis.
 *   Layar pembahasan lengkap akan muncul untuk tetap memberikan edukasi kepada siswa.
